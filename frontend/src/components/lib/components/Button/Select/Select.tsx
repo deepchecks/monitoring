@@ -10,10 +10,12 @@ export interface SelectProps {
   selections: { value: any; label: string }[];
   state: any;
   setState: (state: any) => void;
+  margin?: string;
+  rounded?: boolean;
 }
 
 export const Select = (props: SelectProps) => {
-  const { selections, state, setState } = props;
+  const { selections, state, setState, margin = '0', rounded } = props;
 
   const theme = useTheme();
 
@@ -55,7 +57,7 @@ export const Select = (props: SelectProps) => {
   };
 
   return (
-    <Container flexDirection="row" gap="16px">
+    <Container flexDirection="row" gap="16px" margin={margin}>
       {selections.map((selection, i) => {
         const isSelected = selection.value === state;
 
@@ -78,7 +80,10 @@ export const Select = (props: SelectProps) => {
                 backgroundColor: colorsToUse(isSelected).background,
                 color: colorsToUse(isSelected).color,
                 borderColor: colorsToUse(isSelected).border
-              }
+              },
+
+              '&:last-child': { borderRadius: rounded ? '0 16px 16px 0' : 'auto' },
+              '&:first-child': { borderRadius: rounded ? '16px 0 0 16px' : 'auto' }
             }}
           >
             {selection.label}

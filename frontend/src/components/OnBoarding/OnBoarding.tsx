@@ -17,7 +17,7 @@ import { constants } from './onBoarding.constants';
 import DownloadNotebook from './components/DownloadNotebook';
 
 interface OnBoardingProps {
-  dataType?: 'demo' | 'user';
+  dataType: 'demo' | 'user';
   initialStep: number;
 }
 
@@ -43,7 +43,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
 
   useEffect(() => {
     reportEvent(events.onBoarding.onboarding, {
-      step_name: constants.steps[activeStep].title,
+      step_name: constants[dataType].steps[activeStep].title,
       step_number: activeStep,
       type: `${dataType}`
     });
@@ -66,7 +66,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   return (
     <OnBoardingStepperContainer>
       <Stepper activeStep={activeStep} orientation="vertical">
-        {constants.steps.map(step => (
+        {constants[dataType].steps.map(step => (
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
