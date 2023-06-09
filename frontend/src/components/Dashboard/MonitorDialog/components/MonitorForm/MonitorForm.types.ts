@@ -9,7 +9,7 @@ export interface MonitorFormProps extends StackProps {
   monitor: MonitorSchema | null;
   setMonitorToRefreshId: SetStateType<number | null>;
   runCheckLookBack: (checkId: SelectValues, data: MonitorOptions) => Promise<void>;
-  handleCloseDrawer: () => void;
+  handleCloseDialog: () => void;
   isDrawerOpen: boolean;
   refetchMonitors(): void;
   setGraphFrequency: SetStateType<SelectValues>;

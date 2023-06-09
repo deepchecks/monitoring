@@ -7,13 +7,13 @@ export const constants = {
       'This monitor has active alerts connected to it. In order to edit the monitor, all alerts must be resolved first.Are you sure you want to edit this monitor and resolve all alerts connected to it?'
   },
   createAlertForm: {
-    alertSeverityString: 'Alert severity',
-    severityLabel: 'Severity',
-    raiseAlert: 'Raise alert when check value is:'
+    severityLabel: 'Severity'
   },
   selectCondition: {
+    titleStr: 'Activate alert when check value is:',
     selectOperatorLabel: 'Select Operator',
-    thresholdLabel: 'Threshold'
+    thresholdLabel: 'Threshold',
+    thresholdPlaceholder: '0'
   },
   monitorForm: {
     monitorNameLabel: 'Monitor name',

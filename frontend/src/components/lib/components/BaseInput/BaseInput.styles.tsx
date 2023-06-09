@@ -10,8 +10,7 @@ export const StyledTextfield = styled(TextField)(({ theme }) => ({
   '.MuiInputBase-root': {
     height: '52px',
     border: `1px solid ${theme.palette.grey.light}`,
-    borderRadius: '5px',
-    marginBottom: '20px'
+    borderRadius: '5px'
   }
 }));
 

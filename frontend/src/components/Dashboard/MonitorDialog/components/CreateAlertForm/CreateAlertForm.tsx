@@ -10,15 +10,13 @@ import {
 
 import useModels from 'helpers/hooks/useModels';
 
-import { Box, Divider, MenuItem, Stack, Typography, StackProps } from '@mui/material';
+import { MenuItem, Stack, StackProps } from '@mui/material';
 
-import { MarkedSelect } from 'components/base/MarkedSelect';
 import { SelectCondition } from './SelectCondition';
+import { StyledBaseDropdown, StyledText } from 'components/lib';
 
-import { checkInfoInitValue, monitorInfo } from './CreateAlertForm.helpers';
+import { checkInfoInitValue } from './CreateAlertForm.helpers';
 import { constants } from '../../monitorDialog.constants';
-
-import { theme } from 'components/lib/theme';
 
 interface EditMonitorProps extends StackProps {
   monitor: MonitorSchema;
@@ -27,8 +25,6 @@ interface EditMonitorProps extends StackProps {
   setMonitorToRefreshId: React.Dispatch<React.SetStateAction<number | null>>;
   setSubmitButtonDisabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
-
-const { alertSeverityString, raiseAlert, severityLabel } = constants.createAlertForm;
 
 export const CreateAlertForm = forwardRef(
   (
@@ -110,48 +106,32 @@ export const CreateAlertForm = forwardRef(
 
     return (
       <Stack {...otherProps}>
-        <Stack spacing="15px">
-          {monitorInfo(monitor, currentModel.name).map(({ label, value }) => (
-            <Typography variant="subtitle2" key={label} sx={{ color: theme.palette.text.primary }}>
-              {label}: {value}
-            </Typography>
+        <StyledText
+          text={currentModel.name}
+          type="h2"
+          sx={theme => ({ fontWeight: 500, color: theme.palette.grey[500], marginBottom: '26px' })}
+        />
+        <StyledBaseDropdown
+          label={constants.createAlertForm.severityLabel}
+          clearValue={() => setSeverity('')}
+          onChange={event => setSeverity(event.target.value as AlertSeverity)}
+          disabled={!Object.keys(AlertSeverity).length}
+          value={severity}
+          required
+          sx={{ marginBottom: '32px' }}
+        >
+          {Object.keys(AlertSeverity).map(key => (
+            <MenuItem key={key} value={key}>
+              {key}
+            </MenuItem>
           ))}
-        </Stack>
-        <Divider sx={{ m: '40px 0 11px', border: theme => `1px dashed ${theme.palette.text.primary}` }} />
-        <Typography variant="subtitle1" sx={{ color: theme => theme.palette.text.primary }}>
-          {alertSeverityString}
-        </Typography>
-        <Box mt="25px">
-          <MarkedSelect
-            label={severityLabel}
-            size="small"
-            clearValue={() => {
-              setSeverity('');
-            }}
-            onChange={event => setSeverity(event.target.value as AlertSeverity)}
-            disabled={!Object.keys(AlertSeverity).length}
-            value={severity}
-            fullWidth
-          >
-            {Object.keys(AlertSeverity).map(key => (
-              <MenuItem key={key} value={key}>
-                {key}
-              </MenuItem>
-            ))}
-          </MarkedSelect>
-        </Box>
-        <Divider sx={{ m: '25px 0 11px', border: theme => `1px dashed ${theme.palette.text.primary}` }} />
-        <Typography variant="subtitle1" sx={{ color: theme => theme.palette.text.primary }}>
-          {raiseAlert}
-        </Typography>
-        <Box width={1} marginTop="25px">
-          <SelectCondition
-            operator={operator}
-            setOperator={setOperator}
-            value={numericValue}
-            setValue={setNumericValue}
-          />
-        </Box>
+        </StyledBaseDropdown>
+        <SelectCondition
+          operator={operator}
+          setOperator={setOperator}
+          value={numericValue}
+          setValue={setNumericValue}
+        />
       </Stack>
     );
   }

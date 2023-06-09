@@ -2,10 +2,10 @@ import React from 'react';
 
 import { OperatorsEnum } from 'api/generated';
 
-import { Stack, Typography, TextField, styled } from '@mui/material';
+import { MenuItem, Stack } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimary';
+import { StyledText, StyledBaseInput, StyledBaseDropdown } from 'components/lib';
 
 import mapToOptionsList from 'helpers/utils/mapToOptionsList';
 import { SetStateType } from 'helpers/types';
@@ -20,33 +20,33 @@ interface SelectConditionProps {
 }
 
 const OPERATORS = mapToOptionsList(OperatorsEnum, [OperatorsEnum.in, OperatorsEnum.equals, OperatorsEnum.not_equals]);
-const { selectOperatorLabel, thresholdLabel } = constants.selectCondition;
+const { selectOperatorLabel, thresholdLabel, titleStr, thresholdPlaceholder } = constants.selectCondition;
 
-export const SelectCondition = ({
-  title = 'Activate alert when check value is:',
-  operator,
-  setOperator,
-  value,
-  setValue
-}: SelectConditionProps) => (
+export const SelectCondition = ({ title = titleStr, operator, setOperator, value, setValue }: SelectConditionProps) => (
   <>
-    <StyledTitle>{title}</StyledTitle>
-    <Stack direction="row" divider={<ArrowForwardIcon />} alignItems="center" justifyContent="space-between">
-      <SelectPrimary
+    <StyledText text={title} type="h3" sx={{ fontWeight: 700, marginBottom: '24px' }} />
+    <Stack
+      direction="row"
+      divider={<ArrowForwardIcon />}
+      alignItems={'center'}
+      justifyContent="space-between"
+      marginBottom="30px"
+      spacing="24px"
+    >
+      <StyledBaseDropdown
         label={selectOperatorLabel}
         value={operator}
         onChange={event => setOperator(event.target.value as OperatorsEnum)}
-        sx={{ width: '268px' }}
+        required
       >
         {OPERATORS.map(({ label, value }) => (
-          <SelectPrimaryItem value={value} key={value}>
+          <MenuItem value={value} key={value}>
             {label}
-          </SelectPrimaryItem>
+          </MenuItem>
         ))}
-      </SelectPrimary>
-      <TextField
-        sx={{ width: '200px' }}
-        placeholder="0"
+      </StyledBaseDropdown>
+      <StyledBaseInput
+        placeholder={thresholdPlaceholder}
         type="number"
         label={thresholdLabel}
         value={value}
@@ -55,10 +55,3 @@ export const SelectCondition = ({
     </Stack>
   </>
 );
-
-export const StyledTitle = styled(Typography)({
-  fontWeight: 700,
-  fontSize: '16px',
-  letterSpacing: '0.2px',
-  marginBottom: '23px'
-});

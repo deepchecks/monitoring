@@ -79,13 +79,13 @@ export const MonitorDialog = ({
     [runCheck]
   );
 
-  const closeDrawer = () => {
+  const closeDialog = () => {
     onClose();
     setTimeout(() => setGraphData(null), 500);
   };
 
-  const handleOnCloseDrawer = () => {
-    closeDrawer();
+  const handleCloseDialog = () => {
+    closeDialog();
   };
 
   const isCreateAlert = dialogName === DialogNames.CreateAlert;
@@ -93,20 +93,20 @@ export const MonitorDialog = ({
   return (
     <StyledDialog
       open={!!open}
-      closeDialog={handleOnCloseDrawer}
+      closeDialog={handleCloseDialog}
       title={dialogName}
       submitButtonLabel={constants.submitButtonLabel(isCreateAlert)}
       submitButtonAction={() => ref.current?.submit()}
       submitButtonDisabled={submitButtonDisabled}
-      maxWidth="md"
+      maxWidth="sm"
       fullWidth
     >
-      <Stack justifyContent="space-between" height="893px">
-        <Box sx={{ height: '650px', overflowY: 'auto' }}>
+      <Stack justifyContent="space-between">
+        <Box sx={{ overflowY: 'auto', marginTop: '-20px' }}>
           {isCreateAlert && monitor ? (
             <CreateAlertForm
               monitor={monitor}
-              onClose={closeDrawer}
+              onClose={closeDialog}
               runCheckLookBack={handleGraphLookBack}
               setMonitorToRefreshId={setMonitorToRefreshId}
               setSubmitButtonDisabled={setSubmitButtonDisabled}
@@ -117,7 +117,7 @@ export const MonitorDialog = ({
               monitor={monitor}
               refetchMonitors={refetchMonitors}
               setMonitorToRefreshId={setMonitorToRefreshId}
-              handleCloseDrawer={closeDrawer}
+              handleCloseDialog={closeDialog}
               runCheckLookBack={handleGraphLookBack}
               isDrawerOpen={!!open}
               setGraphFrequency={setGraphFrequency}
@@ -129,13 +129,14 @@ export const MonitorDialog = ({
             />
           )}
         </Box>
-        <Box height="173px" marginBottom="36.6px">
+        <Box height="246px" marginBottom="36px">
           <GraphView
             graphData={graphData}
             isLoading={isRunCheckLoading}
             timeFreq={timeFreq}
             monitor={monitor}
             setReset={setReset}
+            isCreateAlert={isCreateAlert}
           />
         </Box>
       </Stack>

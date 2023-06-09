@@ -1,5 +1,5 @@
 export enum DialogNames {
-  CreateAlert = 'New alert',
-  CreateMonitor = 'Create monitor',
-  EditMonitor = 'Edit monitor'
+  CreateAlert = 'Create New Alert',
+  CreateMonitor = 'Create Monitor',
+  EditMonitor = 'Edit Monitor'
 }

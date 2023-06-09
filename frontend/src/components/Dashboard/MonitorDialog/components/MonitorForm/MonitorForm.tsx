@@ -50,7 +50,7 @@ export const MonitorForm = forwardRef(
       monitor,
       setMonitorToRefreshId,
       runCheckLookBack,
-      handleCloseDrawer,
+      handleCloseDialog,
       isDrawerOpen,
       refetchMonitors,
       setGraphFrequency,
@@ -203,7 +203,7 @@ export const MonitorForm = forwardRef(
         refetchMonitors();
       }
 
-      handleCloseDrawer();
+      handleCloseDialog();
     };
 
     const handleMonitorSave = async () => {

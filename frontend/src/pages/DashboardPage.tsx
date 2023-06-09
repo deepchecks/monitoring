@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -52,10 +52,10 @@ export const DashboardPage = () => {
     setIsDrawerOpen(true);
   };
 
-  const handleCloseMonitorDialog = useCallback(() => {
-    setCurrentMonitor(null);
+  const handleCloseMonitorDialog = () => {
     setIsDrawerOpen(false);
-  }, []);
+    setTimeout(() => setCurrentMonitor(null), 100);
+  };
 
   useEffect(() => {
     if (dashboard?.monitors?.length === 0 && (onboardingEnabled || !isCloud)) {
