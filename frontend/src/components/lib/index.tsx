@@ -21,6 +21,7 @@ import { Input as StyledInput } from './components/Input/Input';
 import { Dropdown as StyledDropdown } from './components/Dropdown/Dropdown';
 import { NavLink as StyledNavLink } from './components/NavLink/NavLink';
 import { CodeSnippet as StyledCodeSnippet } from './components/Container/CodeSnippet/CodeSnippet';
+import { BaseInput as StyledBaseInput, BaseDropdown as StyledBaseDropdown } from './components/BaseInput/BaseInput';
 
 export {
   StyledThemeProvider,
@@ -45,5 +46,7 @@ export {
   StyledInput,
   StyledDropdown,
   StyledNavLink,
-  StyledCodeSnippet
+  StyledCodeSnippet,
+  StyledBaseInput,
+  StyledBaseDropdown
 };
