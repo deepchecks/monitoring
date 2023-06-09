@@ -43,6 +43,7 @@ User Interface
     user_interface/alerts
     user_interface/analysis
     user_interface/configuration
+    user_interface/integrations
 
 Examples
 --------
