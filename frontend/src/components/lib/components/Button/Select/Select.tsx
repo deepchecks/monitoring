@@ -11,11 +11,11 @@ export interface SelectProps {
   state: any;
   setState: (state: any) => void;
   margin?: string;
-  rounded?: boolean;
+  connected?: boolean;
 }
 
 export const Select = (props: SelectProps) => {
-  const { selections, state, setState, margin = '0', rounded } = props;
+  const { selections, state, setState, margin = '0', connected } = props;
 
   const theme = useTheme();
 
@@ -57,7 +57,7 @@ export const Select = (props: SelectProps) => {
   };
 
   return (
-    <Container flexDirection="row" gap="16px" margin={margin}>
+    <Container flexDirection="row" gap={connected ? 0 : '16px'} margin={margin}>
       {selections.map((selection, i) => {
         const isSelected = selection.value === state;
 
@@ -70,11 +70,11 @@ export const Select = (props: SelectProps) => {
               borderWidth: '1px',
               borderStyle: 'solid',
               padding: '7px 24px',
-              borderRadius: '28px',
               transition: '0.5s',
               backgroundColor: colorsToUse(isSelected).background,
               color: colorsToUse(isSelected).color,
               borderColor: colorsToUse(isSelected).border,
+              borderRadius: connected ? 0 : '28px',
 
               ':hover': {
                 backgroundColor: colorsToUse(isSelected).background,
@@ -82,8 +82,8 @@ export const Select = (props: SelectProps) => {
                 borderColor: colorsToUse(isSelected).border
               },
 
-              '&:last-child': { borderRadius: rounded ? '0 16px 16px 0' : 'auto' },
-              '&:first-child': { borderRadius: rounded ? '16px 0 0 16px' : 'auto' }
+              '&:last-child': { borderRadius: connected ? '0 16px 16px 0' : 'auto' },
+              '&:first-child': { borderRadius: connected ? '16px 0 0 16px' : 'auto' }
             }}
           >
             {selection.label}
