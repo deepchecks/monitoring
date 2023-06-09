@@ -6,22 +6,17 @@ export const StyledLabel = styled(Typography)({
   marginBottom: '8px'
 });
 
-export const StyledTextfield = styled(TextField)(({ theme }) => ({
+export const StyledTextfield = styled(TextField)({
   '.MuiInputBase-root': {
     height: '52px',
-    border: `1px solid ${theme.palette.grey.light}`,
     borderRadius: '5px'
   }
-}));
+});
 
-export const StyledSelect = styled(Select)(({ theme }) => ({
+export const StyledSelect = styled(Select)({
   height: '52px',
-  borderRadius: '5px',
-
-  '& .MuiOutlinedInput-notchedOutline': {
-    border: `1px solid ${theme.palette.grey.light}`
-  }
-}));
+  borderRadius: '5px'
+});
 
 interface StyledIconButtonProps {
   active: boolean;
