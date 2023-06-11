@@ -27,11 +27,14 @@ Requirements
 * At least 4GB of RAM
 * At least 2 vCPU cores
 * At least 20GB of persistent volumes
-    * POSIX-compliant block storage
-    * 3,000 IOPS recommended
+
+  - POSIX-compliant block storage
+  - 3,000 IOPS recommended
+
 * **Optional (but recommended for secured installations):**
-    * A DNS record on a domain you own. Deepchecks will automatically create an SSL certificate for your domain
-      using LetsEncrypt.
+
+  - A DNS record on a domain you own. Deepchecks will automatically create an SSL certificate for your domain
+    using LetsEncrypt.
 
 Configuration
 =============
@@ -45,32 +48,42 @@ Installing
 To get started: first make sure you have the docker engine up and running 
 (try running ``docker`` or ``docker ps`` in your cli and check if you receive relevant output).
 
-All you need to do is to run the following command, which will spin up a new Deepchecks deployment
-for us automatically!
+.. admonition:: Before Installing: Make a New Directory
+    :class: hint
 
-You will be asked for the release tag you would like to use (default to `latest-release`), the domain you'd like to use,
-and whether this deployment should be secured (HTTP or HTTPS).
+    Create a new directory where you want the monitoring installation files to be inside.
+    Then open the terminal inside that directory and start the installation.
+
+Running the following commands in the terminal will spin up a new Deepchecks deployment automatically.
 
 .. code-block:: bash
     
     pip install deepchecks-installer
     deepchecks-installer monitoring-install
 
+During the installation you'll be asked for:
 
-Installation process
------------------------
+- The release tag you would like to use (default to ``latest-release``)
+- The domain you'd like to use (default to ``local-host``)
+- Whether the deployment should be secured (HTTP or HTTPS)
 
-Once everything has been setup by the installer, you should see the following message:
+You can press "enter" throughout
+the installation process to use the default values.
+
+Once everything has been setup by the installer (if you have fast internet, this shouldn't take more
+than a couple of minutes), you should see the following message:
 
 .. code-block::
 
-    We will need to wait ~5-10 minutes for things to settle down, migrations to finish, and TLS certs to be issued.
+    We will need to wait ~5-10 minutes for things to settle down, 
+    migrations to finish, and TLS certs to be issued.
 
     ⏳ Waiting for Deepchecks to boot (this will take a few minutes)
 
 .. note::
 
-    The installation will hang here a couple of minutes, waiting for all services to finish their deployment procedures.
+    The installation will hang here a couple of minutes 
+    waiting for all services to finish their deployment procedures.
 
 Once this step concludes successfully: Congratulations 🥇
 
@@ -78,14 +91,23 @@ The monitoring service is now installed. You should now be able to go to the url
 (the default is http://localhost), create your user account, and start working with the system 
 and with the Deepchecks Monitoring app!
 
-Now to get some data into the application, you should open the app's url and follow the onboarding
+.. image:: /_static/images/installation/deepchecks_oss_login.png
+   :alt: Deepchecks Login Screen
+   :align: center
+   :width: 100%
+
+
+After you have your user and organizaiton, you can create a model-version 
+for monitoring and start sending data to the app!
+Open the app's url and follow the onboardingo
 tutorial, where you'll upload data to the system. The onboarding tutorial follows the same steps as our
 :doc:`quickstart </user-guide/tabular/auto_quickstarts/plot_quickstart>`.
 
-Customizing your deployment (optional)
---------------------------------------
 
-The configuration file exists under the name `oss-conf.env` and comes with a series of default config values that should
+Customizing your deployment (optional)
+==========================================
+
+The configuration file exists under the name ``oss-conf.env`` and comes with a series of default config values that should
 work for most deployments. If you need to customize anything, you can take a look at the full list of
 :ref:`environment variables <installation__self_host__configurationn>`.
 After making any changes, simply restart the stack with docker-compose.
