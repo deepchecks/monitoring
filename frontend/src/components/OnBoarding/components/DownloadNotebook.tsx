@@ -148,7 +148,7 @@ const constants = {
         "source": [
           "import os ",
           "",
-          "dc_client = DeepchecksClient(host='${window.location.href}', token='${token}') ",
+          "dc_client = DeepchecksClient(host='${window.location.origin}', token='${token}') ",
           "",
           "version_arguments = {",
           "    'model_name' : 'Airbnb',",
