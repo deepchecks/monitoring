@@ -9,15 +9,6 @@ export const reportEvent = (eventName: string, eventData?: { [param: string]: an
 };
 
 export const events = {
-  authentication: {
-    logout: 'logout',
-    login: 'login',
-    signUp: 'signup'
-  },
-  workspaceSettings: {
-    adminModelAssign: 'admin model assign',
-    invite: 'invite'
-  },
   onBoarding: {
     onboarding: 'onboarding'
   }

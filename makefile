@@ -19,7 +19,7 @@ ext_py := $(shell which python3 || which python)
 # Override by putting in commandline python=XXX when needed.
 python = $(shell echo ${ext_py} | rev | cut -d '/' -f 1 | rev)
 TESTDIR = $(shell realpath backend/tests)
-ENV = $(shell realpath .venv)
+ENV = $(shell realpath -q .venv || echo .venv)
 repo = pypi
 
 WIN_ENV := .venv
@@ -130,7 +130,7 @@ $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
 	@$(PIP) install -e backend/
-	@$(PIP) install -U pip==22.0.4 setuptools==58.3.0
+	@$(PIP) install -U pip setuptools ray==2.3.1
 
 
 requirements: $(ENV)

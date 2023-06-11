@@ -5,9 +5,9 @@ import { Box, Stack, useTheme } from '@mui/material';
 import { StyledButton, StyledImage, StyledText } from 'components/lib';
 import WebhookDialog from './WebhookDialog';
 
-import webhook from '../../../assets/integrations/webhook.svg';
+import webhook from '../../../../assets/integrations/webhook.svg';
 
-import { constants } from '../integrations.constants';
+import { constants } from '../../integrations.constants';
 
 interface ConnectWebhookProps {
   isWebhookConnected: boolean | undefined;

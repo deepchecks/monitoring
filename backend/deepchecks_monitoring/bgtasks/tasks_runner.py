@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 """Contains alert scheduling logic."""
-import inspect
 import logging.handlers
 import typing as t
 
@@ -18,7 +17,7 @@ import anyio
 import pendulum as pdl
 import uvloop
 from redis.asyncio import Redis, RedisCluster
-from redis.exceptions import RedisClusterException
+from redis.exceptions import LockNotOwnedError, RedisClusterException
 from sqlalchemy import select
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
@@ -28,7 +27,7 @@ from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import Model
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
+from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE, TASK_RUNNER_LOCK
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.utils.other import ExtendedAIOKafkaAdminClient
@@ -80,15 +79,7 @@ class TaskRunner:
             raise
 
     async def wait_for_task(self, timeout=0):
-        # Question: do we want to hold a lock for edge cases?
-        # For example the retry time is 10 minutes. If there is 10 minutes delay in the runner, same task will be pushed
-        # again, and if a second runner will get the task before the first one removed it, it will be ran twice.
-
-        task_entry = self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
-        # allow async redis or normal redis for testing
-
-        if inspect.iscoroutine(task_entry):
-            task_entry = await task_entry
+        task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
 
         # If timeout is not 0 we might get return value of None
         if task_entry is None:
@@ -101,22 +92,38 @@ class TaskRunner:
             return task_id, queued_timestamp
 
     async def run_single_task(self, task_id, session, queued_timestamp):
-        # queued_time is not used but logged in telemetry
+        """Run single task."""
+        # Using distributed lock to make sure long task won't be ran twice
+        lock_name = TASK_RUNNER_LOCK.format(task_id)
+        # By default, allow task 5 minutes before removes lock to allow another run. Inside the task itself we can
+        # extend the lock if we are doing slow operation and want more time
+        lock = self.redis.lock(lock_name, blocking=False, timeout=60 * 5)
+        lock_acquired = await lock.acquire()
+        if not lock_acquired:
+            self.logger.debug(f'Failed to acquire lock for task id: {task_id}')
+            return
+
         task = await session.scalar(select(Task).where(Task.id == task_id))
         # Making sure task wasn't deleted for some reason
-        if task is None:
+        if task is not None:
+            await self._run_task(task, session, queued_timestamp, lock)
+        else:
             self.logger.debug(f'Got already removed task id: {task_id}')
-            return
-        await self._run_task(task, session, queued_timestamp)
 
-    async def _run_task(self, task: Task, session, queued_timestamp):
+        try:
+            await lock.release()
+        except LockNotOwnedError:
+            self.logger.error(f'Failed to release lock for task id: {task_id}. probably task run for longer than '
+                              f'maximum time for the lock')
+
+    async def _run_task(self, task: Task, session, queued_timestamp, lock):
         """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
         to log the task parameters and queued time."""
         try:
             worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
             if worker:
                 start = pdl.now()
-                await worker.run(task, session, self.resource_provider)
+                await worker.run(task, session, self.resource_provider, lock)
                 duration = (pdl.now() - start).total_seconds()
                 delay = start.int_timestamp - queued_timestamp
                 self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})

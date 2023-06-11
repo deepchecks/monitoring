@@ -18,7 +18,6 @@ import pendulum as pdl
 from deepchecks.core import BaseCheck, errors
 from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import base_checks as tabular_base_checks
-from joblib import Parallel, delayed
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -172,12 +171,10 @@ async def get_results_for_model_versions_per_window(
         check: t.Union[Check, t.List[Check]],
         additional_kwargs: MonitorCheckConfSchema,
         with_display: bool = False,
-        parallel: bool = True,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
 
-    jobs = []
     model_results = {}
     need_ref = check.is_reference_required if isinstance(check, Check) else \
         any((c.is_reference_required for c in check))
@@ -244,23 +241,10 @@ async def get_results_for_model_versions_per_window(
             if data_df.empty or (need_ref and reference.empty):
                 continue
 
-            jobs.append(delayed(run_deepchecks)(data_df, model_version, model, top_feat, dp_check,
-                                                feat_imp, with_display, reference_table_ds, reference_table_pred,
-                                                reference_table_proba))
-            # Map index of the job to location in dict
-            result['job_index'] = len(jobs) - 1
+            result['result'] = run_deepchecks(data_df, model_version, model, top_feat, dp_check,
+                                              feat_imp, with_display, reference_table_ds, reference_table_pred,
+                                              reference_table_proba)
 
-    if jobs:
-        # Do not want to use parallel for less than 3 jobs
-        if not parallel or len(jobs) <= 2:
-            jobs = [job[0](*job[1], **job[2]) for job in jobs]
-        else:
-            jobs = Parallel(n_jobs=8)(jobs)
-
-        for model_version, version_results in model_results.items():
-            for result in version_results:
-                if 'job_index' in result:
-                    result['result'] = jobs[result.pop('job_index')]
     return model_results
 
 
@@ -284,6 +268,11 @@ def run_deepchecks(
         dataset_name='Production',
     )
     shared_args = dict(
+        feature_importance=feat_imp,
+        with_display=with_display,
+        model_classes=model_version.classes
+    )
+    single_dataset_args = dict(
         # NOTE: this is not a bug or a mistake
         #
         # it is not possible to execute a check instance only on a test dataset,
@@ -292,11 +281,6 @@ def run_deepchecks(
         # passing our test dataset as a train dataset
         #
         # see 'deepchecks.tabular.context.Context.__init__' method for more info
-        feature_importance=feat_imp,
-        with_display=with_display,
-        model_classes=model_version.classes
-    )
-    single_dataset_args = dict(
         y_pred_train=test_pred,
         y_proba_train=test_proba,
         **shared_args

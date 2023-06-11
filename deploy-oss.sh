@@ -7,12 +7,18 @@ DEEPCHECKS_SECRET=$(head -c 28 /dev/urandom | sha224sum -b | head -c 56)
 export DEEPCHECKS_SECRET
 
 OS=$(uname | awk '{print tolower($0)}')
+ARCH=$(uname -m)
 YUM_CMD=$(which yum || echo '')
 APT_GET_CMD=$(which apt-get || echo '')
 
 # Check if the OS is Mac of Linux
 if ! [[ "$OS" == *darwin* || "$OS" == *linux* ]]; then
   echo "Unfortunately, Deepchecks can only be deployed on MacOS or Linux systems at the moment"
+  exit 0
+fi
+# Check if ARMv7, then not supported
+if [[ "$ARCH" == "armv7l" ]]; then
+  echo "Unfortunately, Deepchecks can only be deployed on x86_64 or ARMv8 systems at the moment"
   exit 0
 fi
 

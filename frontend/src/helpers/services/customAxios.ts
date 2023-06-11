@@ -18,7 +18,8 @@ AXIOS_INSTANCE.interceptors.response.use(
         let redirectLocation = `${process.env.REACT_APP_BASE_API}/api/v1/auth/login/auth0`;
 
         if (window.location.href.includes('localhost')) {
-          const localUrl = 'https://localhost:3000';
+          const localUrl = window.location.href;
+
           redirectLocation += `?return_uri=${encodeURIComponent(localUrl)}`;
         }
 

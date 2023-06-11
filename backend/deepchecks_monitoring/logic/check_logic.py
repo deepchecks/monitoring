@@ -253,7 +253,6 @@ async def run_check_per_window_in_range(
         monitor_id: int | None = None,
         cache_funcs: CacheFunctions | None = None,
         organization_id: int | None = None,
-        parallel: bool = True,
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.
     The function gets the relevant model versions and the task type of the check.
@@ -271,8 +270,6 @@ async def run_check_per_window_in_range(
     monitor_id
     cache_funcs
     organization_id
-    parallel : bool, default True
-        Whether to run the checks in parallel with joblib.
 
     Returns
     -------
@@ -336,6 +333,7 @@ async def run_check_per_window_in_range(
                 period = window_end - window_start
                 query = create_execution_data_query(model_version, monitor_options, period=period, columns=columns,
                                                     with_labels=check.is_label_required,
+                                                    filter_labels_exist=check.is_label_required,
                                                     is_ref=False)
                 curr_test_info["query"] = session.execute(query)
                 query_reference = True
@@ -346,6 +344,7 @@ async def run_check_per_window_in_range(
             # Reference query
             query = create_execution_data_query(model_version, monitor_options, columns=columns,
                                                 with_labels=check.is_label_required,
+                                                filter_labels_exist=check.is_label_required,
                                                 is_ref=True)
             reference = session.execute(query)
         else:
@@ -359,8 +358,7 @@ async def run_check_per_window_in_range(
         model_versions,
         model,
         check,
-        monitor_options.additional_kwargs,
-        parallel=parallel
+        monitor_options.additional_kwargs
     )
 
     # Reduce the check results
@@ -454,8 +452,7 @@ async def run_check_window(
             model,
             check,
             monitor_options.additional_kwargs,
-            with_display,
-            parallel=False,
+            with_display
         )
     else:
         model_results_per_window = await get_results_for_model_versions_for_reference(

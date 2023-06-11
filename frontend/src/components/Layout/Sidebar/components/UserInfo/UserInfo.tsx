@@ -9,7 +9,6 @@ import { logoutApiV1AuthLogoutGet } from 'api/generated';
 
 import { cancelPendingRequests } from 'helpers/services/customAxios';
 import useUser from 'helpers/hooks/useUser';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { StyledMenuItem } from 'components/Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
 import { ReportModal } from './components/ReportModal';
@@ -33,7 +32,6 @@ export const UserInfo = () => {
 
   const handleLogout = () => {
     cancelPendingRequests();
-    reportEvent(events.authentication.logout);
     logoutApiV1AuthLogoutGet().then(() => {
       handleClose();
       mixpanel.reset();
