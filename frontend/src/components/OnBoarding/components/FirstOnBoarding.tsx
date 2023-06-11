@@ -7,6 +7,7 @@ import { getOnboardingStateApiV1OnboardingGet } from 'api/generated';
 
 import { StyledContainer, StyledImage, StyledSelect, StyledText } from 'components/lib';
 import { isLargeDesktop } from 'components/lib/theme/typography';
+
 import {
   FirstOnBoardingBoxLabel,
   FirstOnBoardingOutlinedBox,
@@ -53,7 +54,7 @@ const FirstOnBoarding = () => {
               ]}
               state={dataType}
               setState={setDataType}
-              margin="0 0 0 36px"
+              margin="0 0 0 70px"
               connected
             />
           )}

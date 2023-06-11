@@ -13,11 +13,12 @@ import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegen
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { constants } from './onBoarding.constants';
 import DownloadNotebook from './components/DownloadNotebook';
 import ColabLink from './components/ColabLink';
 import GenerateToken from './components/GenerateToken';
 import DownloadScript from './components/DownloadScript';
+
+import { constants } from './onBoarding.constants';
 
 interface OnBoardingProps {
   dataType: 'demo' | 'user';
@@ -88,9 +89,9 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
         ))}
       </Stepper>
       <OnBoardingAdditionalContainer>
-        <DownloadNotebook token={apiToken} />
-        <DownloadScript token={apiToken} />
-        <ColabLink />
+        <DownloadNotebook dataType={dataType} token={apiToken} />
+        <DownloadScript dataType={dataType} token={apiToken} />
+        <ColabLink dataType={dataType} />
         <GenerateToken regenerateApiToken={regenerateApiToken} />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>

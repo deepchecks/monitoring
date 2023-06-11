@@ -25,7 +25,7 @@ const FirstOnBoardingOutlinedBox = styled(StyledContainer)(({ theme }) => ({
 
 const FirstOnBoardingSelectContainer = styled(StyledContainer)(() => ({
   display: 'grid',
-  gridTemplateColumns: 'auto 264px',
+  gridTemplateColumns: 'auto 270px',
   alignItems: 'center'
 }));
 
@@ -56,8 +56,7 @@ const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
 }));
 
 const OnBoardingAdditionalContainer = styled(StyledContainer)({
-  gap: '24px',
-  marginTop: '64px'
+  gap: '24px'
 });
 
 export {
