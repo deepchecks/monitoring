@@ -7,4 +7,5 @@ Getting Started
     :maxdepth: 3
 
     welcome
-    installation
+    deploy_self_host_open_source
+    environment_setup

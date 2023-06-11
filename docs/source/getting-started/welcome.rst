@@ -86,14 +86,14 @@ send data over time, explore system status and receive alerts on problems that a
     :gutter: 3
     
     .. grid-item-card:: 🏃‍♀️ Open-Source Quickstart 🏃‍♀️
-        :link-type: doc
-        :link: /getting-started/deploy_self_host_open_source
+        :link-type: ref
+        :link: deploy_self_host_open_source
         
         End-to-end guide to start monitoring your first model in a few minutes.
     
     .. grid-item-card:: 🏃‍♀️ SaaS Quickstart 🏃‍♀️
-        :link-type: doc
-        :link: /user-guide/tabular/auto_quickstarts/plot_quickstart
+        :link-type: ref
+        :link: quick_tabular
         
         End-to-end guide to start monitoring your first model in a few minutes.
 

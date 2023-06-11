@@ -1,16 +1,19 @@
 .. _installation__self_host_deepchecks:
 
-============================================================
-Additional Installation Info for Open-source Deployment
-============================================================
+=======================================
+Install the Open-source Deployment
+=======================================
 
 Deepchecks can be self-hosted on your on-prem environment. If you are a large company and you have data privacy
 concerns when sharing your data with SaaS tools, or you're an engineer wishing to use the open-source version
 of Deepchecks, you're in the right place! The open-source deployment let's you spin up a fresh Deepchecks instance
 in a few minutes.
 
-Don't want to manage the deepchecks app yourself? The quickest way to get started with Deepchecks is to use
-the SaaS `Deepchecks Cloud <https://app.deepchecks.com>`__ offering.
+If you're using the SaaS offering, feel free to skip to the :ref:`environment_setup`, or jump right to the 
+:ref:`Monitoring Quickstart for SaaS <quick_tabular>`.
+
+.. Don't want to manage the deepchecks app yourself? The quickest way to get started with Deepchecks is to use
+.. the SaaS `Deepchecks Cloud <https://app.deepchecks.com>`__ offering.
 
 .. note::
     The open source version is built for monitoring 1 model per deployment. Its ability to handle scale

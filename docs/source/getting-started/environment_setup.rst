@@ -1,8 +1,8 @@
-.. _installation:
+.. _environment_setup:
 
-================================================
-Installation (SaaS and Open-source)
-================================================
+================================
+Setting Up the Environment
+================================
 
 Overview - Deepchecks Monitoring Structure
 ================================================
@@ -127,9 +127,3 @@ Congratulations, you're ready to start monitoring your models with deepchecks!
 Head over to our :doc:`Quickstart </user-guide/tabular/auto_quickstarts/plot_quickstart>`
 or see the full :doc:`User Guide </user-guide/index>`
 to get your model & data monitoring up and running.
-
-.. toctree::
-    :hidden:
-    :maxdepth: 2
-
-    deploy_self_host_open_source
