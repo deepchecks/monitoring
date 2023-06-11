@@ -1,0 +1,6 @@
+version: 2
+
+secret:
+  ignored-paths:
+    - deploy/oss-conf.env
+    - .github/workflows/e2e-tests.yml
