@@ -20,7 +20,7 @@ export const constants = {
         docLink: { label: 'Read more', url: '' }
       },
       {
-        title: 'Creating a New Model Version',
+        title: 'Creating a New Model Version - Demo Data',
         description:
           'To create a model version in Deepchecks, we will need to define the feature schema and preferably also provide referance data. The reference data is optional but necessary for certain checks. The easiest way to create a feature schema and provide the referance data is via a deepschecks Dataset object. \n The data schema is a yaml file contaning the names and types of the different features for the model version. It can be generated autometically based on the Dataset object.',
         codeSnippet: 'import sys \n!{sys.executable} -m pip install -U deepchecks-client',

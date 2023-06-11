@@ -5,7 +5,7 @@ import OnBoarding from '../OnBoarding';
 
 import { getOnboardingStateApiV1OnboardingGet } from 'api/generated';
 
-import { StyledContainer, StyledImage, StyledSelect, StyledText } from 'components/lib';
+import { StyledContainer, StyledImage, StyledText } from 'components/lib';
 import { isLargeDesktop } from 'components/lib/theme/typography';
 
 import {
@@ -46,19 +46,6 @@ const FirstOnBoarding = () => {
       <StyledContainer maxWidth={dataType ? 1100 : 770} margin="16px auto">
         <FirstOnBoardingSelectContainer>
           <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
-          {dataType && (
-            <StyledSelect
-              selections={[
-                { label: constants.first.userDataToggleLabel, value: 'user' },
-                { label: constants.first.demoDataToggleLabel, value: 'demo' }
-              ]}
-              state={dataType}
-              setState={setDataType}
-              margin="0 0 0 70px"
-              connected
-              disabled
-            />
-          )}
         </FirstOnBoardingSelectContainer>
         {dataType ? (
           <OnBoarding dataType={dataType} initialStep={initialStep} />
