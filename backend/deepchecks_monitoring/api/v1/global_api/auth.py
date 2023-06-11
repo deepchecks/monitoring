@@ -13,6 +13,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProvide
 from deepchecks_monitoring.exceptions import BadRequest, InternalError
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.user import User, UserOAuthDTO
+from deepchecks_monitoring.schema_models import Model, ModelMember
 
 from .global_router import router
 
@@ -66,7 +67,8 @@ async def auth0_callback(
         raise InternalError('There was an error while trying to get the user info from the server.') from e
 
     # If multi tenant is disabled, then we need to assign the user to the single organization if exists
-    if resources_provider.get_features_control(user=None).multi_tenant is False:
+    feature_control = resources_provider.get_features_control(user=None)
+    if feature_control.multi_tenant is False:
         organization_id = await session.scalar(select(Organization.id).limit(1))
     else:
         organization_id = None
@@ -76,7 +78,15 @@ async def auth0_callback(
                                       auth_jwt_secret=request.app.state.settings.auth_jwt_secret,
                                       eula=False,
                                       organization_id=organization_id)
+    # Flush to get user id
     await session.flush()
+
+    # If model assignment is disabled, then we need to assign the user to all existing models
+    if feature_control.model_assignment is False:
+        models = await session.scalars(select(Model.id))
+        for model_id in models:
+            session.add(ModelMember(user_id=user.id, model_id=model_id))
+
     if settings.debug_mode:
         return_uri = request.query_params.get('state')
         resp = RedirectResponse(url=return_uri)
