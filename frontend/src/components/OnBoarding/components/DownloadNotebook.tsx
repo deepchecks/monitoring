@@ -249,7 +249,9 @@ const constants = {
             "# **Welcome To Deepchecks !**",
             "Here is how you can quickly create your first model in Deepchecks.",
             "",
-            "All You need is to follow the instructions, Good luck!"
+            "All You need is a dataset of your choice and to follow the instructions below, Good luck!",
+            "",
+            "For a step-by-step example see the following [quickstart](https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_prepare_your_data.html)."
           ],
           "metadata": {
             "id": "6ozMJDZcXunN"
@@ -271,11 +273,7 @@ const constants = {
             "!{sys.executable} -m pip install -U deepchecks-client"
           ],
           "metadata": {
-            "id": "NvC7hrUCX8Qi",
-            "colab": {
-              "base_uri": "https://localhost:8080/"
-            },
-            "outputId": "db96cb7f-c4b6-43f7-ee18-dba05e9784db"
+            "id": "NvC7hrUCX8Qi"
           },
           "execution_count": null,
           "outputs": []
@@ -293,9 +291,23 @@ const constants = {
           }
         },
         {
+          "cell_type": "code",
+          "source": [
+            "https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_prepare_your_data.html"
+          ],
+          "metadata": {
+            "id": "RlDtZDhDINen"
+          },
+          "execution_count": null,
+          "outputs": []
+        },
+        {
           "cell_type": "markdown",
           "source": [
             "## **Creating a Dataset Object**",
+            "",
+            "Deepchecks' Dataset object contain the data alongside assosiated metadata and",
+            "can be easily initialized from a panadas DataFrame or a numpy ndarray.",
             "For more information about the deepchecks' Dataset object see [link](https://docs.deepchecks.com/stable/tabular/usage_guides/dataset_object.html)."
           ],
           "metadata": {
@@ -305,12 +317,30 @@ const constants = {
         {
           "cell_type": "code",
           "source": [
-            "from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction, load_pre_calculated_feature_importance ",
+            "ref_data, prod_data = # Load your data (preferably as a pandas DataFrame)",
+            "ref_predictions, prod_predictions = # Optional - Generate model predictions",
+            "feature_importance = # Optional - Calculate model feature importance",
             "",
-            "ref_dataset, _ = load_data(data_format='Dataset') ",
-            "ref_predictions, _ = load_pre_calculated_prediction() ",
-            "feature_importance = load_pre_calculated_feature_importance() # Optional ",
-            "feature_importance "
+            "prod_data.head(2) "
+          ],
+          "metadata": {
+            "id": "DbZcVy7v9EbS"
+          },
+          "execution_count": null,
+          "outputs": []
+        },
+        {
+          "cell_type": "code",
+          "source": [
+            "from deepchecks.tabular import Dataset",
+            "",
+            "# MODIFY BASED ON YOUR DATA",
+            "LABEL_COL = 'price'",
+            "CAT_FEATURES = ['room_type', 'neighbourhood', 'neighbourhood_group', 'has_availability']",
+            "DATETIME_COL = 'timestamp'",
+            "",
+            "ref_dataset = Dataset(ref_data, label=LABEL_COL, cat_features=CAT_FEATURES) ",
+            "ref_dataset"
           ],
           "metadata": {
             "id": "cGARXoQvY_93"
@@ -365,17 +395,16 @@ const constants = {
         {
           "cell_type": "code",
           "source": [
-            "import os ",
-            "",
             "dc_client = DeepchecksClient(host='${window.location.origin}', token='${token}') ",
+            "# ",
             "",
             "version_arguments = {",
             "    'model_name' : 'Airbnb',",
             "    'version_name' : 'ver_1',",
-            "    'schema' : schema_file_path,",
-            "    'feature_importance' : feature_importance,",
-            "    'reference_dataset': ref_dataset,",
-            "    'reference_predictions' : ref_predictions,",
+            "    'schema' : 'schema_file_path',",
+            "    'feature_importance' : feature_importance, # Optional",
+            "    'reference_dataset': ref_dataset, # Optional",
+            "    'reference_predictions' : ref_predictions, # Optional",
             "    'task_type' : 'regression'",
             "}",
             "model_version = dc_client.create_tabular_model_version(**version_arguments)"
@@ -402,12 +431,10 @@ const constants = {
         {
           "cell_type": "code",
           "source": [
-            "timestamp, label_col = 'timestamp', 'price'",
-            "_, prod_data = load_data(data_format='DataFrame')",
-            "_, prod_predictions = load_pre_calculated_prediction()",
-            "timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 ",
+            "# Convert timestamp to UNIX timestamp format",
+            "timestamp_col = prod_data[DATETIME_COL].astype(int) // 10 ** 9 ",
             "model_version.log_batch(sample_ids=prod_data.index,",
-            "                        data=prod_data.drop([timestamp, label_col], axis=1), ",
+            "                        data=prod_data.drop([DATETIME_COL, LABEL_COL], axis=1), ",
             "                        timestamps=timestamp_col, predictions=prod_predictions)"
           ],
           "metadata": {
@@ -431,7 +458,7 @@ const constants = {
           "cell_type": "code",
           "source": [
             "model_client = dc_client.get_or_create_model(version_arguments['model_name'])",
-            "model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label_col])"
+            "model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[LABEL_COL])"
           ],
           "metadata": {
             "id": "YzqDhw5KZnMr"
