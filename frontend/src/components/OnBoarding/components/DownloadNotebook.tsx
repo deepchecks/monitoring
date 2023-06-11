@@ -446,9 +446,11 @@ const constants = {
 };
 
 const DownloadNotebook = ({ token, dataType }: { token: string; dataType: 'demo' | 'user' }) => {
+  const fileName = dataType === 'demo' ? 'onboarding-demo-data.ipynb' : 'onboarding-custom-data.ipynb';
+
   const handleDownload = () => {
     const blob = new Blob([constants.notebook[dataType](token)], { type: 'application/json' });
-    FileSaver.saveAs(blob, 'onboarding.ipynb');
+    FileSaver.saveAs(blob, fileName);
   };
 
   return (
