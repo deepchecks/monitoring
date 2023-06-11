@@ -1,5 +1,6 @@
-import pino from 'pino';
 import * as Sentry from '@sentry/react';
+
+import pino from 'pino';
 
 const logger = (() =>
   pino({

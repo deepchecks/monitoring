@@ -195,4 +195,4 @@ class LicenseCheckDependency:
         """
         # TODO: implement license check, for open source all enterprise features are disabled.
         if request.app.state.settings.is_cloud is False:
-            raise LicenseError("Need license to use this feature")
+            raise LicenseError("S3 integration is only available for paid subscription")
