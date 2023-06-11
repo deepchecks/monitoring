@@ -1,8 +1,8 @@
 .. _installation__self_host_configuration:
 
-===============================
-Open-source Deployment Settings
-===============================
+=============================================
+Open-source Deployment Configuration Settings
+=============================================
 
 Deepchecks is configured by using environment variables. To customize your deployments for your needs, the table below
 details the list of environment details Deepchecks is using.

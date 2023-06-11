@@ -1,8 +1,8 @@
 .. _installation__self_host_deepchecks:
 
-======================
-Open-source Deployment
-======================
+============================================================
+Additional Installation Info for Open-source Deployment
+============================================================
 
 Deepchecks can be self-hosted on your on-prem environment. If you are a large company and you have data privacy
 concerns when sharing your data with SaaS tools, or you're an engineer wishing to use the open-source version
@@ -42,23 +42,36 @@ Installing
 To get started: first make sure you have the docker engine up and running 
 (try running ``docker`` or ``docker ps`` in your cli and check if you receive relevant output).
 
-Now all you need to do is to run the following command, which will spin up a new Deepchecks deployment
+Installation command: using the deepchecks-installer
+----------------------------------------------------------
+
+All you need to do is to run the following command, which will spin up a new Deepchecks deployment
 for us automatically!
 
+You will be asked for the release tag you would like to use (default to `latest-release`), the domain you'd like to use,
+and whether this deployment should be secured (HTTP or HTTPS).
 
-.. .. code-block:: bash
+.. code-block:: bash
     
-..     pip install deepchecks-installer
-..     deepchecks-installer monitoring-install
+    pip install deepchecks-installer
+    deepchecks-installer monitoring-install
+
+
+
+Alternative installation command: bash script
+------------------------------------------------------------------
+
+Alternatively, you can use the following command for installation:
 
 .. code-block:: bash
 
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/monitoring/main/deploy-oss.sh)"
 
-You will be asked for the release tag you would like to use (default to `latest-release`), the domain you'd like to use,
-and whether this deployment should be secured (HTTP or HTTPS).
 
-Once everything has been setup, you should see the following message:
+Installation process
+-----------------------
+
+Once everything has been setup by the installer, you should see the following message:
 
 .. code-block::
 
@@ -66,9 +79,12 @@ Once everything has been setup, you should see the following message:
 
     ⏳ Waiting for Deepchecks to boot (this will take a few minutes)
 
-The installation will hang here a couple of minutes, waiting for all services to finish their deployment procedures.
+.. note::
 
-Once this is completed, you should be able to see your Deepchecks dashboard on the domain you provided!
+    The installation will hang here a couple of minutes, waiting for all services to finish their deployment procedures.
+
+Once this is completed, you should be able to go to the url/domain you provided
+(the default is http://localhost) and see your Deepchecks dashboard!
 
 Now to get some data into the application, you should follow the
 :doc:`quickstart </user-guide/tabular/auto_quickstarts/plot_quickstart>`.
