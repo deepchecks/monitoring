@@ -1,7 +1,7 @@
 .. _installation__self_host_deepchecks:
 
 =======================================
-Install the Open-source Deployment
+Install the Open-Source Deployment
 =======================================
 
 Deepchecks can be self-hosted on your on-prem environment. If you are a large company and you have data privacy
@@ -36,7 +36,7 @@ Requirements
 Configuration
 =============
 
-Deepchecks can be configured using environment variables. See the :ref:`Configuration section <installation__self_host__configuration>`
+Deepchecks can be configured using environment variables. See the :ref:`Configuration section <installation__self_host_configuration>`
 for more details.
 
 Installing
@@ -44,9 +44,6 @@ Installing
 
 To get started: first make sure you have the docker engine up and running 
 (try running ``docker`` or ``docker ps`` in your cli and check if you receive relevant output).
-
-Installation command: using the deepchecks-installer
-----------------------------------------------------------
 
 All you need to do is to run the following command, which will spin up a new Deepchecks deployment
 for us automatically!
@@ -58,17 +55,6 @@ and whether this deployment should be secured (HTTP or HTTPS).
     
     pip install deepchecks-installer
     deepchecks-installer monitoring-install
-
-
-
-Alternative installation command: bash script
-------------------------------------------------------------------
-
-Alternatively, you can use the following command for installation:
-
-.. code-block:: bash
-
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/monitoring/main/deploy-oss.sh)"
 
 
 Installation process
@@ -86,10 +72,14 @@ Once everything has been setup by the installer, you should see the following me
 
     The installation will hang here a couple of minutes, waiting for all services to finish their deployment procedures.
 
-Once this is completed, you should be able to go to the url/domain you provided
-(the default is http://localhost) and see your Deepchecks dashboard!
+Once this step concludes successfully: Congratulations 🥇
 
-Now to get some data into the application, you should follow the
+The monitoring service is now installed. You should now be able to go to the url/domain you provided
+(the default is http://localhost), create your user account, and start working with the system 
+and with the Deepchecks Monitoring app!
+
+Now to get some data into the application, you should open the app's url and follow the onboarding
+tutorial, where you'll upload data to the system. The onboarding tutorial follows the same steps as our
 :doc:`quickstart </user-guide/tabular/auto_quickstarts/plot_quickstart>`.
 
 Customizing your deployment (optional)

@@ -85,9 +85,9 @@ send data over time, explore system status and receive alerts on problems that a
 .. grid:: 1
     :gutter: 3
     
-    .. grid-item-card:: 🏃‍♀️ Open-Source Quickstart 🏃‍♀️
+    .. grid-item-card:: 🏃‍♀️ Open-Source Installation & Quickstart 🏃‍♀️
         :link-type: ref
-        :link: deploy_self_host_open_source
+        :link: installation__self_host_deepchecks
         
         End-to-end guide to start monitoring your first model in a few minutes.
     
@@ -97,12 +97,12 @@ send data over time, explore system status and receive alerts on problems that a
         
         End-to-end guide to start monitoring your first model in a few minutes.
 
-    .. grid-item-card:: 💻  Install 💻 
+    .. grid-item-card:: 💻  Set up your environment 💻 
         :link-type: ref
-        :link: installation
+        :link: environment_setup
 
-        Install the deepchecks-client and get your API token
-        to start working with the system.
+        An elaborate guide for installing the deepchecks-client SDK and getting your API token
+        to start working with the monitoring app
     
     .. grid-item-card:: 🤓 User Guide 🤓
         :link-type: ref
