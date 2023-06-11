@@ -22,7 +22,7 @@ We invite you to:
 .. image:: /_static/images/welcome/monitoring-app-ui.gif
    :alt: Deepchecks Monitoring Dashboard
    :align: center
-   :width: 60%
+   :width: 70%
 
 .. _welcome__deepchecks_components:
 
@@ -35,13 +35,13 @@ to validating data splits, comparing models and evaluating their
 performance across the model's entire development process. 
 
 .. grid:: 1
-    :gutter: 3
+    :gutter: 1 1 3 3
 
     .. grid-item-card:: Testing Docs
         :link-type: doc
         :link: deepchecks:getting-started/welcome
         :img-top: /_static/images/welcome/testing_tile.png
-        :columns: 4
+        :columns: 6 4 4 4
 
         Tests during research and model development
     
@@ -49,7 +49,7 @@ performance across the model's entire development process.
         :link-type: doc
         :link: deepchecks:general/usage/ci_cd
         :img-top: /_static/images/welcome/ci_tile.png
-        :columns: 4
+        :columns: 6 4 4 4
         
         Tests before deploying the model to production
 
@@ -57,7 +57,7 @@ performance across the model's entire development process.
         :link-type: ref
         :link: welcome__start_with_deepchecks_monitoring
         :img-top: /_static/images/welcome/monitoring_tile.png
-        :columns: 4
+        :columns: 6 4 4 4
 
         Tests and continuous monitoring during production
         
@@ -85,9 +85,9 @@ send data over time, explore system status and receive alerts on problems that a
 .. grid:: 1
     :gutter: 3
     
-    .. grid-item-card:: 🏃‍♀️ Open-Source Quickstart (todo) 🏃‍♀️
+    .. grid-item-card:: 🏃‍♀️ Open-Source Quickstart 🏃‍♀️
         :link-type: doc
-        :link: /user-guide/tabular/auto_quickstarts/plot_quickstart
+        :link: /getting-started/deploy_self_host_open_source
         
         End-to-end guide to start monitoring your first model in a few minutes.
     
