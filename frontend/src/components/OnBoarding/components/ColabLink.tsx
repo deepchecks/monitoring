@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { StyledButton, StyledImage } from 'components/lib';
+import { StyledButton } from 'components/lib';
 
-import logoImg from '../../../assets/onBoarding/colab.svg';
+import AllInclusiveIcon from '@mui/icons-material/AllInclusive';
 
 const constants = {
   text: 'Open with Colab',
@@ -14,11 +14,11 @@ const ColabLink = () => (
     <StyledButton
       label={
         <>
-          <StyledImage src={logoImg} width="36px" height="36px" margin="0 16px 0 -8px" />
+          <AllInclusiveIcon />
           {constants.text}
         </>
       }
-      sx={{ width: '240px', borderRadius: '16px' }}
+      sx={{ width: '240px', height: '44px' }}
     />
   </a>
 );

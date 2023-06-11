@@ -21,7 +21,7 @@ import { constants } from '../onBoarding.constants';
 
 const FirstOnBoarding = () => {
   const [dataType, setDataType] = useState<'demo' | 'user'>();
-  const [initialStep, setInitialStep] = useState(1);
+  const [initialStep, setInitialStep] = useState(0);
 
   const navigate = useNavigate();
 

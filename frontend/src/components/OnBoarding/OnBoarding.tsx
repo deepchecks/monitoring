@@ -15,6 +15,9 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { constants } from './onBoarding.constants';
 import DownloadNotebook from './components/DownloadNotebook';
+import ColabLink from './components/ColabLink';
+import GenerateToken from './components/GenerateToken';
+import DownloadScript from './components/DownloadScript';
 
 interface OnBoardingProps {
   dataType: 'demo' | 'user';
@@ -34,6 +37,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const regenerateApiToken = async () => {
     regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
       value && setApiToken(value);
+      navigator.clipboard.writeText(value);
     });
   };
 
@@ -85,6 +89,9 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
       </Stepper>
       <OnBoardingAdditionalContainer>
         <DownloadNotebook token={apiToken} />
+        <DownloadScript token={apiToken} />
+        <ColabLink />
+        <GenerateToken regenerateApiToken={regenerateApiToken} />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );

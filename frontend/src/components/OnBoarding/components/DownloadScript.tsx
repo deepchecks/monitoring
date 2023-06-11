@@ -1,12 +1,12 @@
 /* eslint-disable no-useless-escape */
 import React from 'react';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
+import { Code } from '@mui/icons-material';
 import * as FileSaver from 'file-saver';
 
 import { StyledButton } from 'components/lib';
 
 const constants = {
-  text: 'Download Notebook',
+  text: 'Download Script.py',
   notebook: (token: string) => `
   {
     "nbformat": 4,
@@ -225,17 +225,17 @@ const constants = {
   `
 };
 
-const DownloadNotebook = ({ token }: { token: string }) => {
+const DownloadScript = ({ token }: { token: string }) => {
   const handleDownload = () => {
     const blob = new Blob([constants.notebook(token)], { type: 'application/json' });
-    FileSaver.saveAs(blob, 'onboarding.ipynb');
+    FileSaver.saveAs(blob, 'onboarding.py');
   };
 
   return (
     <StyledButton
       label={
         <>
-          <MenuBookIcon />
+          <Code />
           {constants.text}
         </>
       }
@@ -245,4 +245,4 @@ const DownloadNotebook = ({ token }: { token: string }) => {
   );
 };
 
-export default DownloadNotebook;
+export default DownloadScript;

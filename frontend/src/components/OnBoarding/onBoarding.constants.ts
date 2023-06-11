@@ -67,7 +67,7 @@ export const constants = {
         docLink: { label: 'Read more', url: '' }
       },
       {
-        title: 'Creating a New Model Version',
+        title: 'Creating a New Model Version (user data)',
         description:
           'To create a model version in Deepchecks, we will need to define the feature schema and preferably also provide referance data. The reference data is optional but necessary for certain checks. The easiest way to create a feature schema and provide the referance data is via a deepschecks Dataset object. \n The data schema is a yaml file contaning the names and types of the different features for the model version. It can be generated autometically based on the Dataset object.',
         codeSnippet: 'import sys \n!{sys.executable} -m pip install -U deepchecks-client',
@@ -79,7 +79,7 @@ export const constants = {
         }
       },
       {
-        title: 'Uploading Production Data',
+        title: 'Uploading Production Data (user data)',
         description:
           'To start monitoring with Deepchecks, you need to upload the production data you want to monitor. In this example, we will upload the data and predictions stored for a single month as a batch. Similar to the reference data, predicted probabilities can also be sent for classification tasks to compute probability-based metrics like AUC, log_loss, brier score, etc.',
         codeSnippet:
@@ -91,7 +91,7 @@ export const constants = {
         }
       },
       {
-        title: 'Updating the Labels',
+        title: 'Updating the Labels (user data)',
         description:
           'In some real-world scenarios, data labels are only available later. We can update them retrospectively using global sample IDs, which are not specific to a version but apply globally to the model. To upload the labels, we need the model client.',
         codeSnippet:
