@@ -12,10 +12,11 @@ export interface SelectProps {
   setState: (state: any) => void;
   margin?: string;
   connected?: boolean;
+  disabled?: boolean;
 }
 
 export const Select = (props: SelectProps) => {
-  const { selections, state, setState, margin = '0', connected } = props;
+  const { selections, state, setState, margin = '0', connected, disabled } = props;
 
   const theme = useTheme();
 
@@ -57,7 +58,12 @@ export const Select = (props: SelectProps) => {
   };
 
   return (
-    <Container flexDirection="row" gap={connected ? 0 : '16px'} margin={margin}>
+    <Container
+      flexDirection="row"
+      gap={connected ? 0 : '16px'}
+      margin={margin}
+      sx={{ pointerEvents: disabled ? 'none' : 'auto' }}
+    >
       {selections.map((selection, i) => {
         const isSelected = selection.value === state;
 

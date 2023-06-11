@@ -56,6 +56,7 @@ const FirstOnBoarding = () => {
               setState={setDataType}
               margin="0 0 0 70px"
               connected
+              disabled
             />
           )}
         </FirstOnBoardingSelectContainer>
