@@ -11,9 +11,12 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+#  push: TODO comment for testing
+#    tags:
+#      - "[0-9]+.[0-9]+.[0-9]+"
+  pull_request:
+    branches:
+      - main
 
 env:
   DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
@@ -23,20 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.draft"
     steps:
-      - uses: dawidd6/action-download-artifact@v2
-        with:
-          commit: ${{ github.sha }}
-          name: commImage
-          path: /tmp
-          workflow: e2e-tests.yml
-          workflow_conclusion: ""
-      - name: Load Docker image
-        run: |
-          echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
-          docker load --input /tmp/commImage.tar
-          docker tag ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }} ${{ secrets.MON_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)
-          docker tag ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }} ${{ secrets.PUBLIC_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)
-          docker tag ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }} ${{ secrets.PUBLIC_IMAGE_NAME }}:latest-release
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Configure AWS credentials (Public)
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -48,10 +39,6 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
         with:
           registry-type: public
-      - name: Push to public
-        run: |
-          docker push ${{ secrets.PUBLIC_IMAGE_NAME }}:${{ env.TAG }}
-          docker push ${{ secrets.PUBLIC_IMAGE_NAME }}:latest-release
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -61,9 +48,13 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-      - name: Build and push
+      - name: Tag image as latest-release
         run: |
-          docker push ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
+          docker buildx imagetools create \
+            --tag ${{ secrets.MON_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
+            --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
+#            --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:latest-release \  # TODO comment for testing
+            ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
       - name: Download task definition
         run: |
           aws ecs describe-task-definition --task-definition mon-commercial-staging --query taskDefinition > task-definition.json
@@ -107,4 +98,3 @@ jobs:
         run: |
           docker logout ${{ steps.login-ecr.outputs.registry }}
           docker logout ${{ steps.login-ecr-public.outputs.registry }}
-
