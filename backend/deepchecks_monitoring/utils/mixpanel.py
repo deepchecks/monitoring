@@ -1,3 +1,5 @@
+# pylint: disable=unused-import,import-outside-toplevel
+"""Mixpanel events definitions."""
 import enum
 import json
 import logging
@@ -5,7 +7,7 @@ import typing as t
 
 import pydantic
 import sqlalchemy as sa
-from mixpanel import Consumer, Mixpanel
+from mixpanel import Consumer, DatetimeSerializer, Mixpanel
 from sqlalchemy.ext.asyncio import async_object_session
 from sqlalchemy.orm import joinedload
 
@@ -21,39 +23,58 @@ from deepchecks_monitoring.utils.alerts import Frequency as MonitorFrequency
 if t.TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from deepchecks_monitoring.public_models import Role
     from deepchecks_monitoring.public_models.organization import Organization
     from deepchecks_monitoring.public_models.role import RoleEnum
     from deepchecks_monitoring.public_models.user import User
 
 
+__all__ = [
+    'MixpanelEventReporter',
+    'InvitationEvent',
+    'LoginEvent',
+    'LoginEvent',
+    'SignupEvent',
+    'ModelCreatedEvent',
+    'ModelDeletedEvent',
+    'ModelVersionCreatedEvent',
+    'ProductionDataUploadEvent',
+    'LabelsUploadEvent',
+    'AlertRuleCreatedEvent',
+    'AlertTriggeredEvent',
+]
+
+
 class BaseEvent(pydantic.BaseModel):
+    """Base mixpanel event type."""
+
     EVENT_NAME: t.ClassVar[str]
 
 
 class OrganizationEvent(BaseEvent):
     """Organization mixpanel super properties."""
 
-    o_deployment: str = "saas"  # TODO: figure out how this should be defined
+    o_deployment: str = 'saas'  # TODO: figure out how this should be defined
     o_tier: OrgTier
     o_name: str
     o_version: str = deepchecks_monitoring.__version__
 
     @classmethod
-    async def from_organization(cls, org: "Organization") -> "OrganizationEvent":
+    async def from_organization(cls, org: 'Organization') -> 'OrganizationEvent':
+        """Create an event instance from organization record."""
         # NOTE:
         # this function is async only for consistency and
         # compatibility with UserEvent
         return OrganizationEvent(
             o_name=t.cast(str, org.name),
             o_tier=t.cast(OrgTier, org.tier),
-            o_deployment="saas"  # TODO:
+            o_deployment='saas'  # TODO:
         )
 
-    @pydantic.validator("o_deployment")
+    @pydantic.validator('o_deployment')
     @classmethod
     def validate_deployment_value(cls, value):
-        assert value in {"saas", "on-prem"}
+        """Validate deployment value."""
+        assert value in {'saas', 'on-prem'}
         return value
 
 
@@ -68,20 +89,21 @@ class UserEvent(BaseEvent):
     u_created_at: str
 
     @classmethod
-    async def from_user(cls, user: "User") -> "UserEvent":
-        session = t.cast(AsyncSession, async_object_session(user))
-        unloaded_relations = t.cast("set[str]", sa.inspect(user).unloaded)
+    async def from_user(cls, user: 'User') -> 'UserEvent':
+        """Create an event instance from user record."""
+        session = t.cast('AsyncSession', async_object_session(user))
+        unloaded_relations = t.cast('set[str]', sa.inspect(user).unloaded)
 
         # TODO:
         # create a utility function to load unloaded relationships
-        if "organization" not in unloaded_relations:
+        if 'organization' not in unloaded_relations:
             org = user.organization
         else:
-            from deepchecks_monitoring.public_models import Organization
+            from deepchecks_monitoring.public_models import Organization  # pylint: disable=redefined-outer-name
             q = sa.select(Organization).where(Organization.id == user.organization_id)
             org = session.scalar(q)
 
-        if "roles" not in unloaded_relations:
+        if 'roles' not in unloaded_relations:
             roles = user.roles
         else:
             from deepchecks_monitoring.public_models import Role
@@ -102,6 +124,7 @@ class UserEvent(BaseEvent):
 
 
 class InvitationEvent(UserEvent):
+    """User invitation event definition."""
 
     EVENT_NAME: t.ClassVar[str] = 'invite'
 
@@ -114,6 +137,7 @@ class InvitationEvent(UserEvent):
         invitees: list[str],
         user: 'User'
     ) -> t.Self:
+        """Create event instance."""
         super_props = await UserEvent.from_user(user)
         return cls(
             invitees=invitees,
@@ -123,6 +147,7 @@ class InvitationEvent(UserEvent):
 
 
 class _AuthEvent(UserEvent):
+    """Base auth event definition."""
 
     method: str
 
@@ -132,6 +157,7 @@ class _AuthEvent(UserEvent):
         method: str,
         user: 'User'
     ) -> t.Self:
+        """Create event instance."""
         super_props = await UserEvent.from_user(user)
         return cls(
             method=method,
@@ -140,18 +166,25 @@ class _AuthEvent(UserEvent):
 
 
 class LoginEvent(_AuthEvent):
+    """User login event definition."""
+
     EVENT_NAME: t.ClassVar[str] = 'login'
 
 
 class LogoutEvent(_AuthEvent):
+    """User logout event definition."""
+
     EVENT_NAME: t.ClassVar[str] = 'logout'
 
 
 class SignupEvent(_AuthEvent):
+    """User signup event definition."""
+
     EVENT_NAME: t.ClassVar[str] = 'signup'
 
 
 class ModelCreatedEvent(OrganizationEvent):
+    """Model creation event definition."""
 
     EVENT_NAME: t.ClassVar[str] = 'model created'
 
@@ -165,6 +198,7 @@ class ModelCreatedEvent(OrganizationEvent):
         model: 'Model',
         user: 'User'
     ) -> t.Self:
+        """Create event instance."""
         org = t.cast('Organization', user.organization)
         super_props = await OrganizationEvent.from_organization(org)
         return cls(
@@ -176,6 +210,7 @@ class ModelCreatedEvent(OrganizationEvent):
 
 
 class ModelDeletedEvent(OrganizationEvent):
+    """Model removal event definition."""
 
     EVENT_NAME: t.ClassVar[str] = 'model deleted'
 
@@ -191,11 +226,12 @@ class ModelDeletedEvent(OrganizationEvent):
         model: 'Model',
         user: 'User'
     ) -> t.Self:
+        """Create event instance."""
         org = t.cast('Organization', user.organization)
         super_props = await OrganizationEvent.from_organization(org)
 
         session = async_object_session(model)
-        unloaded_relations = t.cast("set[str]", sa.inspect(model).unloaded)
+        unloaded_relations = t.cast('set[str]', sa.inspect(model).unloaded)
 
         if 'versions' not in unloaded_relations:
             versions = t.cast('list[ModelVersion]', model.versions)
@@ -216,6 +252,7 @@ class ModelDeletedEvent(OrganizationEvent):
 
 
 class ModelVersionCreatedEvent(OrganizationEvent):
+    """Model version creation event definition."""
 
     EVENT_NAME: t.ClassVar[str] = 'model version created'
 
@@ -231,11 +268,12 @@ class ModelVersionCreatedEvent(OrganizationEvent):
         model_version: 'ModelVersion',
         user: 'User'
     ):
+        """Create event instance."""
         org = t.cast('Organization', user.organization)
         super_props = await OrganizationEvent.from_organization(org)
 
         session = async_object_session(model_version)
-        unloaded_relations = t.cast("set[str]", sa.inspect(model_version).unloaded)
+        unloaded_relations = t.cast('set[str]', sa.inspect(model_version).unloaded)
 
         if 'model' not in unloaded_relations:
             model = t.cast('Model', model_version.model)
@@ -254,6 +292,7 @@ class ModelVersionCreatedEvent(OrganizationEvent):
 
 
 class ProductionDataUploadEvent(OrganizationEvent):
+    """Production data upload event definition."""
 
     EVENT_NAME: t.ClassVar[str] = 'production data uploaded'
 
@@ -272,11 +311,12 @@ class ProductionDataUploadEvent(OrganizationEvent):
         model_version: 'ModelVersion',
         user: 'User'
     ):
+        """Create event instance."""
         org = t.cast('Organization', user.organization)
         super_props = await OrganizationEvent.from_organization(org)
 
         session = async_object_session(model_version)
-        unloaded_relations = t.cast("set[str]", sa.inspect(model_version).unloaded)
+        unloaded_relations = t.cast('set[str]', sa.inspect(model_version).unloaded)
 
         if 'model' not in unloaded_relations:
             model = t.cast('Model', model_version.model)
@@ -296,6 +336,7 @@ class ProductionDataUploadEvent(OrganizationEvent):
 
 
 class LabelsUploadEvent(OrganizationEvent):
+    """Labels upload event definition."""
 
     EVENT_NAME: t.ClassVar[str] = 'labels uploaded'
 
@@ -312,6 +353,7 @@ class LabelsUploadEvent(OrganizationEvent):
         model: 'Model',
         user: 'User'
     ):
+        """Create event instance."""
         org = t.cast('Organization', user.organization)
         super_props = await OrganizationEvent.from_organization(org)
         return cls(
@@ -324,6 +366,7 @@ class LabelsUploadEvent(OrganizationEvent):
 
 
 class AlertRuleCreatedEvent(UserEvent):
+    """Alert rule creation event definition."""
 
     EVENT_NAME: t.ClassVar[str] = 'alert rule created'
 
@@ -355,6 +398,7 @@ class AlertRuleCreatedEvent(UserEvent):
         alert_rule: 'AlertRule',
         user: 'User',
     ):
+        """Create event instance."""
         super_props = await UserEvent.from_user(user)
         session = async_object_session(alert_rule)
 
@@ -390,6 +434,7 @@ class AlertRuleCreatedEvent(UserEvent):
 
 
 class AlertTriggeredEvent(OrganizationEvent):
+    """Alert event definition."""
 
     EVENT_NAME: t.ClassVar[str] = 'alert triggered'
 
@@ -408,7 +453,7 @@ class AlertTriggeredEvent(OrganizationEvent):
     ):
         super_props = await OrganizationEvent.from_organization(organization)
         session = async_object_session(alert)
-        unloaded_relations = t.cast("set[str]", sa.inspect(alert).unloaded)
+        unloaded_relations = t.cast('set[str]', sa.inspect(alert).unloaded)
 
         if 'alert_rule' not in unloaded_relations:
             alert_rule = t.cast(AlertRule, alert.alert_rule)
@@ -426,32 +471,15 @@ class AlertTriggeredEvent(OrganizationEvent):
         )
 
 
-# class AlertRuleDeletedEvent(UserEvent):
-
-#     EVENT_NAME: t.ClassVar[str] = 'alert rule deleted'
-
-#     id: int
-#     name: str
-#     alerts_count: int
-
-
-# class AlertResolvedEvent(UserEvent):
-
-#     EVENT_NAME: t.ClassVar[str] = 'alert resolved'
-
-#     alert_rule_id: int
-#     monitor_id: int
-#     monitor_name: str
-#     check_id: int
-#     check_type: str
-#     model_id: int
-#     model_name: str
-#     model_task_type: TaskType
-#     n_of_resolved_alerts: int
-#     were_all_alerts_resolved: bool
+class _Serializer(DatetimeSerializer):
+    def default(self, obj):
+        if isinstance(obj, enum.Enum):
+            return obj.value
+        return super().default(obj)
 
 
 class MixpanelEventReporter:
+    """Mixpanel events reporter."""
 
     @classmethod
     def from_token(
@@ -460,8 +488,9 @@ class MixpanelEventReporter:
         consumer: Consumer | None = None,
         supress_errors: bool = True
     ) -> t.Self:
+        """Create a 'MixpanelEventReporter' instance from a mixpanel api token."""
         return cls(
-            Mixpanel(token, consumer=consumer),
+            Mixpanel(token, consumer=consumer, serializer=_Serializer),
             supress_errors=supress_errors
         )
 
@@ -479,17 +508,18 @@ class MixpanelEventReporter:
         self,
         event: BaseEvent
     ):
+        """Send an event to the mixpanel service."""
         if isinstance(event, UserEvent):
             kwargs = {
-                "distinct_id": event.u_email,  # TODO: should be id
-                "event_name": event.EVENT_NAME,
-                "properties": event.dict()
+                'distinct_id': event.u_email,  # TODO: should be id
+                'event_name': event.EVENT_NAME,
+                'properties': event.dict()
             }
         elif isinstance(event, OrganizationEvent):
             kwargs = {
-                "distinct_id": event.o_name,
-                "event_name": event.EVENT_NAME,
-                "properties": event.dict()
+                'distinct_id': event.o_name,
+                'event_name': event.EVENT_NAME,
+                'properties': event.dict()
             }
         else:
             raise TypeError(f'Unsupported event type - {type(event)}')
@@ -500,7 +530,7 @@ class MixpanelEventReporter:
 
         try:
             self.mixpanel.track(**kwargs)
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             self.logger.exception(
                 'Failed to send mixpanel event.\n'
                 f'Event:\n{json.dumps(kwargs, indent=3)}'

@@ -422,7 +422,7 @@ class ResourcesProvider(BaseResourcesProvider):
 
     def report_mixpanel_event(self, event: BaseMixpanelEvent):
         if self.settings.enable_analytics is False:
-            logging.getLogger("server").warn({"message": "Analytics gathering is disabled"})
+            logging.getLogger("server").warning({"message": "Analytics gathering is disabled"})
             return
 
         mixpanel = self._mixpanel_event_reporter
@@ -432,7 +432,7 @@ class ResourcesProvider(BaseResourcesProvider):
                 mixpanel = MixpanelEventReporter.from_token(token)
                 self._mixpanel_event_reporter = mixpanel
             else:
-                logging.getLogger("server").warn({"message": "Mixpanel token is not provided"})
+                logging.getLogger("server").warning({"message": "Mixpanel token is not provided"})
                 return
 
         mixpanel.report(event)

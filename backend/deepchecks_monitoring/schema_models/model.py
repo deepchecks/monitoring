@@ -175,19 +175,19 @@ class Model(Base, MetadataMixin, PermissionMixin):
         """Return number of non nullable predictions."""
         # TODO: check if versions are loaded
         session = async_object_session(self)
-        versions = t.cast('list[ModelVersion]', self.versions)
+        versions = t.cast("list[ModelVersion]", self.versions)
         prediction_column = sa.column(SAMPLE_PRED_COL)
 
         tables = [
             it.get_monitor_table_name()
             for it in versions
         ]
-        q = sa.union_all([
-            sa.select(sa.func.count(prediction_column).label('count'))
+        q = sa.union_all(*(
+            sa.select(sa.func.count(prediction_column).label("count"))
             .select_from(sa.text(table_name))
-            .where(prediction_column != None)
+            .where(prediction_column.isnot(None))
             for table_name in tables
-        ])
+        ))
 
         return await session.scalar(
             sa.select(sa.func.sum(q.c.count))
