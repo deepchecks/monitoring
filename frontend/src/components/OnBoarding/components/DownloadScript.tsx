@@ -122,7 +122,7 @@ const DownloadScript = ({
         </>
       }
       onClick={handleDownload}
-      sx={{ width: '280px', height: '44px' }}
+      sx={{ width: '240px', height: '44px' }}
     />
   );
 };
