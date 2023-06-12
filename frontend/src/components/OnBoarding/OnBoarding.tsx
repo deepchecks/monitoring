@@ -93,7 +93,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
       </Stepper>
       <OnBoardingAdditionalContainer>
         <DownloadNotebook dataType={dataType} reportOnboardingStep={reportOnboardingStep} />
-        <DownloadScript dataType={dataType} token={apiToken} reportOnboardingStep={reportOnboardingStep} />
+        <DownloadScript dataType={dataType} reportOnboardingStep={reportOnboardingStep} />
         <ColabLink dataType={dataType} reportOnboardingStep={reportOnboardingStep} />
         <GenerateToken regenerateApiToken={regenerateApiToken} />
       </OnBoardingAdditionalContainer>
