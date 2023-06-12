@@ -10,15 +10,15 @@ Notifications
 Email Notifications
 -------------------
 
-To configure email notifications go to the page 'Configurations/Integrations' and click on the tab 'Notifications'.
-On the shown table mark alert severity levels about which you want to be notified.
+To configure email notifications go to the page 'Configurations/Integrations' and click on the 'Notifications' tab.
+On the display table mark the alert severity levels for which you would like to receive notifications on.
 
 
 .. image:: /_static/images/user-guide/user_interface/8.1.1_selection_of_alert_severity_for_email_notifications.png
     :width: 600
 
 
-Example of an email notification.
+An example of an email notification.
 
 
 .. image:: /_static/images/user-guide/user_interface/8.1.1_example_of_email_notification.png
@@ -29,7 +29,7 @@ Example of an email notification.
 Slack Notifications
 -------------------
 
-To configure Slack notifications go to the page 'Configurations/Integrations' and click on the tab 'Notifications'.
+To configure Slack notifications go to the page 'Configurations/Integrations' and click on the 'Notifications' tab.
 In order to authorize the Deepchecks to send messages to a desired Slack workspace click on the button 'Connect' within the 'Get notified on Slack' rectangle.
 
 
@@ -60,7 +60,7 @@ On the table mark alert severity levels about which you want to be notified via 
     :width: 600
 
 
-Example of a slack message.
+An example of a slack message.
 
 
 .. image:: /_static/images/user-guide/user_interface/8.1.2_example_of_slack_message.png
@@ -73,7 +73,7 @@ Webhooks
 Webhooks functionality gives users a possibility to integrate their Deepchecks organization account with any kind of third-party applications and services that expose reachable public HTTP endpoint.
 Saying shortly, you give the Deepchecks an URL address and each time when an alert is raised the Deepchecks will send an 'HTTP POST' request with an alert payload to it.
 
-To configure a webhook go to the page 'Configurations/Integrations' and click on the tab 'Notifications'.
+To configure a webhook go to the page 'Configurations/Integrations' and click on the 'Notifications' tab.
 
 To create a webhook click on the button 'Create Webhook'.
 
@@ -84,7 +84,7 @@ To create a webhook click on the button 'Create Webhook'.
 
 Fill the form.
 
-Make sure that the specified 'Webhook URL' is reachable from the world and is ready to receive 'HTTP POST' requests.
+Make sure that the specified 'Webhook URL' is reachable and is ready to receive 'HTTP POST' requests.
 If an exposed HTTP endpoint requires an authentification then add appropriate 'HTTP Header' values to the webhook.
 
 
@@ -99,7 +99,7 @@ On the table mark alert severity levels with which the Deepchecks must send requ
     :width: 600
 
 
-Example of an HTTP request payload.
+An example of an HTTP request payload.
 
 
 .. code-block::
