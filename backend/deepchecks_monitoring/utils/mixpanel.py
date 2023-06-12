@@ -1,24 +1,34 @@
+import json
+import logging
 import typing as t
-import pydantic
 
+import pydantic
 import sqlalchemy as sa
+from mixpanel import Consumer, Mixpanel
 from sqlalchemy.ext.asyncio import async_object_session
 
 import deepchecks_monitoring
 from deepchecks_monitoring.public_models.organization import OrgTier
 from deepchecks_monitoring.schema_models.task_type import TaskType
-from deepchecks_monitoring.utils.alerts import Condition as AlertRuleCondition
 from deepchecks_monitoring.utils.alerts import AlertSeverity
+from deepchecks_monitoring.utils.alerts import Condition as AlertRuleCondition
 from deepchecks_monitoring.utils.alerts import Frequency as MonitorFrequency
 
 if t.TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
+
+    from deepchecks_monitoring.public_models import Role
+    from deepchecks_monitoring.public_models.organization import Organization
     from deepchecks_monitoring.public_models.role import RoleEnum
     from deepchecks_monitoring.public_models.user import User
-    from deepchecks_monitoring.public_models.organization import Organization
+    from deepchecks_monitoring.schema_models import Model, ModelVersion
 
 
-class OrganizationMixpanelProps(pydantic.BaseModel):
+class BaseEvent(pydantic.BaseModel):
+    EVENT_NAME: t.ClassVar[str]
+
+
+class OrganizationEvent(BaseEvent):
     """Organization mixpanel super properties."""
 
     o_deployment: str = "saas"  # TODO: figure out how this should be defined
@@ -27,11 +37,11 @@ class OrganizationMixpanelProps(pydantic.BaseModel):
     o_version: str = deepchecks_monitoring.__version__
 
     @classmethod
-    async def from_organization(cls, org: "Organization") -> "OrganizationMixpanelProps":
+    async def from_organization(cls, org: "Organization") -> "OrganizationEvent":
         # NOTE:
-        # this function is async only for consistency and 
-        # compatibility with UserMixpanelProps
-        return OrganizationMixpanelProps(
+        # this function is async only for consistency and
+        # compatibility with UserEvent
+        return OrganizationEvent(
             o_name=t.cast(str, org.name),
             o_tier=t.cast(OrgTier, org.tier),
             o_deployment="saas"  # TODO:
@@ -44,9 +54,9 @@ class OrganizationMixpanelProps(pydantic.BaseModel):
         return value
 
 
-class UserMixpanelProps(pydantic.BaseModel):
+class UserEvent(BaseEvent):
     """User mixpanel super properties."""
-    
+
     u_id: int  # TODO
     u_roles: list[str]
     u_email: str
@@ -55,11 +65,11 @@ class UserMixpanelProps(pydantic.BaseModel):
     u_created_at: str
 
     @classmethod
-    async def from_user(cls, user: "User") -> "UserMixpanelProps":
+    async def from_user(cls, user: "User") -> "UserEvent":
         session = t.cast(AsyncSession, async_object_session(user))
         unloaded_relations = t.cast("set[str]", sa.inspect(user).unloaded)
 
-        # TODO: 
+        # TODO:
         # create a utility function to load unloaded relationships
         if "organization" not in unloaded_relations:
             org = user.organization
@@ -67,18 +77,18 @@ class UserMixpanelProps(pydantic.BaseModel):
             from deepchecks_monitoring.public_models import Organization
             q = sa.select(Organization).where(Organization.id == user.organization_id)
             org = session.scalar(q)
-        
+
         if "roles" not in unloaded_relations:
             roles = user.roles
         else:
             from deepchecks_monitoring.public_models import Role
             q = sa.select(Role).where(Role.user_id == user.id)
             roles = session.scalars(q)
-        
+
         org = t.cast('Organization', org)
         roles = t.cast('list[Role]', roles)
-        
-        return UserMixpanelProps(
+
+        return UserEvent(
             u_id=t.cast(int, user.id),
             u_email=t.cast(str, user.email),
             u_name=t.cast(str, user.full_name),
@@ -88,16 +98,52 @@ class UserMixpanelProps(pydantic.BaseModel):
         )
 
 
-class ModelCreatedEvent(pydantic.BaseModel):
-    
+class InvitationEvent(UserEvent):
+
+    EVENT_NAME: t.ClassVar[str] = 'invite'
+
+    invitees: list[str]
+    invitees_count: int
+
+    @classmethod
+    async def create_event(
+        cls,
+        invitees: list[str],
+        user: User
+    ) -> t.Self:
+        super_props = await UserEvent.from_user(user)
+        return cls(
+            invitees=invitees,
+            invitees_count=len(invitees),
+            **super_props.dict()
+        )
+
+
+class ModelCreatedEvent(OrganizationEvent):
+
     EVENT_NAME: t.ClassVar[str] = 'model created'
-    
+
     id: int
     name: str
     task_type: TaskType
 
+    @classmethod
+    async def create_event(
+        cls,
+        model: Model,
+        user: User
+    ) -> t.Self:
+        org = t.cast('Organization', user.organization)
+        super_props = await OrganizationEvent.from_organization(org)
+        return cls(
+            id=t.cast(int, model.id),
+            name=t.cast(str, model.name),
+            task_type=t.cast('TaskType', model.task_type),
+            **super_props.dict()
+        )
 
-class ModelDeletedEvent(pydantic.BaseModel):
+
+class ModelDeletedEvent(OrganizationEvent):
 
     EVENT_NAME: t.ClassVar[str] = 'model deleted'
 
@@ -107,17 +153,75 @@ class ModelDeletedEvent(pydantic.BaseModel):
     versions_count: int
     predictions_count: int
 
+    @classmethod
+    async def create_event(
+        cls,
+        model: Model,
+        user: User
+    ) -> t.Self:
+        org = t.cast('Organization', user.organization)
+        super_props = await OrganizationEvent.from_organization(org)
 
-class ModelVersionCreatedEvent(pydantic.BaseModel):
-    
+        session = async_object_session(model)
+        unloaded_relations = t.cast("set[str]", sa.inspect(user).unloaded)
+
+        if 'versions' not in unloaded_relations:
+            versions = t.cast('list[ModelVersion]', model.versions)
+            n_of_versions = len(versions)
+        else:
+            q = sa.select(ModelVersion).where(ModelVersion.model_id == model.id)
+            versions = t.cast('list[ModelVersion]', await session.scalars(q))
+            n_of_versions = len(versions)
+
+        return cls(
+            id=t.cast(int, model.id),
+            name=t.cast(str, model.name),
+            task_type=t.cast('TaskType', model.task_type),
+            versions_count=n_of_versions,
+            predictions_count=await model.n_of_predictions(),
+            **super_props.dict()
+        )
+
+
+class ModelVersionCreatedEvent(OrganizationEvent):
+
     EVENT_NAME: t.ClassVar[str] = 'model version created'
-    
+
     id: int
     name: str
+    model_id: int
+    model_name: str
     feature_count: int
 
+    @classmethod
+    async def create_event(
+        cls,
+        model_version: 'ModelVersion',
+        user: User
+    ):
+        org = t.cast('Organization', user.organization)
+        super_props = await OrganizationEvent.from_organization(org)
 
-class ProductionDataUploadEvent(pydantic.BaseModel):
+        session = async_object_session(model_version)
+        unloaded_relations = t.cast("set[str]", sa.inspect(user).unloaded)
+
+        if 'model' not in unloaded_relations:
+            model = t.cast('Model', model_version.model)
+        else:
+            q = sa.select(Model).where(Model.id == model_version.model_id)
+            model = t.cast('Model', await session.scalar(q))
+
+        return cls(
+            id=t.cast(int, model_version.id),
+            name=t.cast(str, model_version.name),
+            model_id=t.cast(int, model.id),
+            model_name=t.cast(str, model.name),
+            feature_count=len(t.cast('dict[str, str]', model_version.features_columns)),
+            **super_props.dict()
+        )
+
+
+class ProductionDataUploadEvent(OrganizationEvent):
 
     EVENT_NAME: t.ClassVar[str] = 'production data uploaded'
 
@@ -125,79 +229,180 @@ class ProductionDataUploadEvent(pydantic.BaseModel):
     model_name: str
     model_version_id: int
     model_version_name: str
-    sample_size: int
+    # n_of_samples: int
+    n_of_received_samples: int
+    n_of_accepted_samples: int
+
+    @classmethod
+    async def create_event(
+        cls,
+        # n_of_samples: int,
+        n_of_received_samples: int,
+        n_of_accepted_samples: int,
+        model_version: 'ModelVersion',
+        user: 'User'
+    ):
+        org = t.cast('Organization', user.organization)
+        super_props = await OrganizationEvent.from_organization(org)
+
+        session = async_object_session(model_version)
+        unloaded_relations = t.cast("set[str]", sa.inspect(user).unloaded)
+
+        if 'model' not in unloaded_relations:
+            model = t.cast('Model', model_version.model)
+        else:
+            q = sa.select(Model).where(Model.id == model_version.model_id)
+            model = await session.scalar(q)
+
+        return cls(
+            model_id=t.cast(int, model.id),
+            model_name=t.cast(str, model.name),
+            model_version_id=t.cast(int, model_version.id),
+            model_version_name=t.cast(str, model_version.name),
+            # n_of_samples=n_of_samples,
+            n_of_received_samples=n_of_received_samples,
+            n_of_accepted_samples=n_of_accepted_samples,
+            **super_props.dict()
+        )
 
 
-class LabelsUploadEvent(pydantic.BaseModel):
+class LabelsUploadEvent(OrganizationEvent):
 
     EVENT_NAME: t.ClassVar[str] = 'labels uploaded'
 
     model_id: int
     model_name: str
-    model_version_id: int
-    model_version_name: str
-    sample_size: int
+    # n_of_labels: int
+    n_of_received_labels: int
+    n_of_accepted_labels: int
+
+    @classmethod
+    async def create_event(
+        cls,
+        # n_of_labels: int,
+        n_of_received_labels: int,
+        n_of_accepted_labels: int,
+        model: 'Model',
+        user: 'User'
+    ):
+        org = t.cast('Organization', user.organization)
+        super_props = await OrganizationEvent.from_organization(org)
+        return cls(
+            model_id=t.cast(int, model.id),
+            model_name=t.cast(str, model.name),
+            # n_of_labels=n_of_labels,
+            n_of_received_labels=n_of_received_labels,
+            n_of_accepted_labels=n_of_accepted_labels,
+            **super_props.dict()
+        )
 
 
-class AlertRuleCreatedEvent(pydantic.BaseModel):
+# class AlertRuleCreatedEvent(pydantic.BaseModel):
 
-    EVENT_NAME: t.ClassVar[str] = 'alert rule created'
+#     EVENT_NAME: t.ClassVar[str] = 'alert rule created'
 
-    id: int
-    condition: AlertRuleCondition
-    severity: AlertSeverity
-    monitor_id: int
-    monitor_name: str
-    monitor_frequency: MonitorFrequency
-    monitor_aggregation_window: int
-    check_id: int
-    check_type: str
-    model_id: int
-    model_name: str
-    model_task_type: TaskType
-
-
-class AlertRuleDeletedEvent(pydantic.BaseModel):
-
-    EVENT_NAME: t.ClassVar[str] = 'alert rule deleted'
-
-    id: int
-    name: str
-    alerts_count: int
+#     id: int
+#     condition: AlertRuleCondition
+#     severity: AlertSeverity
+#     monitor_id: int
+#     monitor_name: str
+#     monitor_frequency: MonitorFrequency
+#     monitor_aggregation_window: int
+#     check_id: int
+#     check_type: str
+#     model_id: int
+#     model_name: str
+#     model_task_type: TaskType
 
 
-class AlertTriggeredEvent(pydantic.BaseModel):
+# class AlertRuleDeletedEvent(pydantic.BaseModel):
 
-    EVENT_NAME: t.ClassVar[str] = 'alert triggered'
-    
-    id: int
-    alert_rule_id: int
-    alert_rule_condition: AlertRuleCondition
-    alert_rule_severity: AlertSeverity
-    failed_values: t.Any
+#     EVENT_NAME: t.ClassVar[str] = 'alert rule deleted'
+
+#     id: int
+#     name: str
+#     alerts_count: int
 
 
-class AlertResolvedEvent(pydantic.BaseModel):
+# class AlertTriggeredEvent(pydantic.BaseModel):
 
-    EVENT_NAME: t.ClassVar[str] = 'alert resolved'
+#     EVENT_NAME: t.ClassVar[str] = 'alert triggered'
 
-    alert_rule_id: int
-    monitor_id: int
-    monitor_name: str
-    check_id: int
-    check_type: str
-    model_id: int
-    model_name: str
-    model_task_type: TaskType
-    n_of_resolved_alerts: int
-    were_all_alerts_resolved: bool
+#     id: int
+#     alert_rule_id: int
+#     alert_rule_condition: AlertRuleCondition
+#     alert_rule_severity: AlertSeverity
+#     failed_values: t.Any
+
+
+# class AlertResolvedEvent(pydantic.BaseModel):
+
+#     EVENT_NAME: t.ClassVar[str] = 'alert resolved'
+
+#     alert_rule_id: int
+#     monitor_id: int
+#     monitor_name: str
+#     check_id: int
+#     check_type: str
+#     model_id: int
+#     model_name: str
+#     model_task_type: TaskType
+#     n_of_resolved_alerts: int
+#     were_all_alerts_resolved: bool
 
 
 
 class MixpanelEventReporter:
 
-    def __init__(self) -> None:
-        pass
+    @classmethod
+    def from_token(
+        cls,
+        token: str,
+        consumer: Consumer | None = None,
+        supress_errors: bool = True
+    ) -> t.Self:
+        return cls(
+            Mixpanel(token, consumer=consumer),
+            supress_errors=supress_errors
+        )
 
-    def report(self):
-        pass
+    def __init__(
+        self,
+        mixpanel: Mixpanel,
+        supress_errors: bool = True,
+        logger: 'logging.Logger' | None = None
+    ):
+        self.mixpanel = mixpanel
+        self.supress_errors = supress_errors
+        self.logger = logger or logging.getLogger(type(self).__name__)
+
+    def report(
+        self,
+        event: BaseEvent
+    ):
+        if isinstance(event, UserEvent):
+            kwargs = {
+                "distinct_id": event.u_email,  # TODO: should be id
+                "event_name": event.EVENT_NAME,
+                "properties": event.dict()
+            }
+        elif isinstance(event, OrganizationEvent):
+            kwargs = {
+                "distinct_id": event.o_name,
+                "event_name": event.EVENT_NAME,
+                "properties": event.dict()
+            }
+        else:
+            raise TypeError(f'Unsupported event type - {type(event)}')
+
+        if not self.supress_errors:
+            self.mixpanel.track(**kwargs)
+            return
+
+        try:
+            self.mixpanel.track(**kwargs)
+        except Exception:
+            self.logger.exception(
+                'Failed to send mixpanel event.\n'
+                f'Event:\n{json.dumps(kwargs, indent=3)}'
+            )

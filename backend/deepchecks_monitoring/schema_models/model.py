@@ -14,13 +14,14 @@ from datetime import datetime
 import pendulum as pdl
 import sqlalchemy as sa
 from sqlalchemy import MetaData, PrimaryKeyConstraint, Table, func, update
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_object_session
 from sqlalchemy.orm import Mapped, Query, relationship
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
-                                                             column_types_to_table_columns, get_label_column_type)
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
+                                                             ColumnType, column_types_to_table_columns,
+                                                             get_label_column_type)
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.task_type import TaskType
 
@@ -169,6 +170,28 @@ class Model(Base, MetadataMixin, PermissionMixin):
             query = query.where(labels_table.c[SAMPLE_LABEL_COL].isnot(None))
         query = query.join(labels_table, onclause=data_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
         return query
+
+    async def n_of_predictions(self):
+        """Return number of non nullable predictions."""
+        # TODO: check if versions are loaded
+        session = async_object_session(self)
+        versions = t.cast('list[ModelVersion]', self.versions)
+        prediction_column = sa.column(SAMPLE_PRED_COL)
+
+        tables = [
+            it.get_monitor_table_name()
+            for it in versions
+        ]
+        q = sa.union_all([
+            sa.select(sa.func.count(prediction_column).label('count'))
+            .select_from(sa.text(table_name))
+            .where(prediction_column != None)
+            for table_name in tables
+        ])
+
+        return await session.scalar(
+            sa.select(sa.func.sum(q.c.count))
+        )
 
 
 class ModelNote(Base, MetadataMixin, PermissionMixin):

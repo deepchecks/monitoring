@@ -50,6 +50,7 @@ from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Monitor, round_up_datetime
 from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils.mixpanel import ModelCreatedEvent, ModelDeletedEvent
 
 from .router import router
 
@@ -204,6 +205,11 @@ async def get_create_model(
         connection = await session.connection()
         await connection.run_sync(labels_table.metadata.create_all)
         await connection.run_sync(versions_map_table.metadata.create_all)
+        await session.commit()
+
+        resources_provider.report_mixpanel_event(
+            await ModelCreatedEvent.create_event(model=model, user=user)
+        )
 
     return {"id": model.id, "name": model.name}
 
@@ -552,6 +558,11 @@ async def delete_model(
     )
     await Model.fetch_or_403(session, model.id, user)
 
+    # NOTE:
+    # mixpanel event must be created before model deletion
+    # to be able to gather info about the model
+    mixpanel_event = await ModelDeletedEvent.create_event(model=model, user=user)
+
     organization_schema = user.organization.schema_name
     tables = [f'"{organization_schema}"."{model.get_sample_labels_table_name()}"',
               f'"{organization_schema}"."{model.get_samples_versions_map_table_name()}"']
@@ -561,8 +572,10 @@ async def delete_model(
         tables.append(f'"{organization_schema}"."{version.get_reference_table_name()}"')
 
     await insert_delete_db_table_task(session=session, full_table_paths=tables)
-
     await session.execute(sa.delete(Model).where(model_identifier.as_expression))
+    await session.commit()
+
+    resources_provider.report_mixpanel_event(mixpanel_event)
 
 
 async def drop_tables(

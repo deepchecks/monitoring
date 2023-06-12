@@ -36,6 +36,8 @@ from deepchecks_monitoring.notifications import AlertNotificator
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.utils.mixpanel import BaseEvent as BaseMixpanelEvent
+from deepchecks_monitoring.utils.mixpanel import MixpanelEventReporter
 
 __all__ = ["ResourcesProvider"]
 
@@ -82,6 +84,7 @@ class ResourcesProvider(BaseResourcesProvider):
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
         self._parallel_check_executors = None
+        self._mixpanel_event_reporter: MixpanelEventReporter | None = None
         self._topics = set()
 
     @property
@@ -413,6 +416,23 @@ class ResourcesProvider(BaseResourcesProvider):
         except TopicAlreadyExistsError:
             return True
 
+    def report_mixpanel_event(self, event: BaseMixpanelEvent):
+        if self.settings.enable_analytics is False:
+            logging.getLogger("server").warn({"message": "Analytics gathering is disabled"})
+            return
+
+        mixpanel = self._mixpanel_event_reporter
+
+        if mixpanel is None:
+            if token := self.settings.mixpanel_id:
+                mixpanel = MixpanelEventReporter.from_token(token)
+                self._mixpanel_event_reporter = mixpanel
+            else:
+                logging.getLogger("server").warn({"message": "Mixpanel token is not provided"})
+                return
+
+        mixpanel.report(event)
+
     def get_features_control(self, user: User) -> FeaturesControl:  # pylint: disable=unused-argument
         """Return features control."""
         return FeaturesControl(self.settings)
@@ -433,3 +453,4 @@ class ResourcesProvider(BaseResourcesProvider):
             "hotjar_id": None,
             "hotjar_sv": None
         }
+

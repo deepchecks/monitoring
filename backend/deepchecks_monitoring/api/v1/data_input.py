@@ -30,10 +30,12 @@ from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
+from deepchecks_monitoring.utils.mixpanel import LabelsUploadEvent, ProductionDataUploadEvent
 from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
 from .router import router
@@ -49,7 +51,7 @@ async def log_data_batch(
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
     user: User = Depends(CurrentActiveUser()),
-    resources_provider=ResourcesProviderDep
+    resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Insert batch data samples."""
     model_version: ModelVersion = await fetch_or_404(
@@ -75,6 +77,14 @@ async def log_data_batch(
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
+        resources_provider.report_mixpanel_event(
+            await ProductionDataUploadEvent.create_event(
+                model_version=model_version,
+                user=user,
+                n_of_received_samples=len(data),
+                n_of_accepted_samples=0
+            )
+        )
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
@@ -84,6 +94,15 @@ async def log_data_batch(
         )
 
     await data_ingest.log_samples(model_version, data[:remains], session, user.organization_id, time)
+
+    resources_provider.report_mixpanel_event(
+        await ProductionDataUploadEvent.create_event(
+            model_version=model_version,
+            user=user,
+            n_of_received_samples=len(data),
+            n_of_accepted_samples=remains
+        )
+    )
 
     if remains < len(data):
         return ORJSONResponse(
@@ -126,6 +145,14 @@ async def log_labels(
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
+        resources_provider.report_mixpanel_event(
+            await LabelsUploadEvent.create_event(
+                model=model,
+                user=user,
+                n_of_received_labels=len(data),
+                n_of_accepted_labels=0
+            )
+        )
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
@@ -136,6 +163,14 @@ async def log_labels(
 
     await data_ingest.log_labels(model, data[:remains], session, user.organization_id)
 
+    resources_provider.report_mixpanel_event(
+        await LabelsUploadEvent.create_event(
+            model=model,
+            user=user,
+            n_of_received_labels=len(data),
+            n_of_accepted_labels=remains
+        )
+    )
     if remains < len(data):
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,

@@ -27,7 +27,7 @@ from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.bgtasks.delete_db_table_task import insert_delete_db_table_task
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_violation_error
 from deepchecks_monitoring.logic.check_logic import (SingleCheckRunOptions, TableDataSchema, WindowDataSchema,
                                                      create_execution_data_query)
@@ -36,6 +36,7 @@ from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, Identi
                                                     ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
                                                              SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_PROBA_COL,
                                                              SAMPLE_TS_COL, ColumnType, column_types_to_table_columns,
@@ -43,6 +44,7 @@ from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils.mixpanel import ModelVersionCreatedEvent
 
 from .router import router
 
@@ -72,6 +74,7 @@ async def get_or_create_version(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Create a new model version.
 
@@ -261,6 +264,10 @@ async def get_or_create_version(
     # Create indices
     for index in reference_table.indexes:
         await session.execute(CreateIndex(index))
+
+    resources_provider.report_mixpanel_event(
+        await ModelVersionCreatedEvent.create_event(model_version=model_version, user=user)
+    )
 
     return {'id': model_version.id}
 
