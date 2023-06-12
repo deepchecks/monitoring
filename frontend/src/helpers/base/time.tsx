@@ -13,3 +13,6 @@ export const timeMap = {
   month: timeValues.month * 1000,
   year: timeValues.year * 1000
 };
+
+export const ONE_MINUTE = 60000;
+export const THIRTY_SECONDS = 30000;

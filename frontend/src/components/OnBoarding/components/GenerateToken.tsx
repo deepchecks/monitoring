@@ -2,28 +2,28 @@ import React, { useState } from 'react';
 
 import { useTheme } from '@mui/material';
 
-import { regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
-
 import { StyledButton, StyledContainer, StyledText } from 'components/lib';
 
 const constants = {
   title: 'Generate API Token',
-  description: 'Our tokens are valid until you are generating a new one. \nClick here to get your token.',
+  description: 'Our tokens are valid until you are generating a new one. \nClick here to get new token.',
   buttonLabel: 'Generate and copy',
   buttonCopiedLabel: 'Copied!'
 };
 
-const GenerateToken = () => {
+interface GenerateTokenProps {
+  regenerateApiToken: () => void;
+}
+
+const GenerateToken = ({ regenerateApiToken }: GenerateTokenProps) => {
   const theme = useTheme();
-  const [apiToken, setApiToken] = useState('');
+  const [copiedApiToken, setCopiedApiToken] = useState(false);
 
-  const buttonLabel = apiToken ? constants.buttonCopiedLabel : constants.buttonLabel;
+  const buttonLabel = copiedApiToken ? constants.buttonCopiedLabel : constants.buttonLabel;
 
-  const handleGenerateApiToken = async () => {
-    regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
-      setApiToken(value);
-      navigator.clipboard.writeText(value);
-    });
+  const handleButtonClick = () => {
+    regenerateApiToken();
+    setCopiedApiToken(true);
   };
 
   return (
@@ -38,7 +38,7 @@ const GenerateToken = () => {
     >
       <StyledText type="h3" text={constants.title} fontWeight={700} color={theme.palette.primary.main} />
       <StyledText text={constants.description} />
-      <StyledButton label={buttonLabel} onClick={handleGenerateApiToken} />
+      <StyledButton label={buttonLabel} onClick={handleButtonClick} disabled={copiedApiToken} />
     </StyledContainer>
   );
 };
