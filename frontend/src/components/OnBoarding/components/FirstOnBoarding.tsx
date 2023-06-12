@@ -42,7 +42,7 @@ const FirstOnBoarding = () => {
 
   return (
     <StyledContainer type="bg" width="100%" minHeight="100vh" height="100%">
-      <StyledContainer maxWidth={770} margin="16px auto">
+      <StyledContainer maxWidth={dataType ? 1100 : 770} margin="16px auto">
         <FirstOnBoardingSelectContainer>
           <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
           {/* dataType && (

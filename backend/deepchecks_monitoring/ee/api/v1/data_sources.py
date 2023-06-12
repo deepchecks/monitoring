@@ -13,6 +13,7 @@ import typing as t
 import boto3
 import sqlalchemy as sa
 from botocore.config import Config
+from botocore.exceptions import BotoCoreError
 from fastapi import Depends, Response
 from pydantic.main import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,17 +65,17 @@ async def new_data_source(body: DataSourceCreationSchema,
         expected = {'aws_access_key_id', 'aws_secret_access_key', 'region'}
         if set(data_source.parameters.keys()) != expected:
             raise BadRequest(f'Invalid parameters for S3 data source, expected: {sorted(expected)}')
-        # Test credentials to S3
-        sts = boto3.client(
-            'sts',
-            aws_access_key_id=data_source.parameters['aws_access_key_id'],
-            aws_secret_access_key=data_source.parameters['aws_secret_access_key'],
-            config=Config(region_name=data_source.parameters['region'])
-        )
+        # Test credentials to AWS
         try:
+            sts = boto3.client(
+                'sts',
+                aws_access_key_id=data_source.parameters['aws_access_key_id'],
+                aws_secret_access_key=data_source.parameters['aws_secret_access_key'],
+                config=Config(region_name=data_source.parameters['region'])
+            )
             sts.get_caller_identity()
-        except boto3.exceptions.ClientError as e:
-            raise BadRequest('Invalid credentials to S3') from e
+        except BotoCoreError as e:
+            raise BadRequest('Invalid credentials to AWS') from e
     else:
         raise BadRequest('Invalid data source type')
 

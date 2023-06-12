@@ -20,6 +20,7 @@ DATA_TOPIC_PREFIXES = {
 reverse_data_topic_prefixes = {v: k for k, v in DATA_TOPIC_PREFIXES.items()}
 GLOBAL_TASK_QUEUE = "task_queue"
 INVALIDATION_SET_PREFIX = "invalidation"
+TASK_RUNNER_LOCK = "task_runner_lock:{}"
 
 
 def get_data_topic_name(organization_id, entity_id, entity: t.Literal["model", "model-version"]) -> str:

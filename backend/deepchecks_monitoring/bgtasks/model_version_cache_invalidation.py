@@ -33,7 +33,7 @@ class ModelVersionCacheInvalidation(BackgroundWorker):
     def delay_seconds(cls) -> int:
         return DELAY
 
-    async def run(self, task: 'Task', session: AsyncSession, resources_provider):
+    async def run(self, task: 'Task', session: AsyncSession, resources_provider, lock):
         # Delete task
         await session.execute(delete(Task).where(Task.id == task.id))
 

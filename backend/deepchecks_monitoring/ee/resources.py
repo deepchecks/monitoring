@@ -19,7 +19,8 @@ from ldclient.config import Config as LDConfig
 
 from deepchecks_monitoring.ee import utils
 from deepchecks_monitoring.ee.config import Settings, SlackSettings, StripeSettings, TelemetrySettings
-from deepchecks_monitoring.ee.features_control import CloudFeaturesControl
+from deepchecks_monitoring.ee.features_control_cloud import CloudFeaturesControl
+from deepchecks_monitoring.ee.features_control_on_prem import OnPremFeaturesControl
 from deepchecks_monitoring.ee.notifications import AlertNotificator as EEAlertNotificator
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.integrations.email import EmailSender
@@ -98,22 +99,25 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         """Return features control."""
         if self.settings.is_cloud:
             return CloudFeaturesControl(user, self.lauchdarkly_client, self.settings)
+        # TODO add license check -
+        elif self.settings.is_on_prem:
+            return OnPremFeaturesControl(self.settings)
         return FeaturesControl(self.settings)
 
     @property
     def parallel_check_executors_pool(self) -> "ActorPool | None":
-        if not self.settings.is_cloud:
-            return
+        if self.settings.is_cloud is False:
+            parallel_check_executor_flag = True
+        else:
+            parallel_check_executor_flag = self.lauchdarkly_client.variation(
+                "parallelCheckExecutorEnabled",
+                context=Context.builder("parallelCheckExecutorEnabled").build(),
+                default=True
+            )
 
-        parallel_check_executor_flag = self.lauchdarkly_client.variation(
-            "parallelCheckExecutorEnabled",
-            context=Context.builder("parallelCheckExecutorEnabled").build(),
-            default=False
-        )
         logging.getLogger("server").info({
             "mesage": f"'parallelCheckExecutorEnabled' is set to {parallel_check_executor_flag}"
         })
-
         if parallel_check_executor_flag:
             return super().parallel_check_executors_pool
 

@@ -122,13 +122,16 @@ const StyledContainer = styled(Stack)({
 
 const StyledStack = styled(Stack)({
   alignItems: 'center',
-  flexDirection: 'row'
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  gap: '16px'
 });
 
 const StyledHeading = styled(Typography)({
   fontWeight: 700,
   fontSize: '24px',
-  lineHeight: '140%'
+  lineHeight: '140%',
+  marginRight: '16px'
 });
 
 const StyledControlledMarkedSelect = styled(ControlledMarkedSelect)({

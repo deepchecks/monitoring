@@ -15,6 +15,7 @@ import boto3
 import pandas as pd
 import pendulum as pdl
 from pandas.core.dtypes.common import is_integer_dtype
+from redis.asyncio.lock import Lock
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -48,7 +49,7 @@ class ObjectStorageIngestor(BackgroundWorker):
     def delay_seconds(cls) -> int:
         return 0
 
-    async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider):
+    async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider, lock: Lock):
         await session.execute(delete(Task).where(Task.id == task.id))
 
         organization_id = task.params['organization_id']
@@ -114,6 +115,8 @@ class ObjectStorageIngestor(BackgroundWorker):
                 for df, time in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time):
                     await self.ingestion_backend.log_samples(version, df, session, organization_id, new_scan_time)
                     version.latest_file_time = max(version.latest_file_time, time)
+                    # For each file, set lock expiry to 120 seconds from now
+                    await lock.extend(120, replace_ttl=True)
 
         # Ingest labels
         for prefix in model_prefixes:
@@ -121,6 +124,8 @@ class ObjectStorageIngestor(BackgroundWorker):
             for df, time in self.ingest_prefix(s3, bucket, labels_path, model.latest_labels_file_time):
                 await self.ingestion_backend.log_labels(model, df, session, organization_id)
                 model.latest_labels_file_time = max(model.latest_labels_file_time, time)
+                # For each file, set lock expiry to 120 seconds from now
+                await lock.extend(120, replace_ttl=True)
 
         model.obj_store_last_scan_time = new_scan_time
         await session.commit()

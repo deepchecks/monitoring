@@ -43,6 +43,9 @@ const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
 
 const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
   margin: '8px auto 0 0',
+  display: 'flex',
+  flexDirection: 'row',
+  gap: '24px',
 
   '& .MuiStepContent-root, .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
   '& .MuiStepConnector-root, .MuiStepContent-root': { marginLeft: 16 },
@@ -55,11 +58,17 @@ const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
   }
 }));
 
+const OnBoardingAdditionalContainer = styled(StyledContainer)({
+  gap: '24px',
+  marginTop: '24px'
+});
+
 export {
   FirstOnBoardingTitle,
   FirstOnBoardingBoxLabel,
   FirstOnBoardingOutlinedBox,
   FirstOnBoardingSelectContainer,
   OnBoardingDocsLink,
-  OnBoardingStepperContainer
+  OnBoardingStepperContainer,
+  OnBoardingAdditionalContainer
 };

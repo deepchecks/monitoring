@@ -46,7 +46,8 @@ class ModelDataIngestionAlerter(BackgroundWorker):
 
     async def run(self, task: "Task",
                   session: AsyncSession,  # pylint: disable=unused-argument
-                  resources_provider: ResourcesProvider):
+                  resources_provider: ResourcesProvider,
+                  lock):
         alert_rule_id = task.params["alert_rule_id"]
         org_id = task.params["organization_id"]
         end_time = task.params["end_time"]

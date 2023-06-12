@@ -31,7 +31,7 @@ const Data = () => {
       <StyledContainer flexDirection="row" justifyContent="space-between" type="card">
         <StyledContainer flexDirection="row">
           <StyledImage src={s3} height="24px" width="24px" />
-          <StyledText type="h3" text={constants.data.s3.name} fontWeight={700} />
+          <StyledText type="h3" text={constants.data.s3.name} fontWeight={700} marginTop="2px" />
         </StyledContainer>
         <Tooltip
           title={
@@ -40,7 +40,7 @@ const Data = () => {
           placement="top"
           arrow
         >
-          <Box width="100px" marginRight="39%" padding="8px">
+          <Box width="100px" marginRight="calc(40% - 20px)" padding="8px">
             <StyledButton
               label={constants.data.s3.status(!!isS3Connected)}
               onClick={handleOpenS3Dialog}
