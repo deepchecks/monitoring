@@ -20,7 +20,7 @@ const DownloadNotebook = ({
   const fileName = dataType === 'demo' ? 'Onboarding_Demo_Data' : 'Onboarding_Your_Data';
 
   const handleDownload = async () => {
-    const response = await fetch(`${window.location.origin}/notebooks/${fileName}.json`);
+    const response = await fetch(`${window.location.origin}/snippets/${fileName}.json`);
     reportOnboardingStep('notebook');
 
     if (!response.ok) {
