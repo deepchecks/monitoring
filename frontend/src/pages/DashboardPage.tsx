@@ -7,7 +7,7 @@ import {
   useRetrieveBackendVersionApiV1BackendVersionGet
 } from 'api/generated';
 
-import { Grid } from '@mui/material';
+import { Grid, Snackbar, Alert } from '@mui/material';
 
 import { ModelList } from 'components/Dashboard/ModelList';
 import { DataIngestion } from 'components/Dashboard/DataIngestion';
@@ -19,6 +19,11 @@ import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 import { getParams } from 'helpers/utils/getParams';
 import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
 import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
+import { ONE_MINUTE, THIRTY_SECONDS } from 'helpers/base/time';
+
+const constants = { snackbarAlertMessage: 'Initial first load can take a few minutes, we are processing your data' };
+
+let TIMEOUT: NodeJS.Timeout;
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -29,7 +34,8 @@ export const DashboardPage = () => {
     refetch
   } = useGetOrCreateDashboardApiV1DashboardsGet({
     query: {
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      refetchInterval: ONE_MINUTE
     }
   });
   const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
@@ -45,6 +51,7 @@ export const DashboardPage = () => {
   const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerName, setDrawerName] = useState(DrawerNames.CreateMonitor);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const handleOpenMonitorDrawer = (drawerName: DrawerNames, monitor?: MonitorSchema) => {
     if (monitor) setCurrentMonitor(monitor);
@@ -62,6 +69,14 @@ export const DashboardPage = () => {
       navigate({ pathname: '/onboarding' });
     }
   }, [dashboard, onboardingEnabled]);
+
+  useEffect(() => {
+    if (!dashboard) {
+      TIMEOUT = setTimeout(() => setSnackbarOpen(true), THIRTY_SECONDS);
+    } else {
+      clearTimeout(TIMEOUT);
+    }
+  }, [dashboard]);
 
   useEffect(() => {
     // Update user version
@@ -115,6 +130,14 @@ export const DashboardPage = () => {
         setMonitorToRefreshId={setMonitorToRefreshId}
         selectedModelId={selectedModelId}
       />
+      <Snackbar
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        open={snackbarOpen}
+        onClose={() => setSnackbarOpen(false)}
+        autoHideDuration={6000}
+      >
+        <Alert severity="warning">{constants.snackbarAlertMessage}</Alert>
+      </Snackbar>
     </>
   );
 };
