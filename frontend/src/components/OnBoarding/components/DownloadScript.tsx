@@ -96,11 +96,20 @@ const constants = {
   }
 };
 
-const DownloadScript = ({ token, dataType }: { token: string; dataType: 'demo' | 'user' }) => {
+const DownloadScript = ({
+  token,
+  dataType,
+  reportOnboardingStep
+}: {
+  token: string;
+  dataType: 'demo' | 'user';
+  reportOnboardingStep: (src: string) => void;
+}) => {
   const fileName = dataType === 'demo' ? 'onboarding-demo-data.py' : 'onboarding-custom-data.py';
 
   const handleDownload = () => {
     const blob = new Blob([constants.notebook[dataType](token)], { type: 'application/json' });
+    reportOnboardingStep('python script');
     FileSaver.saveAs(blob, fileName);
   };
 
@@ -113,7 +122,7 @@ const DownloadScript = ({ token, dataType }: { token: string; dataType: 'demo' |
         </>
       }
       onClick={handleDownload}
-      sx={{ width: '280px', height: '44px' }}
+      sx={{ width: '240px', height: '44px' }}
     />
   );
 };

@@ -5,8 +5,8 @@ import { useTheme } from '@mui/material';
 import { StyledButton, StyledContainer, StyledText } from 'components/lib';
 
 const constants = {
-  title: 'Generate API Token (Colab)',
-  description: 'Our tokens are valid until you are generating a new one. \nClick here to get your token.',
+  title: 'Generate API Token',
+  description: 'Our tokens are valid until you are generating a new one. \nClick here to get new token.',
   buttonLabel: 'Generate and copy',
   buttonCopiedLabel: 'Copied!'
 };
@@ -29,7 +29,7 @@ const GenerateToken = ({ regenerateApiToken }: GenerateTokenProps) => {
   return (
     <StyledContainer
       background="rgba(121, 100, 255, 0.2)"
-      width="280px"
+      width="240px"
       height="194px"
       border={`1px solid ${theme.palette.primary.main}`}
       gap="12px"

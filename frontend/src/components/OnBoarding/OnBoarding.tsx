@@ -35,6 +35,15 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
 
   const redirectToDashboard = () => window.location.replace('/');
 
+  const reportOnboardingStep = (source?: string) => {
+    reportEvent(events.onBoarding.onboarding, {
+      step_name: source ? 'source click' : constants[dataType].steps[activeStep].title,
+      step_number: source ? 0 : activeStep,
+      type: `${dataType}`,
+      'click source': source ?? 'none'
+    });
+  };
+
   const regenerateApiToken = async () => {
     regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
       value && setApiToken(value);
@@ -46,13 +55,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
     activeStep === 1 && regenerateApiToken();
   }, []);
 
-  useEffect(() => {
-    reportEvent(events.onBoarding.onboarding, {
-      step_name: constants[dataType].steps[activeStep].title,
-      step_number: activeStep,
-      type: `${dataType}`
-    });
-  }, [activeStep]);
+  useEffect(() => reportOnboardingStep(), [activeStep]);
 
   useEffect((): void | (() => void) => {
     const handleUserStep = setInterval(async () => {
@@ -89,9 +92,9 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
         ))}
       </Stepper>
       <OnBoardingAdditionalContainer>
-        <DownloadNotebook dataType={dataType} token={apiToken} />
-        <DownloadScript dataType={dataType} token={apiToken} />
-        <ColabLink dataType={dataType} />
+        <DownloadNotebook dataType={dataType} reportOnboardingStep={reportOnboardingStep} />
+        <DownloadScript dataType={dataType} token={apiToken} reportOnboardingStep={reportOnboardingStep} />
+        <ColabLink dataType={dataType} reportOnboardingStep={reportOnboardingStep} />
         <GenerateToken regenerateApiToken={regenerateApiToken} />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
