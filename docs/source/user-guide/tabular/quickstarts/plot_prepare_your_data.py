@@ -151,4 +151,4 @@ prod_predictions = model.predict_proba(prod_data[features].fillna('NONE'))
 
 # %%
 #
-# sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/quickstarts/prepare-data-guide-white.png
+# sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/quickstarts/prepare-data-guide-white.png'
