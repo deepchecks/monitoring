@@ -27,7 +27,7 @@ from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.bgtasks.delete_db_table_task import insert_delete_db_table_task
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_violation_error
 from deepchecks_monitoring.logic.check_logic import (SingleCheckRunOptions, TableDataSchema, WindowDataSchema,
                                                      create_execution_data_query)
@@ -36,6 +36,7 @@ from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, Identi
                                                     ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
                                                              SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_PROBA_COL,
                                                              SAMPLE_TS_COL, ColumnType, column_types_to_table_columns,
@@ -72,6 +73,7 @@ async def get_or_create_version(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Create a new model version.
 
@@ -85,7 +87,8 @@ async def get_or_create_version(
         SQLAlchemy session.
     """
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
     model_version: ModelVersion = (await session.execute(
         select(ModelVersion)
         .where(ModelVersion.name == info.name, ModelVersion.model_id == model.id)
@@ -383,11 +386,14 @@ async def retrieve_model_version_by_name(
         version_name: str = Path(..., description='Model version name.'),
         session: ExtendedAsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        
 ) -> ModelVersionSchema:
     """Retrieve model version record."""
     model = await fetch_or_404(session, Model, name=model_name)
     model_version = await fetch_or_404(session, ModelVersion, name=version_name, model_id=model.id)
-    await ModelVersion.fetch_or_403(session, model_version.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await ModelVersion.fetch_or_403(session, model_version.id, user)
     return ModelVersionSchema.from_orm(model_version)
 
 
@@ -695,6 +701,7 @@ async def delete_model_version_by_id(
         model_version_id: int = Path(..., description='Model version id'),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.AdminUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Delete model version by id.
 
@@ -710,6 +717,7 @@ async def delete_model_version_by_id(
         version_identifier=ModelVersionIdentifier.from_request_params(model_version_id),
         session=session,
         user=user,
+        resources_provider=resources_provider
     )
 
 
@@ -720,6 +728,7 @@ async def _delete_model_version(
         model_identifier: t.Optional[ModelIdentifier] = None,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.AdminUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Delete model version.
 
@@ -734,7 +743,8 @@ async def _delete_model_version(
         if version_identifier.kind != IdentifierKind.ID:
             raise ValueError('Version name cannot be used without model identifier')
         model_version = await fetch_or_404(session, ModelVersion, **version_identifier.as_kwargs)
-    model_version = await ModelVersion.fetch_or_403(session, model_version.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await ModelVersion.fetch_or_403(session, model_version.id, user)
     await session.delete(model_version)
     tables = [f'"{organization.schema_name}"."{model_version.get_monitor_table_name()}"',
               f'"{organization.schema_name}"."{model_version.get_reference_table_name()}"']

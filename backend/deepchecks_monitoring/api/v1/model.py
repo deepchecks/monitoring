@@ -161,8 +161,10 @@ async def get_create_model(
         sa.select(Model)
         .where(Model.name == model_schema.name)
     )
+    features_control: FeaturesControl = resources_provider.get_features_control(user)
     if model is not None:
-        await Model.fetch_or_403(session, model.id, user)
+        if features_control.model_assignment:
+            await Model.fetch_or_403(session, model.id, user)
         if model.task_type != model_schema.task_type:
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the task type "
                              f"'{model_schema.task_type} and not the task type '{model.task_type}'")
@@ -172,7 +174,6 @@ async def get_create_model(
     else:
         model_count = await session.scalar(sa.func.count(Model.id))
         if model_count > 0:
-            features_control: FeaturesControl = resources_provider.get_features_control(user)
             if features_control.max_models != -1:
                 allowed_models = await features_control.get_allowed_models(session)
                 if allowed_models == 1:
@@ -219,6 +220,7 @@ async def retrieve_all_models_data_ingestion(
         end_time: t.Optional[str] = None,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve all models data ingestion statistics."""
     return await _retrieve_models_data_ingestion(
@@ -226,6 +228,7 @@ async def retrieve_all_models_data_ingestion(
         end_time=end_time,
         session=session,
         user=user,
+        resources_provider=resources_provider,
     )
 
 
@@ -241,6 +244,7 @@ async def retrieve_models_data_ingestion(
         end_time: t.Optional[str] = None,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve model data ingestion status."""
     return await _retrieve_models_data_ingestion(
@@ -249,6 +253,7 @@ async def retrieve_models_data_ingestion(
         end_time=end_time,
         session=session,
         user=user,
+        resources_provider=resources_provider,
     )
 
 
@@ -271,6 +276,7 @@ async def _retrieve_models_data_ingestion(
         end_time: t.Optional[str] = None,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve models data ingestion status."""
 
@@ -281,6 +287,7 @@ async def _retrieve_models_data_ingestion(
         return sa.func.cast(sa.func.extract("epoch", sa.func.date_trunc(agg_time_unit, col)), sa.Integer)
 
     models_query = sa.select(Model).options(selectinload(Model.versions))
+    feature_control = resources_provider.get_features_control(user)
 
     if model_identifier is not None:
         model_identifier_name = model_identifier.column_name
@@ -288,13 +295,16 @@ async def _retrieve_models_data_ingestion(
             models_query.where(model_identifier.as_expression),
             message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
         ))
-        await Model.fetch_or_403(session, model.id, user)
+        if feature_control.model_assignment:
+            await Model.fetch_or_403(session, model.id, user)
         models = [
             model
         ]
     else:
         model_identifier_name = "id"
-        result = await session.execute(models_query.join(Model.members).where(ModelMember.user_id == user.id))
+        if feature_control.model_assignment:
+            models_query = models_query.join(Model.members).where(ModelMember.user_id == user.id) 
+        result = await session.execute(models_query)
         models = t.cast(t.List[Model], result.scalars().all())
 
     if time_filter == TimeUnit.HOUR:
@@ -368,7 +378,8 @@ async def _retrieve_models_data_ingestion(
 async def get_model(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
-        user: User = Depends(auth.CurrentUser())
+        user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> ModelSchema:
     """Get a model from database based on model id.
 
@@ -385,7 +396,8 @@ async def get_model(
         Requested model.
     """
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
     return ModelSchema.from_orm(model)
 
 
@@ -397,7 +409,8 @@ async def get_model(
 async def get_versions_per_model(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
-        user: User = Depends(auth.CurrentUser())
+        user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Create a new model.
 
@@ -419,7 +432,8 @@ async def get_versions_per_model(
         .options(joinedload(Model.versions)),
         message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
     )
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
     return [
         NameIdResponse.from_orm(model_version)
         for model_version in model.versions
@@ -473,6 +487,7 @@ async def retrieve_available_models(
     show_all: bool = Query(default=False),
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.CurrentUser()),
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[ModelManagmentSchema]:
     """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.cte()
@@ -498,7 +513,8 @@ async def retrieve_available_models(
                 )
             ))
 
-    if not (show_all and auth.is_admin(user)):
+    if resources_provider.get_features_control(user).model_assignment and \
+          not (show_all and auth.is_admin(user)):
         query = query.join(Model.members).where(ModelMember.user_id == user.id)
 
     records = (await session.execute(query)).unique().all()
@@ -550,7 +566,8 @@ async def delete_model(
         .options(joinedload(Model.versions)),
         message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
     )
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
 
     organization_schema = user.organization.schema_name
     tables = [f'"{organization_schema}"."{model.get_sample_labels_table_name()}"',
@@ -582,6 +599,7 @@ async def get_model_columns(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Get statistics of columns for model.
 
@@ -603,7 +621,8 @@ async def get_model_columns(
         **model_identifier.as_kwargs,
         options=selectinload(Model.versions)
     )
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
 
     # If model is new and there are no versions, return empty dict
     if len(model.versions) == 0:
@@ -668,7 +687,8 @@ class ConnectedModelSchema(BaseModel):
 )
 async def retrieve_connected_models(
         session: AsyncSession = AsyncSessionDep,
-        user: User = Depends(auth.CurrentUser())
+        user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[ConnectedModelSchema]:
     """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.where(AlertRule.alert_severity == AlertSeverity.CRITICAL).cte()
@@ -697,9 +717,7 @@ async def retrieve_connected_models(
         .group_by(ModelVersion.model_id)
         .cte()
     )
-
-    records = (await session.execute(
-        sa.select(
+    q = (sa.select(
             Model.id,
             Model.name,
             Model.task_type,
@@ -711,10 +729,11 @@ async def retrieve_connected_models(
         )
         .select_from(Model)
         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id)
-        .join(Model.members)
-        .where(ModelMember.user_id == user.id)
-    )).all()
+        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id))
+
+    if resources_provider.get_features_control(user).model_assignment:
+        q = q.join(Model.members).where(ModelMember.user_id == user.id)
+    records = (await session.execute(q)).all()
 
     connected_models: t.List[ConnectedModelSchema] = []
 
@@ -794,10 +813,8 @@ class ConnectedModelVersionSchema(BaseModel):
 async def retrive_connected_model_versions(
         model_id: int = Path(...),
         session: AsyncSession = AsyncSessionDep,
-        user: User = Depends(auth.CurrentUser())
 ) -> t.List[ConnectedModelVersionSchema]:
     """Retrieve list of versions of a connected model."""
-    await Model.fetch_or_403(session, model_id, user)
     alerts_count = (
         sa.select(
             sa.func.jsonb_object_keys(Alert.failed_values).label("model_version_name"),
@@ -884,10 +901,9 @@ async def retrieve_connected_model_version_ingestion_errors(
         limit: int = Query(default=50, le=10_000, ge=1),
         offset: int = Query(default=0, ge=0),
         session: AsyncSession = AsyncSessionDep,
-        user: User = Depends(auth.CurrentUser())
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Retrieve connected model version ingestion errors."""
-    await Model.fetch_or_403(session, model_id, user)
     order_by_expression: t.Dict[t.Tuple[IngestionErrorsSortKey, SortOrder], t.Any] = {
         (IngestionErrorsSortKey.TIMESTAMP, SortOrder.ASC): IngestionError.created_at.asc(),
         (IngestionErrorsSortKey.TIMESTAMP, SortOrder.DESC): IngestionError.created_at.desc(),
@@ -965,11 +981,13 @@ async def set_schedule_time(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Set schedule time."""
     options = (selectinload(Model.checks).load_only(Check.id).selectinload(Check.monitors))
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs, options=options)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
 
     monitors = [monitor for check in model.checks for monitor in check.monitors]
     monitor_ids = [monitor.id for monitor in monitors]
@@ -1007,6 +1025,7 @@ async def retrieve_model_notes(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[ModelNoteSchema]:
     model = await fetch_or_404(
         session,
@@ -1014,7 +1033,8 @@ async def retrieve_model_notes(
         options=joinedload(Model.notes),
         **model_identifier.as_kwargs,
     )
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
     return [
         ModelNoteSchema.from_orm(it)
         for it in model.notes
@@ -1032,6 +1052,7 @@ async def create_model_notes(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[ModelNoteSchema]:
     if len(notes) == 0:
         raise BadRequest("notes list cannot be empty")
@@ -1040,7 +1061,8 @@ async def create_model_notes(
         model=Model,
         **model_identifier.as_kwargs
     )
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
     records = (await session.execute(
         sa.insert(ModelNote)
         .values([{"model_id": model.id, "created_by": user.id, "updated_by": user.id, **it.dict()} for it in notes])

@@ -15,7 +15,7 @@ import fastapi
 import sqlalchemy as sa
 from fastapi import Depends
 
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import AccessForbidden, NotFound
 from deepchecks_monitoring.utils import auth
 
@@ -40,7 +40,8 @@ class PermissionMixin:
         cls,
         request: fastapi.Request,
         user=Depends(auth.CurrentUser()),
-        session=AsyncSessionDep
+        session=AsyncSessionDep,
+        resources_provider=ResourcesProviderDep,
     ):
         id_param = cls.__tablename__[:-1] + "_id"
         id_param_val = request.query_params.get(id_param) or request.path_params.get(id_param)
@@ -50,4 +51,6 @@ class PermissionMixin:
         obj = await session.scalar(base_obj_query)
         if obj is None:
             raise NotFound(f"{cls.__class__.__name__} with the identifier {id_param_val} was not found.")
-        return await cls.fetch_or_403(session, obj.id, user)
+        if resources_provider.get_features_control(user).model_assignment:
+            return await cls.fetch_or_403(session, obj.id, user)
+        return obj

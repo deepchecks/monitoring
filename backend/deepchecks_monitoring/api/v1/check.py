@@ -125,6 +125,7 @@ async def add_checks(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: ExtendedAsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[t.Dict[t.Any, t.Any]]:
     """Add a new check or checks to the model.
 
@@ -148,7 +149,8 @@ async def add_checks(
         .options(joinedload(Model.checks)),
         message=f'Model with next set of arguments does not exist: {repr(model_identifier)}'
     ))
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
     checks = (
         [checks]
         if not isinstance(checks, t.Sequence)  # pylint: disable=isinstance-second-argument-not-valid-type
@@ -190,10 +192,12 @@ async def delete_check_by_id(
         check_identifier: CheckIdentifier = CheckIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Delete check instance by identifier."""
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
     await exists_or_404(session, Check, **check_identifier.as_kwargs)
     await delete(Check).where(check_identifier.as_expression)
 
@@ -204,6 +208,7 @@ async def delete_checks_by_name(
         names: t.List[str] = Query(..., description='Checks names'),
         session: ExtendedAsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Delete check instances by name if they exist, otherwise returns 404."""
     model = (await session.fetchone_or_404(
@@ -213,7 +218,8 @@ async def delete_checks_by_name(
         .limit(1),
         message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
     ))
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
 
     model = t.cast(Model, model)
     existing_checks = {check.name: check.id for check in model.checks}
@@ -239,6 +245,7 @@ async def get_checks(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[CheckSchema]:
     """Return all the checks for a given model.
 
@@ -255,7 +262,8 @@ async def get_checks(
         All the checks for a given model.
     """
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
     q = select(Check).join(Check.model).where(model_identifier.as_expression)
     results = (await session.scalars(q)).all()
     check_schemas = [CheckSchema.from_orm(res) for res in results]
@@ -286,10 +294,12 @@ async def get_model_auto_frequency(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Infer from the data the best frequency to show for analysis screen."""
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.fetch_or_403(session, model.id, user)
 
     model_timezone = t.cast(str, model.timezone)
 

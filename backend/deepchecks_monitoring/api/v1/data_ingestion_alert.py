@@ -17,8 +17,9 @@ from sqlalchemy import false, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
 from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
 from deepchecks_monitoring.schema_models.model import Model
@@ -51,15 +52,16 @@ class DataIngestionAlertSchema(BaseModel):
 async def count_alerts(
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.CurrentUser()),
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Count alerts."""
-    select_alert = (select(DataIngestionAlertRule.alert_severity, func.count())
+    q = (select(DataIngestionAlertRule.alert_severity, func.count())
                     .join(DataIngestionAlert.alert_rule)
                     .join(DataIngestionAlertRule.model)
-                    .join(Model.members)
-                    .where(ModelMember.user_id == user.id)
                     .where(DataIngestionAlert.resolved == false()))
-    q = select_alert.group_by(DataIngestionAlertRule.alert_severity)
+    if resources_provider.get_features_control(user).model_assignment:
+        q = q.join(Model.members).where(ModelMember.user_id == user.id)
+    q = q.group_by(DataIngestionAlertRule.alert_severity)
     results = await session.execute(q)
     total = results.all()
     return dict(total)

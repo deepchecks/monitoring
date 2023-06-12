@@ -30,6 +30,7 @@ from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
@@ -49,7 +50,7 @@ async def log_data_batch(
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
     user: User = Depends(CurrentActiveUser()),
-    resources_provider=ResourcesProviderDep
+    resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Insert batch data samples."""
     model_version: ModelVersion = await fetch_or_404(
@@ -58,7 +59,8 @@ async def log_data_batch(
         id=model_version_id,
         options=joinedload(ModelVersion.model)
     )
-    await ModelVersion.fetch_or_403(session, model_version_id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await ModelVersion.fetch_or_403(session, model_version_id, user)
 
     if len(data) == 0:
         return ORJSONResponse(
