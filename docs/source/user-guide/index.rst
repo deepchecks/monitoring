@@ -4,8 +4,10 @@
 User Guide
 ==========
 
-For quick onboarding to the system, check out the :ref:`tabluar_quickstarts`, 
-and for more info about installation check out the :ref:`Insallation Guide <installation>`.
+For installing the open-source version of the monitoring app,
+check out the :ref:`installation__self_host_deepchecks` guide,
+and for getting started with the SaaS version go to the :ref:`quick_tabular`
+
 To get better familiar with the way the system operates, and dive into various concepts and
 configuration options, make sure to check the :ref:`user_guide__general` section.
 
