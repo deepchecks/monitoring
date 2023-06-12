@@ -13,7 +13,8 @@ import useModels from 'helpers/hooks/useModels';
 import { MenuItem, Stack, StackProps } from '@mui/material';
 
 import { SelectCondition } from './SelectCondition';
-import { StyledBaseDropdown, StyledText } from 'components/lib';
+import { StyledText } from 'components/lib';
+import { BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
 
 import { checkInfoInitValue } from './CreateAlertForm.helpers';
 import { constants } from '../../monitorDialog.constants';
@@ -111,7 +112,7 @@ export const CreateAlertForm = forwardRef(
           type="h2"
           sx={theme => ({ fontWeight: 500, color: theme.palette.grey[500], marginBottom: '26px' })}
         />
-        <StyledBaseDropdown
+        <BaseDropdown
           label={constants.createAlertForm.severityLabel}
           clearValue={() => setSeverity('')}
           onChange={event => setSeverity(event.target.value as AlertSeverity)}
@@ -125,7 +126,7 @@ export const CreateAlertForm = forwardRef(
               {key}
             </MenuItem>
           ))}
-        </StyledBaseDropdown>
+        </BaseDropdown>
         <SelectCondition
           operator={operator}
           setOperator={setOperator}

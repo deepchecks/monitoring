@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { TextFieldProps, SelectProps, InputLabel, FormControl, SxProps } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 
-import { StyledIconButton, StyledLabel, StyledSelect, StyledTextfield } from './BaseInput.styles';
+import { StyledIconButton, StyledLabel, StyledSelect, StyledTextfield } from './InputDropdown.styles';
 
 type BaseInputProps = {
   inputLabel?: string;

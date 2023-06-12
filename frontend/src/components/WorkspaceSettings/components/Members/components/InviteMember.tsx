@@ -4,8 +4,9 @@ import { useCreateInviteApiV1OrganizationInvitePut } from 'api/generated';
 
 import { Snackbar } from '@mui/material';
 
-import { StyledContainer, StyledDialog, StyledText, StyledBaseInput } from 'components/lib';
+import { StyledContainer, StyledDialog, StyledText } from 'components/lib';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
+import { BaseInput } from 'components/base/InputDropdown/InputDropdown';
 
 import { validateEmail } from 'helpers/utils/validateEmail';
 import { resError } from 'helpers/types/resError';
@@ -82,7 +83,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
       >
         <MembersActionDialogContentLayout>
           {isEmailEnabled ? (
-            <StyledBaseInput
+            <BaseInput
               placeholder={constants.inviteMember.placeholder}
               label={constants.inviteMember.inputLabel}
               value={email}

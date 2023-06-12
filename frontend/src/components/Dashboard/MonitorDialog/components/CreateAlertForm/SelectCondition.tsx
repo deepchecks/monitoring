@@ -5,7 +5,8 @@ import { OperatorsEnum } from 'api/generated';
 import { MenuItem, Stack } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-import { StyledText, StyledBaseInput, StyledBaseDropdown } from 'components/lib';
+import { StyledText } from 'components/lib';
+import { BaseInput, BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
 
 import mapToOptionsList from 'helpers/utils/mapToOptionsList';
 import { SetStateType } from 'helpers/types';
@@ -33,7 +34,7 @@ export const SelectCondition = ({ title = titleStr, operator, setOperator, value
       marginBottom="30px"
       spacing="24px"
     >
-      <StyledBaseDropdown
+      <BaseDropdown
         label={selectOperatorLabel}
         value={operator}
         onChange={event => setOperator(event.target.value as OperatorsEnum)}
@@ -44,8 +45,8 @@ export const SelectCondition = ({ title = titleStr, operator, setOperator, value
             {label}
           </MenuItem>
         ))}
-      </StyledBaseDropdown>
-      <StyledBaseInput
+      </BaseDropdown>
+      <BaseInput
         placeholder={thresholdPlaceholder}
         type="number"
         label={thresholdLabel}
