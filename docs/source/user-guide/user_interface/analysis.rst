@@ -9,7 +9,7 @@ but creates issues in a specific region or is associated with bias.
 
 
 .. image:: /_static/images/user-guide/user_interface/6_Analysis.png
-    :width: 600
+    :width: 750
 
 
 |
@@ -37,6 +37,10 @@ Comparing current results to those on a previous period (e.g. performance during
 When data comparison mode is on, both graphs will be shown for each of the checks and you can turn each of the graphs on/off by clicking on their respective legends.
 
 
+.. image:: /_static/images/user-guide/user_interface/6_Analysis_data_comparison.png
+    :width: 750
+
+
 
 Filters
 ==========
@@ -46,6 +50,15 @@ Filters can also be applied on "additional data" (per-sample metadata that the w
 e.g. country code may be additional data if not used for training the model), if supplied.	
 
 
+.. image:: /_static/images/user-guide/user_interface/6_Analysis_filters_1.png
+    :width: 750
+
+|
+
+.. image:: /_static/images/user-guide/user_interface/6_Analysis_filters_2.png
+    :width: 750
+
+
 
 Drilldown
 ============
@@ -53,3 +66,6 @@ Once you have selected a graph point, the drill-down shows the check results, se
 The feature drop down is sorted by the descending order of feature importance.
 The default segment is “All data” and it shows the results of the alert’s check for that segment.
 You can choose a different segment or change the check as part of the analysis process.
+
+.. image:: /_static/images/user-guide/user_interface/6_Analysis_drilldown.png
+    :width: 750
