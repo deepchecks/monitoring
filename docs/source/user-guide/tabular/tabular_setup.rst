@@ -156,7 +156,6 @@ The schema file must be in the structure demonstrated in the example below:
         id_meta_data: integer
         numeric_metadata: numeric
 
-
 Essentially the YAML file is a dictionary with two keys: ``features`` and ``additional_data``. The ``features`` key
 contains a dictionary of the features in the data, and their types. The ``additional_data`` is the same for columns that
 are not used by the model itself - for e.g. metadata columns (such as user id, ip address, demographic data, etc...).
@@ -179,7 +178,7 @@ the rent of the Airbnb unit is predicted from a set of features describing the r
 this dataset for the rest of the guide.
 
 Automatically creating a schema file using the :func:`create_schema <deepchecks_client.tabular.utils.create_schema>`
-method requires a deepchecks :doc:`Dataset <deepchecks:tabular/usage_guides/dataset_object>` object. The dataset object
+method requires a deepchecks :doc:`Dataset <deepchecks:user-guide/tabular/dataset_object>` object. The dataset object
 is a wrapper around the data itself that provides additional information about the data, such as the column roles.
 In the following example we'll use an already existing dataset object.
 
@@ -209,7 +208,6 @@ classified as a feature, and you should manually change it to additional_data if
 
 An alternative method for editing and passing the schema is as a dict. You can then load the file to a dict using
 the :func:`read_schema <deepchecks_client.tabular.utils.read_schema>` method:
-
 
 .. doctest::
 
