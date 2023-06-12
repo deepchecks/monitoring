@@ -1,3 +1,4 @@
+import enum
 import json
 import logging
 import typing as t
@@ -6,9 +7,12 @@ import pydantic
 import sqlalchemy as sa
 from mixpanel import Consumer, Mixpanel
 from sqlalchemy.ext.asyncio import async_object_session
+from sqlalchemy.orm import joinedload
 
 import deepchecks_monitoring
+from deepchecks_monitoring.monitoring_utils import OperatorsEnum
 from deepchecks_monitoring.public_models.organization import OrgTier
+from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.task_type import TaskType
 from deepchecks_monitoring.utils.alerts import AlertSeverity
 from deepchecks_monitoring.utils.alerts import Condition as AlertRuleCondition
@@ -21,7 +25,6 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.public_models.organization import Organization
     from deepchecks_monitoring.public_models.role import RoleEnum
     from deepchecks_monitoring.public_models.user import User
-    from deepchecks_monitoring.schema_models import Model, ModelVersion
 
 
 class BaseEvent(pydantic.BaseModel):
@@ -109,7 +112,7 @@ class InvitationEvent(UserEvent):
     async def create_event(
         cls,
         invitees: list[str],
-        user: User
+        user: 'User'
     ) -> t.Self:
         super_props = await UserEvent.from_user(user)
         return cls(
@@ -117,6 +120,35 @@ class InvitationEvent(UserEvent):
             invitees_count=len(invitees),
             **super_props.dict()
         )
+
+
+class _AuthEvent(UserEvent):
+
+    method: str
+
+    @classmethod
+    async def create_event(
+        cls,
+        method: str,
+        user: 'User'
+    ) -> t.Self:
+        super_props = await UserEvent.from_user(user)
+        return cls(
+            method=method,
+            **super_props.dict()
+        )
+
+
+class LoginEvent(_AuthEvent):
+    EVENT_NAME: t.ClassVar[str] = 'login'
+
+
+class LogoutEvent(_AuthEvent):
+    EVENT_NAME: t.ClassVar[str] = 'logout'
+
+
+class SignupEvent(_AuthEvent):
+    EVENT_NAME: t.ClassVar[str] = 'signup'
 
 
 class ModelCreatedEvent(OrganizationEvent):
@@ -130,8 +162,8 @@ class ModelCreatedEvent(OrganizationEvent):
     @classmethod
     async def create_event(
         cls,
-        model: Model,
-        user: User
+        model: 'Model',
+        user: 'User'
     ) -> t.Self:
         org = t.cast('Organization', user.organization)
         super_props = await OrganizationEvent.from_organization(org)
@@ -156,14 +188,14 @@ class ModelDeletedEvent(OrganizationEvent):
     @classmethod
     async def create_event(
         cls,
-        model: Model,
-        user: User
+        model: 'Model',
+        user: 'User'
     ) -> t.Self:
         org = t.cast('Organization', user.organization)
         super_props = await OrganizationEvent.from_organization(org)
 
         session = async_object_session(model)
-        unloaded_relations = t.cast("set[str]", sa.inspect(user).unloaded)
+        unloaded_relations = t.cast("set[str]", sa.inspect(model).unloaded)
 
         if 'versions' not in unloaded_relations:
             versions = t.cast('list[ModelVersion]', model.versions)
@@ -197,13 +229,13 @@ class ModelVersionCreatedEvent(OrganizationEvent):
     async def create_event(
         cls,
         model_version: 'ModelVersion',
-        user: User
+        user: 'User'
     ):
         org = t.cast('Organization', user.organization)
         super_props = await OrganizationEvent.from_organization(org)
 
         session = async_object_session(model_version)
-        unloaded_relations = t.cast("set[str]", sa.inspect(user).unloaded)
+        unloaded_relations = t.cast("set[str]", sa.inspect(model_version).unloaded)
 
         if 'model' not in unloaded_relations:
             model = t.cast('Model', model_version.model)
@@ -246,7 +278,7 @@ class ProductionDataUploadEvent(OrganizationEvent):
         super_props = await OrganizationEvent.from_organization(org)
 
         session = async_object_session(model_version)
-        unloaded_relations = t.cast("set[str]", sa.inspect(user).unloaded)
+        unloaded_relations = t.cast("set[str]", sa.inspect(model_version).unloaded)
 
         if 'model' not in unloaded_relations:
             model = t.cast('Model', model_version.model)
@@ -297,25 +329,73 @@ class LabelsUploadEvent(OrganizationEvent):
         )
 
 
-# class AlertRuleCreatedEvent(pydantic.BaseModel):
+class AlertRuleCreatedEvent(UserEvent):
 
-#     EVENT_NAME: t.ClassVar[str] = 'alert rule created'
+    EVENT_NAME: t.ClassVar[str] = 'alert rule created'
 
-#     id: int
-#     condition: AlertRuleCondition
-#     severity: AlertSeverity
-#     monitor_id: int
-#     monitor_name: str
-#     monitor_frequency: MonitorFrequency
-#     monitor_aggregation_window: int
-#     check_id: int
-#     check_type: str
-#     model_id: int
-#     model_name: str
-#     model_task_type: TaskType
+    id: int
+    rule_operator: OperatorsEnum
+    rule_threshold: float
+    severity: AlertSeverity
+    monitor_id: int
+    monitor_name: str
+    monitor_frequency: MonitorFrequency
+    monitor_aggregation_window: int
+    check_id: int
+    check_type: str
+    check_name: str
+    model_id: int
+    model_name: str
+    model_task_type: TaskType
+
+    @staticmethod
+    def _get_check_type(check: 'Check') -> str:
+        config = t.cast(dict[str, t.Any], check.config)
+        name = config.get('class_name') or 'unknown'
+        module = config.get('class_name') or 'unknown'
+        return f'{module}.{name}'
+
+    @classmethod
+    async def create_event(
+        cls,
+        alert_rule: 'AlertRule',
+        user: 'User',
+    ):
+        super_props = await UserEvent.from_user(user)
+        session = async_object_session(alert_rule)
+
+        monitor = t.cast(Monitor, await session.scalar(
+            sa.select(Monitor)
+            .where(Monitor.id == alert_rule.monitor_id)
+            .options(
+                joinedload(Monitor.check)
+                .joinedload(Check.model)
+            )
+        ))
+
+        check = t.cast(Check, monitor.check)
+        model = t.cast(Model, check.model)
+
+        return cls(
+            id=t.cast(int, alert_rule.id),
+            rule_operator=t.cast(AlertRuleCondition, alert_rule.condition).operator,
+            rule_threshold=t.cast(AlertRuleCondition, alert_rule.condition).value,
+            severity=t.cast(AlertSeverity, alert_rule.alert_severity),
+            monitor_id=t.cast(int, monitor.id),
+            monitor_name=t.cast(str, monitor.name),
+            monitor_frequency=t.cast(MonitorFrequency, monitor.frequency),
+            monitor_aggregation_window=t.cast(int, monitor.aggregation_window),
+            check_id=t.cast(int, check.id),
+            check_type=cls._get_check_type(check),
+            check_name=t.cast(str, check.name),
+            model_id=t.cast(int, model.id),
+            model_name=t.cast(str, model.name),
+            model_task_type=t.cast(TaskType, model.task_type),
+            **super_props.dict()
+        )
 
 
-# class AlertRuleDeletedEvent(pydantic.BaseModel):
+# class AlertRuleDeletedEvent(UserEvent):
 
 #     EVENT_NAME: t.ClassVar[str] = 'alert rule deleted'
 
@@ -324,7 +404,7 @@ class LabelsUploadEvent(OrganizationEvent):
 #     alerts_count: int
 
 
-# class AlertTriggeredEvent(pydantic.BaseModel):
+# class AlertTriggeredEvent(OrganizationEvent):
 
 #     EVENT_NAME: t.ClassVar[str] = 'alert triggered'
 
@@ -335,7 +415,7 @@ class LabelsUploadEvent(OrganizationEvent):
 #     failed_values: t.Any
 
 
-# class AlertResolvedEvent(pydantic.BaseModel):
+# class AlertResolvedEvent(UserEvent):
 
 #     EVENT_NAME: t.ClassVar[str] = 'alert resolved'
 
@@ -370,7 +450,7 @@ class MixpanelEventReporter:
         self,
         mixpanel: Mixpanel,
         supress_errors: bool = True,
-        logger: 'logging.Logger' | None = None
+        logger: logging.Logger | None = None
     ):
         self.mixpanel = mixpanel
         self.supress_errors = supress_errors

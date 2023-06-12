@@ -13,6 +13,9 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProvide
 from deepchecks_monitoring.exceptions import BadRequest, InternalError
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.user import User, UserOAuthDTO
+from deepchecks_monitoring.resources import ResourcesProvider
+from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils.mixpanel import LoginEvent, LogoutEvent, SignupEvent
 
 from .global_router import router
 
@@ -46,7 +49,7 @@ async def auth0_callback(
     session: AsyncSession = AsyncSessionDep,
     oauth: OAuth = Depends(get_oauth_resource),
     settings=SettingsDep,
-    resources_provider=ResourcesProviderDep
+    resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Get the user details from the Auth0 callback."""
     auth0_client = oauth.create_client('auth0')
@@ -71,12 +74,34 @@ async def auth0_callback(
     else:
         organization_id = None
 
-    user = await User.from_oauth_info(info,
-                                      session=session,
-                                      auth_jwt_secret=request.app.state.settings.auth_jwt_secret,
-                                      eula=False,
-                                      organization_id=organization_id)
+    is_signup = await session.scalar(
+        select(User.id)
+        .where(User.email == info.email)
+    ) is None
+
+    user = await User.from_oauth_info(
+        info,
+        session=session,
+        auth_jwt_secret=request.app.state.settings.auth_jwt_secret,
+        eula=False,
+        organization_id=organization_id
+    )
+
     await session.flush()
+    await session.commit()
+
+    MixpanelEvent = (
+        SignupEvent
+        if is_signup
+        else LoginEvent
+    )
+    resources_provider.report_mixpanel_event(
+        await MixpanelEvent.create_event(
+            user=user,
+            method='email'  # TODO:
+        )
+    )
+
     if settings.debug_mode:
         return_uri = request.query_params.get('state')
         resp = RedirectResponse(url=return_uri)
@@ -90,9 +115,18 @@ async def auth0_callback(
 
 @router.get('/auth/logout', tags=['security'])
 async def logout(
-    settings=SettingsDep
+    settings=SettingsDep,
+    user: User = Depends(auth.CurrentActiveUser()),
+    resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Logout the user."""
+    resources_provider.report_mixpanel_event(
+        await LogoutEvent.create_event(
+            user=user,
+            method='email'  # TODO:
+        )
+    )
+
     resp = RedirectResponse(url=DEFAULT_RETURN_URI)
     if settings.debug_mode:
         resp.delete_cookie('Authorization', httponly=True, secure=True, samesite='none')
