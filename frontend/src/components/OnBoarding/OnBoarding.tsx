@@ -13,11 +13,15 @@ import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegen
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { constants } from './onBoarding.constants';
 import DownloadNotebook from './components/DownloadNotebook';
+import ColabLink from './components/ColabLink';
+import GenerateToken from './components/GenerateToken';
+import DownloadScript from './components/DownloadScript';
+
+import { constants } from './onBoarding.constants';
 
 interface OnBoardingProps {
-  dataType?: 'demo' | 'user';
+  dataType: 'demo' | 'user';
   initialStep: number;
 }
 
@@ -34,6 +38,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const regenerateApiToken = async () => {
     regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
       value && setApiToken(value);
+      navigator.clipboard.writeText(value);
     });
   };
 
@@ -43,7 +48,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
 
   useEffect(() => {
     reportEvent(events.onBoarding.onboarding, {
-      step_name: constants.steps[activeStep].title,
+      step_name: constants[dataType].steps[activeStep].title,
       step_number: activeStep,
       type: `${dataType}`
     });
@@ -66,7 +71,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   return (
     <OnBoardingStepperContainer>
       <Stepper activeStep={activeStep} orientation="vertical">
-        {constants.steps.map(step => (
+        {constants[dataType].steps.map(step => (
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
@@ -84,7 +89,10 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
         ))}
       </Stepper>
       <OnBoardingAdditionalContainer>
-        <DownloadNotebook token={apiToken} />
+        <DownloadNotebook dataType={dataType} token={apiToken} />
+        <DownloadScript dataType={dataType} token={apiToken} />
+        <ColabLink dataType={dataType} />
+        <GenerateToken regenerateApiToken={regenerateApiToken} />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );
