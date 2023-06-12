@@ -12,8 +12,14 @@ const constants = {
   }
 };
 
-const ColabLink = ({ dataType }: { dataType: 'user' | 'demo' }) => (
-  <a href={constants.link[dataType]} target="_blank" rel="noreferrer">
+const ColabLink = ({
+  dataType,
+  reportOnboardingStep
+}: {
+  dataType: 'user' | 'demo';
+  reportOnboardingStep: (src: string) => void;
+}) => (
+  <a href={constants.link[dataType]} target="_blank" rel="noreferrer" onClick={() => reportOnboardingStep('colab')}>
     <StyledButton
       label={
         <>
