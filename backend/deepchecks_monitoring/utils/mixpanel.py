@@ -12,7 +12,7 @@ from sqlalchemy.orm import joinedload
 import deepchecks_monitoring
 from deepchecks_monitoring.monitoring_utils import OperatorsEnum
 from deepchecks_monitoring.public_models.organization import OrgTier
-from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor
+from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.task_type import TaskType
 from deepchecks_monitoring.utils.alerts import AlertSeverity
 from deepchecks_monitoring.utils.alerts import Condition as AlertRuleCondition
@@ -261,14 +261,12 @@ class ProductionDataUploadEvent(OrganizationEvent):
     model_name: str
     model_version_id: int
     model_version_name: str
-    # n_of_samples: int
     n_of_received_samples: int
     n_of_accepted_samples: int
 
     @classmethod
     async def create_event(
         cls,
-        # n_of_samples: int,
         n_of_received_samples: int,
         n_of_accepted_samples: int,
         model_version: 'ModelVersion',
@@ -291,7 +289,6 @@ class ProductionDataUploadEvent(OrganizationEvent):
             model_name=t.cast(str, model.name),
             model_version_id=t.cast(int, model_version.id),
             model_version_name=t.cast(str, model_version.name),
-            # n_of_samples=n_of_samples,
             n_of_received_samples=n_of_received_samples,
             n_of_accepted_samples=n_of_accepted_samples,
             **super_props.dict()
@@ -304,14 +301,12 @@ class LabelsUploadEvent(OrganizationEvent):
 
     model_id: int
     model_name: str
-    # n_of_labels: int
     n_of_received_labels: int
     n_of_accepted_labels: int
 
     @classmethod
     async def create_event(
         cls,
-        # n_of_labels: int,
         n_of_received_labels: int,
         n_of_accepted_labels: int,
         model: 'Model',
@@ -322,7 +317,6 @@ class LabelsUploadEvent(OrganizationEvent):
         return cls(
             model_id=t.cast(int, model.id),
             model_name=t.cast(str, model.name),
-            # n_of_labels=n_of_labels,
             n_of_received_labels=n_of_received_labels,
             n_of_accepted_labels=n_of_accepted_labels,
             **super_props.dict()
@@ -395,6 +389,43 @@ class AlertRuleCreatedEvent(UserEvent):
         )
 
 
+class AlertTriggeredEvent(OrganizationEvent):
+
+    EVENT_NAME: t.ClassVar[str] = 'alert triggered'
+
+    id: int
+    alert_rule_id: int
+    alert_rule_operator: OperatorsEnum
+    alert_rule_threshold: float
+    alert_rule_severity: AlertSeverity
+    failed_values: t.Any
+
+    @classmethod
+    async def create_event(
+        cls,
+        alert: 'Alert',
+        organization: 'Organization'
+    ):
+        super_props = await OrganizationEvent.from_organization(organization)
+        session = async_object_session(alert)
+        unloaded_relations = t.cast("set[str]", sa.inspect(alert).unloaded)
+
+        if 'alert_rule' not in unloaded_relations:
+            alert_rule = t.cast(AlertRule, alert.alert_rule)
+        else:
+            alert_rule = await session.get(AlertRule, alert.alert_rule_id)
+
+        return cls(
+            id=t.cast(int, alert.id),
+            alert_rule_id=t.cast(int, alert_rule.id),
+            alert_rule_operator=t.cast(AlertRuleCondition, alert_rule.condition).operator,
+            alert_rule_threshold=t.cast(AlertRuleCondition, alert_rule.condition).value,
+            alert_rule_severity=t.cast(AlertSeverity, alert_rule.alert_severity),
+            failed_values={},
+            **super_props.dict()
+        )
+
+
 # class AlertRuleDeletedEvent(UserEvent):
 
 #     EVENT_NAME: t.ClassVar[str] = 'alert rule deleted'
@@ -402,17 +433,6 @@ class AlertRuleCreatedEvent(UserEvent):
 #     id: int
 #     name: str
 #     alerts_count: int
-
-
-# class AlertTriggeredEvent(OrganizationEvent):
-
-#     EVENT_NAME: t.ClassVar[str] = 'alert triggered'
-
-#     id: int
-#     alert_rule_id: int
-#     alert_rule_condition: AlertRuleCondition
-#     alert_rule_severity: AlertSeverity
-#     failed_values: t.Any
 
 
 # class AlertResolvedEvent(UserEvent):
@@ -429,7 +449,6 @@ class AlertRuleCreatedEvent(UserEvent):
 #     model_task_type: TaskType
 #     n_of_resolved_alerts: int
 #     were_all_alerts_resolved: bool
-
 
 
 class MixpanelEventReporter:

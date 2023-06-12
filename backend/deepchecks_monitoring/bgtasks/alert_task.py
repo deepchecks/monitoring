@@ -30,6 +30,7 @@ from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
 from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.utils.mixpanel import AlertTriggeredEvent
 
 __all__ = ["AlertsTask"]
 
@@ -64,7 +65,6 @@ class AlertsTask(BackgroundWorker):
                 session=session,
                 schema_search_path=[organization_schema, "public"]
             )
-
             alerts = await execute_monitor(
                 session=session,
                 resources_provider=resources_provider,
@@ -88,6 +88,12 @@ class AlertsTask(BackgroundWorker):
                 session=session,
                 resources_provider=resources_provider,
                 logger=self._logger.getChild("alert-notificator")
+            )
+            resources_provider.report_mixpanel_event(
+                await AlertTriggeredEvent.create_event(
+                    alert=alert,
+                    organization=await session.get(Organization, organization_id)
+                )
             )
             await notificator.notify()
 
