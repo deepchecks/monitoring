@@ -25,15 +25,13 @@ class PermissionMixin:
 
     @classmethod
     @abc.abstractmethod
-    def get_object_by_id(cls, obj_id, user):
+    async def has_object_permissions(cls, session, obj_id, user):
         raise NotImplementedError()
 
     @classmethod
     async def assert_user_assigend_to_model(cls, session, obj_id, user):
-        obj = await session.scalar(cls.get_object_by_id(obj_id, user))
-        if obj is None:
+        if not (await cls.has_object_permissions(session, obj_id, user)):
             raise AccessForbidden("You do not have permissions to access this object.")
-        return obj
 
     @classmethod
     async def get_object_from_http_request(
