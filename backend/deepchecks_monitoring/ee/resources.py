@@ -21,7 +21,8 @@ from starlette.templating import Jinja2Templates
 
 from deepchecks_monitoring.ee import utils
 from deepchecks_monitoring.ee.config import Settings, SlackSettings, StripeSettings, TelemetrySettings
-from deepchecks_monitoring.ee.features_control import CloudFeaturesControl
+from deepchecks_monitoring.ee.features_control_cloud import CloudFeaturesControl
+from deepchecks_monitoring.ee.features_control_on_prem import OnPremFeaturesControl
 from deepchecks_monitoring.ee.notifications import AlertNotificator as EEAlertNotificator
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.integrations.email import EmailSender
@@ -112,6 +113,9 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         """Return features control."""
         if self.settings.is_cloud:
             return CloudFeaturesControl(user, self.lauchdarkly_client, self.settings)
+        # TODO add license check -
+        elif self.settings.is_on_prem:
+            return OnPremFeaturesControl(self.settings)
         return FeaturesControl(self.settings)
 
     @property

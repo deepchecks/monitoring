@@ -37,6 +37,6 @@ def format_float(value: T, n_of_digits: int = 5) -> T:
     elif isinstance(value, (list, tuple)):
         return type(value)(format_float(it, n_of_digits) for it in value)
     elif isinstance(value, dict):
-        return type(dict)((k, format_float(v, n_of_digits)) for k, v in value.items())
+        return type(value)((k, format_float(v, n_of_digits)) for k, v in value.items())
     else:
         return value

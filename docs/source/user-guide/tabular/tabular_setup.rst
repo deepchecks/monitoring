@@ -181,7 +181,7 @@ the rent of the Airbnb unit is predicted from a set of features describing the r
 this dataset for the rest of the guide.
 
 Automatically creating a schema file using the :func:`create_schema <deepchecks_client.tabular.utils.create_schema>`
-method requires a deepchecks :doc:`Dataset <deepchecks:user-guide/tabular/dataset_object>` object. The dataset object
+method requires a deepchecks :ref:`Dataset <deepchecks:tabular__dataset_object>` object. The dataset object
 is a wrapper around the data itself that provides additional information about the data, such as the column roles.
 In the following example we'll use an already existing dataset object.
 
@@ -258,17 +258,17 @@ feature importance calculation method:
     >>> feature_importance = calculate_feature_importance(dataset=ref_dataset, model=my_model)
 
 For more details about computing feature importance and it's uses in deepchecks, see the
-:doc:`feature importance guide <deepchecks:user-guide/tabular/feature_importance>`.
+:ref:`feature importance guide <deepchecks:tabular__feature_importance>`.
 
 Uploading a Reference Dataset
 =============================
 
 Reference data is a dataset to which we wish to compare our production data stream for a given model version. Providing
-reference data is optional, yet many important :doc:`checks <deepchecks:user-guide/general/deepchecks_hierarchy>` such as
-:doc:`Train Test Feature Drift (Tabular Version) <deepchecks:checks_gallery/tabular/train_test_validation/plot_train_test_feature_drift>`
+reference data is optional, yet many important :ref:`checks <deepchecks:general__deepchecks_hierarchyy>` such as
+:ref:`Feature Drift (Tabular Version) <deepchecks:tabular__feature_drift>`
 cannot run without it.
 
-The reference data must be a deepchecks :doc:`Dataset <deepchecks:user-guide/tabular/dataset_object>` object. We'll use
+The reference data must be a deepchecks :ref:`Dataset <deepchecks:tabular__dataset_object>` object. We'll use
 the dataset object already used earlier in this guide to create the schema file.
 
 Apart from the dataset itself that contains the features, metadata and labels, we must also provide the model

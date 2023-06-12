@@ -6,17 +6,22 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
 
-import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
+import { OnBoardingAdditionalContainer, OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
 import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
 
 import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
+import DownloadNotebook from './components/DownloadNotebook';
+import ColabLink from './components/ColabLink';
+import GenerateToken from './components/GenerateToken';
+import DownloadScript from './components/DownloadScript';
+
 import { constants } from './onBoarding.constants';
 
 interface OnBoardingProps {
-  dataType?: 'demo' | 'user';
+  dataType: 'demo' | 'user';
   initialStep: number;
 }
 
@@ -33,6 +38,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const regenerateApiToken = async () => {
     regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
       value && setApiToken(value);
+      navigator.clipboard.writeText(value);
     });
   };
 
@@ -42,7 +48,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
 
   useEffect(() => {
     reportEvent(events.onBoarding.onboarding, {
-      step_name: constants.steps[activeStep].title,
+      step_name: constants[dataType].steps[activeStep].title,
       step_number: activeStep,
       type: `${dataType}`
     });
@@ -65,12 +71,12 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   return (
     <OnBoardingStepperContainer>
       <Stepper activeStep={activeStep} orientation="vertical">
-        {constants.steps.map(step => (
+        {constants[dataType].steps.map(step => (
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
               <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
-              <StyledCodeSnippet code={step.codeSnippet} />
+              <StyledCodeSnippet code={step.codeSnippet} width="800px" />
               {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
@@ -82,6 +88,12 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
           </Step>
         ))}
       </Stepper>
+      <OnBoardingAdditionalContainer>
+        <DownloadNotebook dataType={dataType} token={apiToken} />
+        <DownloadScript dataType={dataType} token={apiToken} />
+        <ColabLink dataType={dataType} />
+        <GenerateToken regenerateApiToken={regenerateApiToken} />
+      </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );
 };

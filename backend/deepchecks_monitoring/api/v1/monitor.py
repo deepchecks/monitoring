@@ -329,5 +329,4 @@ async def run_monitor_lookback(
         monitor_id=monitor_id,
         cache_funcs=cache_funcs,
         organization_id=user.organization_id,
-        parallel=resources_provider.settings.parallel_enabled,
     )

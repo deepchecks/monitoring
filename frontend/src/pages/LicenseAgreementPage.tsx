@@ -19,7 +19,6 @@ import { eulaAcceptanceApiV1UsersAcceptEulaGet } from 'api/generated';
 import { termsAndConditions } from 'helpers/base/termsAndConditions';
 
 import { theme } from '../components/lib/theme';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 export const LicenseAgreementPage = function () {
   const descriptionElementRef = React.useRef<HTMLElement>(null);
@@ -37,10 +36,6 @@ export const LicenseAgreementPage = function () {
       window.location.href = '/';
     });
   };
-
-  useEffect(() => {
-    reportEvent(events.authentication.signUp);
-  }, []);
 
   return (
     <ThemeProvider theme={theme}>

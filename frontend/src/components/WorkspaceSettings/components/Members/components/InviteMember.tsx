@@ -11,7 +11,6 @@ import { MembersActionDialogInput } from './MembersActionDialogInput';
 import { validateEmail } from 'helpers/utils/validateEmail';
 import { resError } from 'helpers/types/resError';
 import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { MembersActionDialog } from '../Members.type';
 import { constants } from '../members.constants';
@@ -64,7 +63,6 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   useEffect(() => {
     if (err === 'none') {
       setSuccess(true);
-      reportEvent(events.workspaceSettings.invite, { invitees: email });
       handleCloseDialog();
     }
   }, [err]);

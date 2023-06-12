@@ -37,6 +37,14 @@ div.sphx-glr-download a:hover {
     background-color: #B17DFF;
 }
 
+/* Make the permalink link hover (default is # in red)
+Need to change both the headerlink and it's hover color */
+.headerlink {
+    color: #FFFFFF !important;
+}
+.headerlink:hover {
+    color: #FFFFFF !important;
+}
 
 /*
  * Delete the double caption from the toc display. (see: https://bit.ly/3IPt8Ud)
