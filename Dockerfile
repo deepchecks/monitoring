@@ -34,6 +34,9 @@ COPY backend/requirements.txt ./
 COPY backend/addon-requirements.txt ./
 
 # TODO: not secure, use docker build-kit instead
+ARG MIXPANEL_ID
+ENV MIXPANEL_ID=$MIXPANEL_ID
+# ---
 ARG DEEPCHECKS_CI_TOKEN
 ARG IS_DEEPCHECKS_OSS
 
