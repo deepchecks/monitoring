@@ -13,7 +13,6 @@ dc_client = DeepchecksClient(
     host="YOUR_DEPLOYMENT_URL", token="YOUR_API_TOKEN")
 
 model_name = "Airbnb"
-# model_version = dc_client.get_or_create_model(model_name).version("ver_1")
 model_version = dc_client.create_tabular_model_version(model_name=model_name, version_name="ver_1",
                                                        schema=schema_file_path,
                                                        feature_importance=feature_importance,
