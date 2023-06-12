@@ -10,7 +10,7 @@ create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
 read_schema(schema_file_path)
 
 dc_client = DeepchecksClient(
-    host="${window.location.origin}", token="${token}")
+    host="YOUR_DEPLOYMENT_URL", token="YOUR_API_TOKEN")
 
 model_name = "Airbnb"
 # model_version = dc_client.get_or_create_model(model_name).version("ver_1")

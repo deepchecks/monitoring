@@ -16,8 +16,8 @@ schema_file_path = "schema_file.yaml"
 create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
 read_schema(schema_file_path)
 
-dc_client = DeepchecksClient(host="https://localhost:3000",
-                             token="ZGFzZGFzZGFzZGFzZGFzZDIxMzQxMjM0MTI0QGRlZXBjaGVja3MuY29t.7p6v1yPkiD9NEdJ1o2q6ZQ")
+dc_client = DeepchecksClient(host="YOUR_DEPLOYMENT_URL",
+                             token="YOUR_API_TOKEN")
 
 version_arguments = {
     'model_name': "my_model",
