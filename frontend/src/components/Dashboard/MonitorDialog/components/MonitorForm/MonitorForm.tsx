@@ -11,18 +11,18 @@ import {
 
 import useModels from 'helpers/hooks/useModels';
 
-import { TextField, MenuItem, OutlinedInput, Typography, Stack } from '@mui/material';
+import { MenuItem, Stack } from '@mui/material';
 
-import { MarkedSelect } from 'components/base/MarkedSelect';
 import {
-  ControlledMarkedSelect,
-  ControlledMarkedSelectDisabledCallback
-} from 'components/base/MarkedSelect/ControlledMarkedSelect';
+  ControlledBaseDropdown,
+  ControlledBaseDropdownDisabledCallback
+} from 'components/base/InputDropdown/ControlledBaseDropdown';
 import { SelectCheck } from 'components/Select/SelectCheck';
 import { SelectColumn } from 'components/Select/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { Subcategory } from 'components/Subcategory';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';
+import { BaseInput, BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
 
 import { StyledDivider, StyledLink } from './MonitorForm.style';
 
@@ -41,7 +41,11 @@ const {
   frequencyLabel,
   frequencyTooltip,
   modelLabel,
-  monitorNameLabel
+  monitorNameLabel,
+  aggWindowError,
+  resetToDefault,
+  advancedStr,
+  aggValueStr
 } = constants.monitorForm;
 
 export const MonitorForm = forwardRef(
@@ -305,16 +309,15 @@ export const MonitorForm = forwardRef(
     }, [monitorName, check, frequency, aggregationWindow, lookBack, isValidConfig]);
 
     return (
-      <Stack spacing="30px" {...otherProps}>
-        <TextField
-          sx={{ marginTop: '10px' }}
+      <Stack spacing="30px" marginBottom="30px" {...otherProps}>
+        <BaseInput
           label={monitorNameLabel}
-          size="small"
           value={monitorName}
           onChange={event => setMonitorName(event.target.value)}
           required={!monitor}
+          sx={{ marginTop: '10px' }}
         />
-        <MarkedSelect
+        <BaseDropdown
           label={modelLabel}
           value={model}
           onChange={event => {
@@ -332,7 +335,7 @@ export const MonitorForm = forwardRef(
               {name}
             </MenuItem>
           ))}
-        </MarkedSelect>
+        </BaseDropdown>
         <SelectCheck
           monitor={monitor}
           model={model}
@@ -357,7 +360,7 @@ export const MonitorForm = forwardRef(
         />
         <StyledDivider />
         <TooltipInputWrapper title={frequencyTooltip}>
-          <MarkedSelect
+          <BaseDropdown
             label={frequencyLabel}
             value={frequency}
             required
@@ -366,63 +369,52 @@ export const MonitorForm = forwardRef(
               setFrequency(freqTimeWindow[0].value);
               setAggregationWindow(1);
             }}
-            fullWidth
           >
             {freqTimeWindow.map(({ label, value }, index) => (
               <MenuItem key={value + index} value={value}>
                 {label}
               </MenuItem>
             ))}
-          </MarkedSelect>
+          </BaseDropdown>
         </TooltipInputWrapper>
         {!advanced ? (
-          <StyledLink
-            underline="hover"
-            sx={{ display: 'flex' }}
-            onClick={() => {
-              setAdvanced(true);
-            }}
-          >
-            Advanced
+          <StyledLink underline="hover" onClick={() => setAdvanced(true)}>
+            {advancedStr}
           </StyledLink>
         ) : (
           <Subcategory sx={{ marginTop: '0 !important' }}>
-            <Typography sx={{ color: 'gray' }}>Aggregation value</Typography>
-            <OutlinedInput
+            <BaseInput
               placeholder={aggWindowLabel}
-              size="small"
               value={aggregationWindow}
+              label={aggValueStr}
               onChange={event => setAggregationWindow(Number(event.target.value))}
               error={aggregationWindowErr}
-              endAdornment={aggregationWindowSuffix}
+              helperText={aggregationWindowErr ? aggWindowError : ''}
               inputProps={{ min: 0, max: 30 }}
+              InputProps={{ endAdornment: aggregationWindowSuffix }}
               type="number"
               fullWidth
-              required
             />
-            {aggregationWindowErr && <Typography color={'red'}>aggregation window max value is 30</Typography>}
             <StyledLink
               underline="hover"
-              sx={{ display: 'flex' }}
               onClick={() => {
                 setAdvanced(false);
                 setAggregationWindow(1);
               }}
             >
-              Reset to default
+              {resetToDefault}
             </StyledLink>
           </Subcategory>
         )}
         <TooltipInputWrapper title={displayRangeTooltip}>
-          <ControlledMarkedSelect
+          <ControlledBaseDropdown
             label={displayRangeLabel}
             values={lookbackTimeWindow}
             value={lookBack}
             setValue={setLookBack}
             clearValue={clearLookBack}
-            DisabledCallback={isDisabledLookback as ControlledMarkedSelectDisabledCallback}
+            DisabledCallback={isDisabledLookback as ControlledBaseDropdownDisabledCallback}
             required
-            fullWidth
           />
         </TooltipInputWrapper>
 

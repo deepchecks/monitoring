@@ -4,8 +4,8 @@ import { useGetModelColumnsApiV1ModelsModelIdColumnsGet } from 'api/generated';
 
 import { Stack, MenuItem, SelectChangeEvent } from '@mui/material';
 
-import { MarkedSelect } from 'components/base/MarkedSelect';
-import { ControlledMarkedSelect } from 'components/base/MarkedSelect/ControlledMarkedSelect';
+import { BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
+import { ControlledBaseDropdown } from 'components/base/InputDropdown/ControlledBaseDropdown';
 import { Subcategory } from 'components/Subcategory';
 import { RangePicker } from 'components/base/RangePicker/RangePicker';
 
@@ -20,7 +20,6 @@ interface SelectColumnProps {
   setCategory: SetStateType<SelectValues>;
   numericValue: number[] | undefined;
   setNumericValue: SetStateType<number[] | undefined>;
-  size?: 'small' | 'medium';
 }
 
 const SelectColumnComponent = ({
@@ -30,15 +29,14 @@ const SelectColumnComponent = ({
   category,
   setCategory,
   numericValue,
-  setNumericValue,
-  size = 'small'
+  setNumericValue
 }: SelectColumnProps) => {
   const { data: columnsMap = {}, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model);
   const columns = useMemo(
     () => Object.fromEntries(Object.entries(columnsMap).filter(([, value]) => value.type in ColumnType)),
     [columnsMap]
   );
-  const disabled = useMemo(() => !model || !columns || isLoading, [model, columns, isLoading]);
+  const disabled = !model || !columns || isLoading;
 
   const resetSubcategory = () => {
     setCategory('');
@@ -59,8 +57,8 @@ const SelectColumnComponent = ({
 
   return (
     <Stack>
-      <MarkedSelect
-        label={'Filter by segment'}
+      <BaseDropdown
+        label="Filter by segment"
         value={column}
         onChange={handleColumnChange}
         clearValue={() => {
@@ -68,25 +66,23 @@ const SelectColumnComponent = ({
           resetSubcategory();
         }}
         disabled={disabled}
-        size={size}
       >
         {Object.keys(columns).map(col => (
           <MenuItem key={col} value={col}>
             {col}
           </MenuItem>
         ))}
-      </MarkedSelect>
+      </BaseDropdown>
       {column &&
         !disabled &&
         (columns[column].type === ColumnType.categorical ? (
           <Subcategory>
-            <ControlledMarkedSelect
+            <ControlledBaseDropdown
               label="Select category"
               values={columns[column].stats.values || []}
               value={category}
               setValue={setCategory}
               clearValue={() => setCategory('')}
-              size={size}
             />
           </Subcategory>
         ) : (

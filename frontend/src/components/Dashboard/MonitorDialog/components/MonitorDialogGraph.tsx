@@ -42,7 +42,7 @@ export const MonitorDialogGraph = ({
     />
   ) : (
     <Box>
-      <NoDataToShow title={title} height={193} />
+      <NoDataToShow title={title} height={246} />
       {monitor && setReset && <StyledReset onClick={() => setReset(true)}>{reset}</StyledReset>}
     </Box>
   );

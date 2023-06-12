@@ -102,7 +102,7 @@ export const MonitorDialog = ({
       fullWidth
     >
       <Stack justifyContent="space-between">
-        <Box sx={{ overflowY: 'auto', marginTop: '-20px' }}>
+        <Box sx={{ maxHeight: '650px', overflowY: 'auto', marginTop: '-20px' }}>
           {isCreateAlert && monitor ? (
             <CreateAlertForm
               monitor={monitor}

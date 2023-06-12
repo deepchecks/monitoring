@@ -9,9 +9,9 @@ import {
 
 import { Stack, MenuItem } from '@mui/material';
 
-import { ControlledMarkedSelect } from 'components/base/MarkedSelect/ControlledMarkedSelect';
-import { MarkedSelect } from 'components/base/MarkedSelect';
 import { Subcategory } from 'components/Subcategory';
+import { BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
+import { ControlledBaseDropdown } from 'components/base/InputDropdown/ControlledBaseDropdown';
 
 import { SetStateType, SelectValues } from 'helpers/types';
 import { CheckFilterTypes, FilteredValues, initFilteredValues, TypeMap, unionCheckConf } from 'helpers/utils/checkUtil';
@@ -145,7 +145,7 @@ export const SelectCheckComponent = ({
 
   return (
     <Stack>
-      <ControlledMarkedSelect
+      <ControlledBaseDropdown
         required
         error={error && !check}
         label="Check"
@@ -171,7 +171,7 @@ export const SelectCheckComponent = ({
         <>
           {checkInfo?.check_conf?.map((conf, confIndex) => (
             <Subcategory key={confIndex}>
-              <MarkedSelect
+              <BaseDropdown
                 label={`Select ${conf.type}`}
                 value={isDisabled(conf) ? '' : getSelectedVal(conf)}
                 onChange={e => updateFilteredValue(e.target.value as string, conf)}
@@ -196,12 +196,12 @@ export const SelectCheckComponent = ({
                     {value.name}
                   </MenuItem>
                 ))}
-              </MarkedSelect>
+              </BaseDropdown>
             </Subcategory>
           ))}
           {checkInfo?.res_conf && (
             <Subcategory>
-              <MarkedSelect
+              <BaseDropdown
                 label={`Select ${checkInfo?.res_conf.type}`}
                 onChange={e => setResConf((e.target.value as string) || undefined)}
                 clearValue={() => setResConf(undefined)}
@@ -222,7 +222,7 @@ export const SelectCheckComponent = ({
                     {value.name}
                   </MenuItem>
                 ))}
-              </MarkedSelect>
+              </BaseDropdown>
             </Subcategory>
           )}
         </>
