@@ -11,12 +11,9 @@
 name: Release
 
 on:
-#  push: TODO comment for testing
-#    tags:
-#      - "[0-9]+.[0-9]+.[0-9]+"
-  pull_request:
-    branches:
-      - main
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 env:
   DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
@@ -53,6 +50,7 @@ jobs:
           docker buildx imagetools create \
             --tag ${{ secrets.MON_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
             --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
+            --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:latest-release
             ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
       - name: Download task definition
         run: |
