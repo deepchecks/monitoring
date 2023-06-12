@@ -15,7 +15,7 @@ import fastapi
 import sqlalchemy as sa
 from fastapi import Depends
 
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import AccessForbidden, NotFound
 from deepchecks_monitoring.utils import auth
 
@@ -25,22 +25,21 @@ class PermissionMixin:
 
     @classmethod
     @abc.abstractmethod
-    def get_object_by_id(cls, obj_id, user):
+    async def has_object_permissions(cls, session, obj_id, user):
         raise NotImplementedError()
 
     @classmethod
-    async def fetch_or_403(cls, session, obj_id, user):
-        obj = await session.scalar(cls.get_object_by_id(obj_id, user))
-        if obj is None:
+    async def assert_user_assigend_to_model(cls, session, obj_id, user):
+        if not await cls.has_object_permissions(session, obj_id, user):
             raise AccessForbidden("You do not have permissions to access this object.")
-        return obj
 
     @classmethod
     async def get_object_from_http_request(
         cls,
         request: fastapi.Request,
         user=Depends(auth.CurrentUser()),
-        session=AsyncSessionDep
+        session=AsyncSessionDep,
+        resources_provider=ResourcesProviderDep,
     ):
         id_param = cls.__tablename__[:-1] + "_id"
         id_param_val = request.query_params.get(id_param) or request.path_params.get(id_param)
@@ -50,4 +49,6 @@ class PermissionMixin:
         obj = await session.scalar(base_obj_query)
         if obj is None:
             raise NotFound(f"{cls.__class__.__name__} with the identifier {id_param_val} was not found.")
-        return await cls.fetch_or_403(session, obj.id, user)
+        if resources_provider.get_features_control(user).model_assignment:
+            await cls.assert_user_assigend_to_model(session, obj.id, user)
+        return obj
