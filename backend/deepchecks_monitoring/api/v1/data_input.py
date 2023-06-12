@@ -60,7 +60,8 @@ async def log_data_batch(
         id=model_version_id,
         options=joinedload(ModelVersion.model)
     )
-    await ModelVersion.fetch_or_403(session, model_version_id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await ModelVersion.assert_user_assigend_to_model(session, model_version_id, user)
 
     if len(data) == 0:
         return ORJSONResponse(

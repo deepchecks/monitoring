@@ -136,6 +136,7 @@ async def get_monitor(
         monitor_id: int,
         session: ExtendedAsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Get monitor by id."""
     monitor = await session.fetchone_or_404(
@@ -144,7 +145,8 @@ async def get_monitor(
         .options(joinedload(Monitor.check), joinedload(Monitor.alert_rules)),
         message=f"'Monitor with the id - {monitor_id} does not exist"
     )
-    await Monitor.fetch_or_403(session, monitor_id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Monitor.assert_user_assigend_to_model(session, monitor_id, user)
     return MonitorSchema.from_orm(monitor)
 
 
@@ -154,12 +156,14 @@ async def update_monitor(
         body: MonitorUpdateSchema,
         session: AsyncSession = AsyncSessionDep,
         cache_funcs: CacheFunctions = CacheFunctionsDep,
-        user: User = Depends(CurrentActiveUser())
+        user: User = Depends(CurrentActiveUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Update monitor by id."""
     options = joinedload(Monitor.check).load_only(Check.id).joinedload(Check.model)
     monitor = await fetch_or_404(session, Monitor, id=monitor_id, options=options)
-    await Monitor.fetch_or_403(session, monitor_id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Monitor.assert_user_assigend_to_model(session, monitor_id, user)
     model = monitor.check.model
 
     # Remove from body all the fields which hasn't changed

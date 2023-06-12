@@ -126,7 +126,8 @@ async def get_alert_rules(
         ]] = Query(default=[]),
         monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         user: User = Depends(auth.CurrentUser()),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Return all the alert rules.
 
@@ -180,10 +181,11 @@ async def get_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
-        .join(Model.members)
         .join(alerts_info, alerts_info.c.alert_rule_id == AlertRule.id)
-        .where(ModelMember.user_id == user.id)
     )
+
+    if resources_provider.get_features_control(user).model_assignment:
+        q = q.join(Model.members).where(ModelMember.user_id == user.id)
 
     if monitor is not None:
         q = q.where(AlertRule.monitor_id == monitor_id)
