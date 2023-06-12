@@ -19,6 +19,7 @@ import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 import { getParams } from 'helpers/utils/getParams';
 import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
 import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
+import { ONE_MINUTE } from 'helpers/base/time';
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -29,7 +30,8 @@ export const DashboardPage = () => {
     refetch
   } = useGetOrCreateDashboardApiV1DashboardsGet({
     query: {
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      refetchInterval: ONE_MINUTE
     }
   });
   const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
