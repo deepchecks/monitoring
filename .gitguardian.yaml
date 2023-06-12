@@ -1,0 +1,11 @@
+version: 2
+
+secret:
+  # Ignore security incidents with the SHA256 of the occurrence obtained at output or the secret itself
+  ignored-matches:
+    - name: oss_conf_oauth_client_secret
+      match: 7ff1f39cca2ff23fe8105ad02bd1d090793d9421
+    - name: oss_conf_auth_jwt_secret
+      match: 5qM4Te0knu65k1gG9UGOoba6KVag4HRD
+    - name: e2e_test_api_token
+      match: ZTJlLXRlc3RpbmdAZGVlcGNoZWNrcy5jb20=.ASB8rB13J5i_4Nma7zZfIA
