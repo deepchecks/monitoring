@@ -387,7 +387,6 @@ async def retrieve_model_version_by_name(
         session: ExtendedAsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
         resources_provider: ResourcesProvider = ResourcesProviderDep,
-        
 ) -> ModelVersionSchema:
     """Retrieve model version record."""
     model = await fetch_or_404(session, Model, name=model_name)

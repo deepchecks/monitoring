@@ -30,7 +30,7 @@ class PermissionMixin:
 
     @classmethod
     async def assert_user_assigend_to_model(cls, session, obj_id, user):
-        if not (await cls.has_object_permissions(session, obj_id, user)):
+        if not await cls.has_object_permissions(session, obj_id, user):
             raise AccessForbidden("You do not have permissions to access this object.")
 
     @classmethod

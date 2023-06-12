@@ -303,7 +303,7 @@ async def _retrieve_models_data_ingestion(
     else:
         model_identifier_name = "id"
         if feature_control.model_assignment:
-            models_query = models_query.join(Model.members).where(ModelMember.user_id == user.id) 
+            models_query = models_query.join(Model.members).where(ModelMember.user_id == user.id)
         result = await session.execute(models_query)
         models = t.cast(t.List[Model], result.scalars().all())
 

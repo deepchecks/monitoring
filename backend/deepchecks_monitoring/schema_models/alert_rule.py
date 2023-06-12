@@ -73,7 +73,6 @@ class AlertRule(Base, MetadataMixin, PermissionMixin):
                                     .join(Model.members)
                                     .where(ModelMember.user_id == user.id)
                                     .where(cls.id == obj_id))
-             
 
     @classmethod
     async def get_alerts_per_rule(

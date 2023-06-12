@@ -18,8 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
-from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, ModelMember, Monitor
 from deepchecks_monitoring.utils import auth
 
