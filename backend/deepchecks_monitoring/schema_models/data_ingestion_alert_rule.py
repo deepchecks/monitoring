@@ -93,7 +93,7 @@ class DataIngestionAlertRule(Base, MetadataMixin, PermissionMixin):
         from deepchecks_monitoring.schema_models.model import Model
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
-        assert await session.scalar(sa.select(1)
+        return await session.scalar(sa.select(1)
                                     .join(DataIngestionAlertRule.model)
                                     .join(Model.members)
                                     .where(ModelMember.user_id == user.id)
