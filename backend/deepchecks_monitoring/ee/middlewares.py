@@ -194,5 +194,5 @@ class LicenseCheckDependency:
             http request instance
         """
         # TODO: implement license check, for open source all enterprise features are disabled.
-        if request.app.state.settings.is_cloud is False:
-            raise LicenseError("Need license to use this feature")
+        if request.app.state.settings.is_cloud is False and request.app.state.settings.is_on_prem is False:
+            raise LicenseError("Can't use enterprise features in open source version.")

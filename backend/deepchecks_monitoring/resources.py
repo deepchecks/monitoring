@@ -349,8 +349,12 @@ class ResourcesProvider(BaseResourcesProvider):
     def parallel_check_executors_pool(self):
         """Return parallel check executors actors."""
         # pylint: disable=import-outside-toplevel
-        import ray  # noqa
-        from ray.util.actor_pool import ActorPool  # noqa
+        try:
+            import ray  # noqa
+            from ray.util.actor_pool import ActorPool  # noqa
+        except ImportError:
+            logging.getLogger("server").info({"message": "Ray is not installed"})
+            return
 
         if not ray.is_initialized():
             logging.getLogger("server").info({

@@ -15,13 +15,13 @@ Supported Use-Cases & Terminology
       related issues including integrity and drift.
     * For model evaluation, some additional drift checks, and performance monitoring the following tasks are supported
       - Regression, Binary and Multiclass Classification. For more information please visit the
-      :doc:`supported models guide <deepchecks:user-guide/tabular/supported_models>`.
+      :ref:`supported models guide <deepchecks:tabular__supported_models>`.
 
 .. collapse:: What is Reference Data?
 
     * Reference data is compared to the production data in several checks, for purposes such as discovering drift and
       estimating decrease in model performance
-      (see :doc:`example <deepchecks:user-guide/tabular/auto_quickstarts/plot_quick_train_test_validation>`).
+      (see :ref:`example <deepchecks:quick_train_test_validation>`).
       In most cases, reference data should the data used to train the model.
     * When either the training data is unavailable or the data distributions of the train and test are
       different it is recommended to use a portion of previous
