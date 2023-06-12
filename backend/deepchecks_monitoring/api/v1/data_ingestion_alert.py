@@ -56,9 +56,9 @@ async def count_alerts(
 ):
     """Count alerts."""
     q = (select(DataIngestionAlertRule.alert_severity, func.count())
-                    .join(DataIngestionAlert.alert_rule)
-                    .join(DataIngestionAlertRule.model)
-                    .where(DataIngestionAlert.resolved == false()))
+         .join(DataIngestionAlert.alert_rule)
+         .join(DataIngestionAlertRule.model)
+         .where(DataIngestionAlert.resolved == false()))
     if resources_provider.get_features_control(user).model_assignment:
         q = q.join(Model.members).where(ModelMember.user_id == user.id)
     q = q.group_by(DataIngestionAlertRule.alert_severity)

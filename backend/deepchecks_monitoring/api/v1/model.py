@@ -514,7 +514,7 @@ async def retrieve_available_models(
             ))
 
     if resources_provider.get_features_control(user).model_assignment and \
-          not (show_all and auth.is_admin(user)):
+            not (show_all and auth.is_admin(user)):
         query = query.join(Model.members).where(ModelMember.user_id == user.id)
 
     records = (await session.execute(query)).unique().all()
