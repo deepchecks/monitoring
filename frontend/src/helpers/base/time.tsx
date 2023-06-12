@@ -15,3 +15,4 @@ export const timeMap = {
 };
 
 export const ONE_MINUTE = 60000;
+export const THIRTY_SECONDS = 30000;
