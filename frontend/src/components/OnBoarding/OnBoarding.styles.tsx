@@ -25,11 +25,8 @@ const FirstOnBoardingOutlinedBox = styled(StyledContainer)(({ theme }) => ({
 
 const FirstOnBoardingSelectContainer = styled(StyledContainer)(() => ({
   display: 'grid',
-  gridTemplateColumns: 'auto 250px',
-  alignItems: 'center',
-
-  '& .MuiButtonBase-root': { borderRadius: 0 },
-  '& .MuiBox-root': { gap: 0, padding: 0 }
+  gridTemplateColumns: 'auto 270px',
+  alignItems: 'center'
 }));
 
 const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
@@ -59,8 +56,7 @@ const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
 }));
 
 const OnBoardingAdditionalContainer = styled(StyledContainer)({
-  gap: '24px',
-  marginTop: '24px'
+  gap: '24px'
 });
 
 export {
