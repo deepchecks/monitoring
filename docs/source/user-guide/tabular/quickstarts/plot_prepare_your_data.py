@@ -149,6 +149,4 @@ feature_importance = pd.Series(model.feature_importances_ / sum(model.feature_im
 ref_predictions = model.predict_proba(train_df[features].fillna('NONE'))
 prod_predictions = model.predict_proba(prod_data[features].fillna('NONE'))
 
-# %%
-#
 # sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/quickstarts/prepare-data-guide-white.png'
