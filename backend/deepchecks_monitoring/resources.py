@@ -421,6 +421,7 @@ class ResourcesProvider(BaseResourcesProvider):
             return True
 
     def report_mixpanel_event(self, event: BaseMixpanelEvent):
+        """Send mixpanel event."""
         if self.settings.enable_analytics is False:
             logging.getLogger("server").warning({"message": "Analytics gathering is disabled"})
             return
