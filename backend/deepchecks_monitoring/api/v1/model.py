@@ -164,7 +164,7 @@ async def get_create_model(
     features_control: FeaturesControl = resources_provider.get_features_control(user)
     if model is not None:
         if features_control.model_assignment:
-            await Model.fetch_or_403(session, model.id, user)
+            await Model.assert_user_assigend_to_model(session, model.id, user)
         if model.task_type != model_schema.task_type:
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the task type "
                              f"'{model_schema.task_type} and not the task type '{model.task_type}'")
@@ -296,7 +296,7 @@ async def _retrieve_models_data_ingestion(
             message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
         ))
         if feature_control.model_assignment:
-            await Model.fetch_or_403(session, model.id, user)
+            await Model.assert_user_assigend_to_model(session, model.id, user)
         models = [
             model
         ]
@@ -397,7 +397,7 @@ async def get_model(
     """
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     return ModelSchema.from_orm(model)
 
 
@@ -433,7 +433,7 @@ async def get_versions_per_model(
         message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
     )
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     return [
         NameIdResponse.from_orm(model_version)
         for model_version in model.versions
@@ -567,7 +567,7 @@ async def delete_model(
         message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
     )
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
 
     organization_schema = user.organization.schema_name
     tables = [f'"{organization_schema}"."{model.get_sample_labels_table_name()}"',
@@ -622,7 +622,7 @@ async def get_model_columns(
         options=selectinload(Model.versions)
     )
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
 
     # If model is new and there are no versions, return empty dict
     if len(model.versions) == 0:
@@ -987,7 +987,7 @@ async def set_schedule_time(
     options = (selectinload(Model.checks).load_only(Check.id).selectinload(Check.monitors))
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs, options=options)
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
 
     monitors = [monitor for check in model.checks for monitor in check.monitors]
     monitor_ids = [monitor.id for monitor in monitors]
@@ -1034,7 +1034,7 @@ async def retrieve_model_notes(
         **model_identifier.as_kwargs,
     )
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     return [
         ModelNoteSchema.from_orm(it)
         for it in model.notes
@@ -1062,7 +1062,7 @@ async def create_model_notes(
         **model_identifier.as_kwargs
     )
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     records = (await session.execute(
         sa.insert(ModelNote)
         .values([{"model_id": model.id, "created_by": user.id, "updated_by": user.id, **it.dict()} for it in notes])

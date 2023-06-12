@@ -88,7 +88,7 @@ async def get_or_create_version(
     """
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     model_version: ModelVersion = (await session.execute(
         select(ModelVersion)
         .where(ModelVersion.name == info.name, ModelVersion.model_id == model.id)
@@ -393,7 +393,7 @@ async def retrieve_model_version_by_name(
     model = await fetch_or_404(session, Model, name=model_name)
     model_version = await fetch_or_404(session, ModelVersion, name=version_name, model_id=model.id)
     if resources_provider.get_features_control(user).model_assignment:
-        await ModelVersion.fetch_or_403(session, model_version.id, user)
+        await ModelVersion.assert_user_assigend_to_model(session, model_version.id, user)
     return ModelVersionSchema.from_orm(model_version)
 
 
@@ -680,6 +680,7 @@ async def delete_model_version_by_name(
         version_name: str = Path(..., description='Model version name'),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.AdminUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Delete model version by name."""
     await _delete_model_version(
@@ -688,6 +689,7 @@ async def delete_model_version_by_name(
         version_identifier=ModelVersionIdentifier(version_name, kind=IdentifierKind.NAME),
         session=session,
         user=user,
+        resources_provider=resources_provider,
     )
 
 
@@ -744,7 +746,7 @@ async def _delete_model_version(
             raise ValueError('Version name cannot be used without model identifier')
         model_version = await fetch_or_404(session, ModelVersion, **version_identifier.as_kwargs)
     if resources_provider.get_features_control(user).model_assignment:
-        await ModelVersion.fetch_or_403(session, model_version.id, user)
+        await ModelVersion.assert_user_assigend_to_model(session, model_version.id, user)
     await session.delete(model_version)
     tables = [f'"{organization.schema_name}"."{model_version.get_monitor_table_name()}"',
               f'"{organization.schema_name}"."{model_version.get_reference_table_name()}"']

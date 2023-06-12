@@ -29,7 +29,7 @@ class PermissionMixin:
         raise NotImplementedError()
 
     @classmethod
-    async def fetch_or_403(cls, session, obj_id, user):
+    async def assert_user_assigend_to_model(cls, session, obj_id, user):
         obj = await session.scalar(cls.get_object_by_id(obj_id, user))
         if obj is None:
             raise AccessForbidden("You do not have permissions to access this object.")
@@ -52,5 +52,5 @@ class PermissionMixin:
         if obj is None:
             raise NotFound(f"{cls.__class__.__name__} with the identifier {id_param_val} was not found.")
         if resources_provider.get_features_control(user).model_assignment:
-            return await cls.fetch_or_403(session, obj.id, user)
+            await cls.assert_user_assigend_to_model(session, obj.id, user)
         return obj

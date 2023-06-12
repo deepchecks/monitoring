@@ -150,7 +150,7 @@ async def add_checks(
         message=f'Model with next set of arguments does not exist: {repr(model_identifier)}'
     ))
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     checks = (
         [checks]
         if not isinstance(checks, t.Sequence)  # pylint: disable=isinstance-second-argument-not-valid-type
@@ -197,7 +197,7 @@ async def delete_check_by_id(
     """Delete check instance by identifier."""
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     await exists_or_404(session, Check, **check_identifier.as_kwargs)
     await delete(Check).where(check_identifier.as_expression)
 
@@ -219,7 +219,7 @@ async def delete_checks_by_name(
         message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
     ))
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
 
     model = t.cast(Model, model)
     existing_checks = {check.name: check.id for check in model.checks}
@@ -263,7 +263,7 @@ async def get_checks(
     """
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     q = select(Check).join(Check.model).where(model_identifier.as_expression)
     results = (await session.scalars(q)).all()
     check_schemas = [CheckSchema.from_orm(res) for res in results]
@@ -299,7 +299,7 @@ async def get_model_auto_frequency(
     """Infer from the data the best frequency to show for analysis screen."""
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
     if resources_provider.get_features_control(user).model_assignment:
-        await Model.fetch_or_403(session, model.id, user)
+        await Model.assert_user_assigend_to_model(session, model.id, user)
 
     model_timezone = t.cast(str, model.timezone)
 

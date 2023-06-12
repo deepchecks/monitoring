@@ -146,7 +146,7 @@ async def get_monitor(
         message=f"'Monitor with the id - {monitor_id} does not exist"
     )
     if resources_provider.get_features_control(user).model_assignment:
-        await Monitor.fetch_or_403(session, monitor_id, user)
+        await Monitor.assert_user_assigend_to_model(session, monitor_id, user)
     return MonitorSchema.from_orm(monitor)
 
 
@@ -163,7 +163,7 @@ async def update_monitor(
     options = joinedload(Monitor.check).load_only(Check.id).joinedload(Check.model)
     monitor = await fetch_or_404(session, Monitor, id=monitor_id, options=options)
     if resources_provider.get_features_control(user).model_assignment:
-        await Monitor.fetch_or_403(session, monitor_id, user)
+        await Monitor.assert_user_assigend_to_model(session, monitor_id, user)
     model = monitor.check.model
 
     # Remove from body all the fields which hasn't changed
