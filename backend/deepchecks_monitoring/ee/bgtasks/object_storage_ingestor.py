@@ -56,7 +56,8 @@ class ObjectStorageIngestor(BackgroundWorker):
         model_id = task.params['model_id']
 
         organization_schema = (await session.scalar(
-            select(Organization.schema_name).where(Organization.id == organization_id)
+            select(Organization.schema_name)
+            .where(Organization.id == organization_id)
         ))
 
         if organization_schema is None:

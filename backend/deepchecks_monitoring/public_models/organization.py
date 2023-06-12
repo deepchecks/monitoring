@@ -7,6 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+# 
+# pylint: disable=unused-import
 """Organization entity model."""
 import enum
 import logging
@@ -27,7 +29,7 @@ from deepchecks_monitoring.utils.database import SchemaBuilder
 from deepchecks_monitoring.utils.text import slugify
 
 if t.TYPE_CHECKING:
-    from . import Invitation, User  # pylint: disable=unused-import
+    from . import Invitation, User
 
 __all__ = ["Organization"]
 
