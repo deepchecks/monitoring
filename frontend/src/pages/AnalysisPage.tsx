@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useContext } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Stack } from '@mui/material';
 
 import {
@@ -20,9 +20,12 @@ import AnalysisItem from 'components/Analysis/AnalysisItem/AnalysisItem';
 import { getParams } from 'helpers/utils/getParams';
 import { CheckType } from 'helpers/types/check';
 import { onDrawerOpen } from 'helpers/base/onDrawerOpen';
+import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 const AnalysisPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { models, getCurrentModel } = useModels();
   const { period, frequency, compareWithPreviousPeriod, compareByReference, activeFilters, resetAllFilters } =
     useContext(AnalysisContext);
@@ -43,6 +46,16 @@ const AnalysisPage = () => {
       enabled: false
     }
   });
+
+  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
+
+  const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
+
+  useEffect(() => {
+    if (!checks && (onboardingEnabled || !isCloud)) {
+      navigate({ pathname: '/onboarding' });
+    }
+  }, [checks, onboardingEnabled]);
 
   const handleDrawerOpen = useCallback(
     (

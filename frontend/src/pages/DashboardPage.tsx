@@ -38,9 +38,6 @@ export const DashboardPage = () => {
       refetchInterval: ONE_MINUTE
     }
   });
-  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
-
-  const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
 
   function refetchMonitors() {
     refetch();
@@ -63,6 +60,10 @@ export const DashboardPage = () => {
     setCurrentMonitor(null);
     setIsDrawerOpen(false);
   }, []);
+
+  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
+
+  const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
 
   useEffect(() => {
     if (dashboard?.monitors?.length === 0 && (onboardingEnabled || !isCloud)) {

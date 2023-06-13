@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   AlertRuleConfigSchema,
@@ -20,8 +21,11 @@ import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
 
 import { getAlertFilters, resetAlertFilters } from '../helpers/base/alertFilters';
+import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 export const AlertRulesPage = () => {
+  const navigate = useNavigate();
   const [isDataDialogOpen, setIsDataDialogOpen] = useState(false);
   const [isModelDialogOpen, setIsModelDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -65,6 +69,16 @@ export const AlertRulesPage = () => {
     setIsDeleteDialogOpen(false);
     setTimeout(() => setCurrentAlertRule(null), 50);
   };
+
+  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
+
+  const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
+
+  useEffect(() => {
+    if (alertRules?.length === 0 && (onboardingEnabled || !isCloud)) {
+      navigate({ pathname: '/onboarding' });
+    }
+  }, [alertRules, onboardingEnabled]);
 
   return (
     <Box margin="36px 0">

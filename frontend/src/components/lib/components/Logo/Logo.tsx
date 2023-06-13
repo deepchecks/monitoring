@@ -5,11 +5,12 @@ import { Box, Typography, useTheme } from '@mui/material';
 export interface LogoProps {
   withLabel?: boolean;
   labelColor?: 'black' | 'white' | 'gray';
-  logoColor?: 'black' | 'white' | 'color';
+  logoColor?: 'black' | 'white' | 'color' | 'mon';
+  margin?: string;
 }
 
 export const Logo = (props: LogoProps) => {
-  const { withLabel, labelColor, logoColor } = props;
+  const { withLabel, labelColor, logoColor, margin = '8px' } = props;
 
   const theme = useTheme();
 
@@ -18,6 +19,7 @@ export const Logo = (props: LogoProps) => {
   const logo = require('../../assets/logo/logo.svg').default;
   const logoBlack = require('../../assets/logo/logo-black.svg').default;
   const logoWhite = require('../../assets/logo/logo-white.svg').default;
+  const logoMon = require('../../assets/logo/monitoring.svg').default;
 
   const logoToUse = () => {
     switch (logoColor) {
@@ -27,6 +29,8 @@ export const Logo = (props: LogoProps) => {
         return logoBlack;
       case 'white':
         return logoWhite;
+      case 'mon':
+        return logoMon;
       default:
         return logo;
     }
@@ -48,14 +52,14 @@ export const Logo = (props: LogoProps) => {
   return (
     <Box
       sx={{
-        margin: '8px',
+        margin: margin,
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
         gap: '16px'
       }}
     >
-      <img src={logoToUse()} alt="logo" height={'40px'} />
+      <img src={logoToUse()} alt="logo" height="40px" width="200px" />
       {withLabel && (
         <Typography fontSize={16} fontWeight={900} test-id={'logo-text'} color={labelColorToUse()}>
           {logoLabel}
