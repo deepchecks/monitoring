@@ -69,8 +69,12 @@ class TasksQueuer:
         ], else_=datetime.timedelta(seconds=0))
         retry_interval = Task.num_pushed * datetime.timedelta(seconds=retries_interval)
         condition = Task.creation_time + intervals_by_type + retry_interval
-        self.query = update(Task).where(condition <= func.statement_timestamp())\
-            .values({Task.num_pushed: Task.num_pushed + 1}).returning(Task.id)
+        self.query = (
+            update(Task)
+            .where(condition <= func.statement_timestamp())
+            .values({Task.num_pushed: Task.num_pushed + 1})
+            .returning(Task.id)
+        )
 
     async def run(self):
         """Run the main loop."""

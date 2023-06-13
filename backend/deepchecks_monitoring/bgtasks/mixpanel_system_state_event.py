@@ -10,6 +10,8 @@
 #
 # pylint: disable=unused-argument
 import sqlalchemy as sa
+from redis.asyncio.lock import Lock
+from sqlalchemy.dialects.postgresql import insert as pginsert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.public_models.organization import Organization
@@ -42,7 +44,7 @@ class MixpanelSystemStateEvent(BackgroundWorker):
         task: "Task",
         session: AsyncSession,
         resources_provider: ResourcesProvider,
-        **kwargs
+        lock: Lock
     ):
         """Run task."""
         if not resources_provider.is_analytics_enabled:
@@ -67,11 +69,11 @@ class MixpanelSystemStateEvent(BackgroundWorker):
         """Enqueue task."""
         values = {
             "name": "system-state",
-            "bg_worker_task": cls.queue_name,
+            "bg_worker_task": cls.queue_name(),
             "params": {}
         }
         await session.execute(
-            sa.insert(Task)
+            pginsert(Task)
             .values(values)
             .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT)
         )
