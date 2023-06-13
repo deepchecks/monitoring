@@ -3,6 +3,7 @@ import React from 'react';
 export interface LogoProps {
   withLabel?: boolean;
   margin?: string;
+  width?: string;
 }
 
 export const Logo = (props: LogoProps) => {
@@ -10,6 +11,8 @@ export const Logo = (props: LogoProps) => {
 
   const logoWithoutLabel = require('../../assets/logo/logo.svg').default;
   const logoWithLabel = require('../../assets/logo/monitoring.svg').default;
+
+  const imgWidth = withLabel ? '200px' : '40px';
 
   const logoToUse = () => {
     switch (withLabel) {
@@ -20,5 +23,5 @@ export const Logo = (props: LogoProps) => {
     }
   };
 
-  return <img src={logoToUse()} alt="logo" height="40px" width="200px" style={{ margin: margin }} />;
+  return <img src={logoToUse()} alt="logo" style={{ margin: margin, width: imgWidth, height: '40px' }} />;
 };
