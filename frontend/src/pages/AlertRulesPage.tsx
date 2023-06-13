@@ -20,6 +20,7 @@ import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
 
 import { getAlertFilters, resetAlertFilters } from '../helpers/base/alertFilters';
+import useOnboarding from 'helpers/hooks/useOnboarding';
 
 export const AlertRulesPage = () => {
   const [isDataDialogOpen, setIsDataDialogOpen] = useState(false);
@@ -66,6 +67,7 @@ export const AlertRulesPage = () => {
     setTimeout(() => setCurrentAlertRule(null), 50);
   };
 
+  useOnboarding();
   return (
     <Box margin="36px 0">
       <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
