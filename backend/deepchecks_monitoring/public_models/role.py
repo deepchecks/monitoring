@@ -26,11 +26,16 @@ __all__ = ["Role", "RoleEnum"]
 class RoleEnum(str, enum.Enum):
     """Roles enum."""
 
+    # IMPORTANT:
+    # Keep items in the permissions restrictions order,
+    # from a role with the fewest permissions to a role with the most permissions
+
     ADMIN = "admin"
     OWNER = "owner"
 
     @property
     def role_index(self) -> int:
+        """Return role index."""
         return tuple(type(self)).index(self)
 
 

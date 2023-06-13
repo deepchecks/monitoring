@@ -82,10 +82,11 @@ class UserEvent(BaseEvent):
     """User mixpanel super properties."""
 
     u_id: int  # TODO
-    u_roles: list[str]
+    u_role: str
     u_email: str
     u_name: str
-    u_org: str  # TODO: maybe it should be an org id?
+    u_org_id: int
+    u_org_name: str
     u_created_at: str
 
     @classmethod
@@ -113,12 +114,22 @@ class UserEvent(BaseEvent):
         org = t.cast('Organization', org)
         roles = t.cast('list[Role]', roles)
 
+        roles = (
+            ((role := t.cast('RoleEnum', it.role)).value, role.role_index)
+            for it in roles
+        )
+        max_role = max(
+            roles,
+            key=lambda it: it[1],
+            default=('member', -1)
+        )
         return UserEvent(
             u_id=t.cast(int, user.id),
             u_email=t.cast(str, user.email),
             u_name=t.cast(str, user.full_name),
-            u_roles=[t.cast('RoleEnum', it.role).value for it in roles],
-            u_org=t.cast(str, org.name),
+            u_role=max_role[0],
+            u_org_id=t.cast(int, org.id),
+            u_org_name=t.cast(str, org.name),
             u_created_at=str(user.created_at)
         )
 
