@@ -10,4 +10,4 @@ In order to deploy our open source version on Amazon AWS, you will need to have 
 
 Network Requirements
 --------------------
-Have 443 and 8433 ports open.
+Use the public IPv4 DNS that amazon provides as the domain and make sure the ports 443 and 8433 are open for inbound connection.
