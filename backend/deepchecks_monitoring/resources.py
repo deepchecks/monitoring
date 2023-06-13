@@ -67,6 +67,7 @@ class BaseResourcesProvider:
 
 
 P = t.ParamSpec("P")
+T_MixpanelEvent = t.TypeVar("T_MixpanelEvent", bound=BaseMixpanelEvent)
 
 
 class ResourcesProvider(BaseResourcesProvider):
@@ -425,27 +426,37 @@ class ResourcesProvider(BaseResourcesProvider):
 
     async def lazy_report_mixpanel_event(
         self,
-        event_factory: t.Callable[P, t.Awaitable[BaseMixpanelEvent]],
+        event_factory: t.Callable[P, t.Awaitable[T_MixpanelEvent]],
         *args: P.args,
         **kwargs: P.kwargs
-    ) -> t.Callable[..., None]:
+    ) -> t.Callable[..., T_MixpanelEvent | None]:
         """Create 'report_mixpanel_event' callback for later use."""
         if mixpanel := self._get_mixpanel_event_reporter():
             event = await event_factory(*args, **kwargs)
-            return lambda: mixpanel.report(event)
+            def fn():
+                nonlocal event, mixpanel
+                mixpanel.report(event)
+                return event
+            return fn
         else:
             return lambda: None
 
     async def report_mixpanel_event(
         self,
-        event_factory: t.Callable[P, t.Awaitable[BaseMixpanelEvent]],
+        event_factory: t.Callable[P, t.Awaitable[T_MixpanelEvent]],
         *args: P.args,
         **kwargs: P.kwargs
-    ):
+    ) -> T_MixpanelEvent | None:
         """Send mixpanel event."""
         if mixpanel := self._get_mixpanel_event_reporter():
             event = await event_factory(*args, **kwargs)
             mixpanel.report(event)
+            return event
+
+    @property
+    def is_analytics_enabled(self) -> bool:
+        """Check whether analytics is enabled. """
+        return self._get_mixpanel_event_reporter() is not None
 
     def _get_mixpanel_event_reporter(self) -> MixpanelEventReporter | None:
         mixpanel = self._mixpanel_event_reporter

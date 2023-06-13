@@ -14,6 +14,7 @@ from sqlalchemy.orm import joinedload
 import deepchecks_monitoring
 from deepchecks_monitoring.monitoring_utils import OperatorsEnum
 from deepchecks_monitoring.public_models.organization import OrgTier
+from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.task_type import TaskType
 from deepchecks_monitoring.utils.alerts import AlertSeverity
@@ -25,7 +26,6 @@ if t.TYPE_CHECKING:
 
     from deepchecks_monitoring.public_models.organization import Organization
     from deepchecks_monitoring.public_models.role import RoleEnum
-    from deepchecks_monitoring.public_models.user import User
 
 
 __all__ = [
@@ -476,6 +476,45 @@ class AlertTriggeredEvent(OrganizationEvent):
             alert_rule_threshold=t.cast(AlertRuleCondition, alert_rule.condition).value,
             alert_rule_severity=t.cast(AlertSeverity, alert_rule.alert_severity),
             failed_values={},
+            **super_props.dict()
+        )
+
+
+class HealthcheckEvent(OrganizationEvent):
+    """System state event definition."""
+
+    EVENT_NAME: t.ClassVar[str] = 'healthcheck'
+
+    user_count: int
+    model_count: int
+    alert_count: int
+
+    # TODO:
+    # start_time: datetime
+    # restart: bool
+    # latest_error: str
+
+    @classmethod
+    async def create_event(cls, organization: 'Organization') -> t.Self:
+        """Create event instance."""
+        session = async_object_session(organization)
+        super_props = await OrganizationEvent.from_organization(organization)
+
+        n_of_users = await session.scalar(
+            sa.select(sa.func.count(User.id))
+            .where(User.organization_id == organization.id)
+        )
+        n_of_models = await session.scalar(
+            sa.select(sa.func.count(Model.id))
+        )
+        n_of_alerts = await session.scalar(
+            sa.select(sa.func.count(Alert.id))
+            .where(Alert.resolved.is_(False))
+        )
+        return cls(
+            user_count=n_of_users,
+            model_count=n_of_models,
+            alert_count=n_of_alerts,
             **super_props.dict()
         )
 

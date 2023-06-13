@@ -25,6 +25,7 @@ from sqlalchemy.cimmutabledict import immutabledict
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
+from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
@@ -175,8 +176,15 @@ def execute_worker():
                 )
                 ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
-        workers = [ModelVersionTopicDeletionWorker, ModelVersionOffsetUpdate, ModelVersionCacheInvalidation,
-                   ModelDataIngestionAlerter, DeleteDbTableTask, AlertsTask]
+        workers = [
+            ModelVersionTopicDeletionWorker,
+            ModelVersionOffsetUpdate,
+            ModelVersionCacheInvalidation,
+            ModelDataIngestionAlerter,
+            DeleteDbTableTask,
+            AlertsTask,
+            MixpanelSystemStateEvent
+        ]
 
         # Add ee workers
         if with_ee:
