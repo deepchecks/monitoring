@@ -544,5 +544,5 @@ class MixpanelEventReporter:
         except Exception:  # pylint: disable=broad-except
             self.logger.exception(
                 'Failed to send mixpanel event.\n'
-                f'Event:\n{json.dumps(kwargs, indent=3)}'
+                f'Event:\n{json.dumps(kwargs, indent=3, cls=self.mixpanel._serializer)}'
             )
