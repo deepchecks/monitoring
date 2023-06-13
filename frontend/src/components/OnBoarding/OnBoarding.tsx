@@ -12,6 +12,7 @@ import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
 import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { removeStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 import DownloadNotebook from './components/DownloadNotebook';
 import ColabLink from './components/ColabLink';
@@ -65,6 +66,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
       if (res?.step < 4) {
         setActiveStep(res?.step);
       } else if (res?.step === 4) {
+        removeStorageItem(storageKeys.is_onboarding);
         redirectToDashboard();
       }
     }, 5000);
