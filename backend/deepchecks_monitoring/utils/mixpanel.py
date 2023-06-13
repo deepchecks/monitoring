@@ -51,7 +51,7 @@ class BaseEvent(pydantic.BaseModel):
 
 
 class OrganizationEvent(BaseEvent):
-    """Organization mixpanel super properties."""
+    """Organization event definition."""
 
     o_deployment: str = 'saas'  # TODO: figure out how this should be defined
     o_tier: OrgTier
@@ -78,15 +78,13 @@ class OrganizationEvent(BaseEvent):
         return value
 
 
-class UserEvent(BaseEvent):
-    """User mixpanel super properties."""
+class UserEvent(OrganizationEvent):
+    """User event definition."""
 
-    u_id: int  # TODO
+    u_id: int
     u_role: str
     u_email: str
     u_name: str
-    u_org_id: int
-    u_org_name: str
     u_created_at: str
 
     @classmethod
@@ -113,6 +111,7 @@ class UserEvent(BaseEvent):
 
         org = t.cast('Organization', org)
         roles = t.cast('list[Role]', roles)
+        super_props = await OrganizationEvent.from_organization(org)
 
         roles = (
             ((role := t.cast('RoleEnum', it.role)).value, role.role_index)
@@ -128,9 +127,8 @@ class UserEvent(BaseEvent):
             u_email=t.cast(str, user.email),
             u_name=t.cast(str, user.full_name),
             u_role=max_role[0],
-            u_org_id=t.cast(int, org.id),
-            u_org_name=t.cast(str, org.name),
-            u_created_at=str(user.created_at)
+            u_created_at=str(user.created_at),
+            **super_props.dict()
         )
 
 
