@@ -45,9 +45,11 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
         with:
           registry-type: public
-      - name: Tag image as latest-release
+      - name: Set TAG env var
         run: |
           echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
+      - name: Tag image as latest-release
+        run: |
           docker buildx imagetools create \
             --tag ${{ secrets.MON_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
             --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
