@@ -3,8 +3,8 @@ export const constants = {
   first: {
     title: 'Welcome to Deepchecks!',
     description:
-      'Here is how you can quickly create your first model in Deepchecks.\nAll You need is to open a Python notebook, follow the instructions and in the right places copy the example code into your notebook.\n\nGood luck!',
-    chooseText: 'Use a demo model of your own:',
+      'Creating your first model in Deepchecks can be done in several ways: \n\nIf this is the first time you are working with deepchecks, you would most likely like to work with our onboarding interactive user interface.\n The interactive mode supports two methods:\n 1.Demo Data, which gives a great introduction to our product.\n 2.To have a more thorough experience and work with the model on your real challenges, you can import your own data.\n\n If you are experienced with Deepchecks and/or enthusiastic to move fast,  you can directly use our SDK, all you need is to have a Python environment.\n You can use Jupyter Notebook, Colab or your favorite Python IDE. \n\n Good luck!',
+    chooseText: 'Choose model data type:',
     userDataBtnLabel: 'My model',
     demoDataBtnLabel: 'Demo data',
     userDataToggleLabel: 'My Data',

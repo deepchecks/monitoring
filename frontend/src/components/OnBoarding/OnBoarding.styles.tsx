@@ -10,23 +10,17 @@ const FirstOnBoardingTitle = styled(Typography)(({ theme }) => ({
   margin: '40px 0'
 }));
 
-const FirstOnBoardingBoxLabel = styled(Typography)(({ theme }) => ({
-  fontSize: 20,
-  fontWeight: 800,
-  color: theme.palette.primary.main,
-  margin: '0 auto 20px'
-}));
-
-const FirstOnBoardingOutlinedBox = styled(StyledContainer)(({ theme }) => ({
-  border: `2px solid ${theme.palette.primary.main}`,
-  borderRadius: '16px',
+const FirstOnBoardingOutlinedBox = styled(StyledContainer)(() => ({
+  padding: 0,
+  margin: 0,
   cursor: 'pointer'
 }));
 
 const FirstOnBoardingSelectContainer = styled(StyledContainer)(() => ({
   display: 'grid',
   gridTemplateColumns: 'auto 270px',
-  alignItems: 'center'
+  alignItems: 'center',
+  padding: 0
 }));
 
 const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
@@ -61,7 +55,6 @@ const OnBoardingAdditionalContainer = styled(StyledContainer)({
 
 export {
   FirstOnBoardingTitle,
-  FirstOnBoardingBoxLabel,
   FirstOnBoardingOutlinedBox,
   FirstOnBoardingSelectContainer,
   OnBoardingDocsLink,
