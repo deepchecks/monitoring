@@ -433,9 +433,9 @@ class ResourcesProvider(BaseResourcesProvider):
         """Create 'report_mixpanel_event' callback for later use."""
         if mixpanel := self._get_mixpanel_event_reporter():
             if self.settings.is_cloud:
-                kwargs['deployment'] = 'saas'
+                kwargs["deployment"] = "saas"
             elif self.settings.is_on_prem:
-                kwargs['deployment'] = 'on-prem'
+                kwargs["deployment"] = "on-prem"
             event = await event_factory(*args, **kwargs)
             def fn():
                 nonlocal event, mixpanel
@@ -454,9 +454,9 @@ class ResourcesProvider(BaseResourcesProvider):
         """Send mixpanel event."""
         if mixpanel := self._get_mixpanel_event_reporter():
             if self.settings.is_cloud:
-                kwargs['deployment'] = 'saas'
+                kwargs["deployment"] = "saas"
             elif self.settings.is_on_prem:
-                kwargs['deployment'] = 'on-prem'
+                kwargs["deployment"] = "on-prem"
             event = await event_factory(*args, **kwargs)
             mixpanel.report(event)
             return event
