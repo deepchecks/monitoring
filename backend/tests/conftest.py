@@ -7,7 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-#  pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,unused-argument,invalid-name
 import asyncio
 import os
 import random
