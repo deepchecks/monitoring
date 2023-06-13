@@ -63,7 +63,8 @@ class MixpanelSystemStateEvent(BackgroundWorker):
                 )
 
     @classmethod
-    async def enqueue_task(cls,session: AsyncSession):
+    async def enqueue_task(cls, session: AsyncSession):
+        """Enqueue task."""
         values = {
             "name": "system-state",
             "bg_worker_task": cls.queue_name,
