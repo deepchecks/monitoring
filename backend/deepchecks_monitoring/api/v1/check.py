@@ -270,9 +270,10 @@ async def get_checks(
 
     def get_check_order(check):
         order_by_name = ['SingleDatasetPerformance',
+                         'FeatureDrift',
                          'LabelDrift',
                          'PredictionDrift',
-                         'FeatureDrift']
+                         ]
         if check.config['class_name'] in order_by_name:
             return order_by_name.index(check.config['class_name'])
         # If not in the list, first show checks from model_evaluation module
