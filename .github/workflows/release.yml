@@ -74,6 +74,9 @@ jobs:
       - name: Download task definition
         run: |
           aws ecs describe-task-definition --task-definition mon-commercial-staging --query taskDefinition > task-definition.json
+      - name: Set TAG env var
+        run: |
+          echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
       - name: Fill in the new image ID in the Amazon ECS task definition - app
         id: render-app-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1
