@@ -68,6 +68,7 @@ export const AlertRulesPage = () => {
   };
 
   useOnboarding();
+
   return (
     <Box margin="36px 0">
       <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />

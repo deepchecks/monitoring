@@ -81,6 +81,7 @@ export const DashboardPage = () => {
   }, [versionData]);
 
   useOnboarding();
+
   return (
     <>
       <Grid
