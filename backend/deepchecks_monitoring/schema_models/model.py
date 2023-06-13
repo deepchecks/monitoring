@@ -7,6 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+#
+# pylint: disable=import-outside-toplevel
 """Module defining the model ORM model."""
 import typing as t
 from datetime import datetime
