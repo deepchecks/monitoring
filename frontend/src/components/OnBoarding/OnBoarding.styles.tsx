@@ -19,7 +19,8 @@ const FirstOnBoardingOutlinedBox = styled(StyledContainer)(() => ({
 const FirstOnBoardingSelectContainer = styled(StyledContainer)(() => ({
   display: 'grid',
   gridTemplateColumns: 'auto 270px',
-  alignItems: 'center'
+  alignItems: 'center',
+  padding: 0
 }));
 
 const OnBoardingDocsLink = styled(Link)(({ theme }) => ({

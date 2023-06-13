@@ -6,7 +6,6 @@ import OnBoarding from '../OnBoarding';
 import { getOnboardingStateApiV1OnboardingGet } from 'api/generated';
 
 import { StyledContainer, StyledImage, StyledText } from 'components/lib';
-import { isLargeDesktop } from 'components/lib/theme/typography';
 
 import { FirstOnBoardingOutlinedBox, FirstOnBoardingSelectContainer, FirstOnBoardingTitle } from '../OnBoarding.styles';
 
@@ -20,8 +19,6 @@ const FirstOnBoarding = () => {
   const [initialStep, setInitialStep] = useState(0);
 
   const navigate = useNavigate();
-
-  const font = isLargeDesktop ? { size: 20, lineHeight: '22px' } : { size: 16, lineHeight: '18px' };
 
   useEffect(() => {
     const handleConditionalOnboarding = async () => {
@@ -46,21 +43,8 @@ const FirstOnBoarding = () => {
           <OnBoarding dataType={dataType} initialStep={initialStep} />
         ) : (
           <>
-            <StyledText
-              text={constants.first.description}
-              type="bodyBold"
-              letterSpacing="1.5px"
-              lineHeight={font.lineHeight}
-              fontSize={font.size}
-            />
-            <StyledText
-              text={constants.first.chooseText}
-              type="bodyNormal"
-              margin="50px 0 12px"
-              letterSpacing="1.5px"
-              lineHeight={font.lineHeight}
-              fontSize={font.size}
-            />
+            <StyledText text={constants.first.description} type="h2" color="gray" fontSize="18px" />
+            <StyledText text={constants.first.chooseText} margin="50px 0 12px" type="h3" fontSize="18px" />
             <StyledContainer display="flex" flexDirection="row" gap="24px" padding={0}>
               <FirstOnBoardingOutlinedBox onClick={() => setDataType('user')}>
                 <StyledImage src={userDataImg} />
