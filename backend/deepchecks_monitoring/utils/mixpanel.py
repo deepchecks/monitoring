@@ -53,13 +53,17 @@ class BaseEvent(pydantic.BaseModel):
 class OrganizationEvent(BaseEvent):
     """Organization event definition."""
 
-    o_deployment: str = 'saas'  # TODO: figure out how this should be defined
+    o_deployment: str
     o_tier: OrgTier
     o_name: str
     o_version: str = deepchecks_monitoring.__version__
 
     @classmethod
-    async def from_organization(cls, org: 'Organization') -> 'OrganizationEvent':
+    async def from_organization(
+        cls,
+        org: 'Organization',
+        deployment: str = 'undefined'
+    ) -> 'OrganizationEvent':
         """Create an event instance from organization record."""
         # NOTE:
         # this function is async only for consistency and
@@ -67,14 +71,14 @@ class OrganizationEvent(BaseEvent):
         return OrganizationEvent(
             o_name=t.cast(str, org.name),
             o_tier=t.cast(OrgTier, org.tier),
-            o_deployment='saas'  # TODO:
+            o_deployment=deployment
         )
 
     @pydantic.validator('o_deployment')
     @classmethod
     def validate_deployment_value(cls, value):
         """Validate deployment value."""
-        assert value in {'saas', 'on-prem'}
+        assert value in {'saas', 'on-prem', 'undefined'}
         return value
 
 
@@ -88,7 +92,11 @@ class UserEvent(OrganizationEvent):
     u_created_at: str
 
     @classmethod
-    async def from_user(cls, user: 'User') -> 'UserEvent':
+    async def from_user(
+        cls,
+        user: 'User',
+        deployment: str = 'undefined'
+    ) -> 'UserEvent':
         """Create an event instance from user record."""
         session = t.cast('AsyncSession', async_object_session(user))
         unloaded_relations = t.cast('set[str]', sa.inspect(user).unloaded)
@@ -111,7 +119,7 @@ class UserEvent(OrganizationEvent):
 
         org = t.cast('Organization', org)
         roles = t.cast('list[Role]', roles)
-        super_props = await OrganizationEvent.from_organization(org)
+        super_props = await OrganizationEvent.from_organization(org, deployment=deployment)
 
         roles = (
             ((role := t.cast('RoleEnum', it.role)).value, role.role_index)
@@ -144,10 +152,11 @@ class InvitationEvent(UserEvent):
     async def create_event(
         cls,
         invitees: list[str],
-        user: 'User'
+        user: 'User',
+        deployment: str = 'undefined'
     ) -> t.Self:
         """Create event instance."""
-        super_props = await UserEvent.from_user(user)
+        super_props = await UserEvent.from_user(user, deployment=deployment)
         return cls(
             invitees=invitees,
             invitees_count=len(invitees),
@@ -164,10 +173,11 @@ class _AuthEvent(UserEvent):
     async def create_event(
         cls,
         method: str,
-        user: 'User'
+        user: 'User',
+        deployment: str = 'undefined'
     ) -> t.Self:
         """Create event instance."""
-        super_props = await UserEvent.from_user(user)
+        super_props = await UserEvent.from_user(user, deployment=deployment)
         return cls(
             method=method,
             **super_props.dict()
@@ -205,11 +215,12 @@ class ModelCreatedEvent(OrganizationEvent):
     async def create_event(
         cls,
         model: 'Model',
-        user: 'User'
+        user: 'User',
+        deployment: str = 'undefined'
     ) -> t.Self:
         """Create event instance."""
         org = t.cast('Organization', user.organization)
-        super_props = await OrganizationEvent.from_organization(org)
+        super_props = await OrganizationEvent.from_organization(org, deployment=deployment)
         return cls(
             id=t.cast(int, model.id),
             name=t.cast(str, model.name),
@@ -233,11 +244,12 @@ class ModelDeletedEvent(OrganizationEvent):
     async def create_event(
         cls,
         model: 'Model',
-        user: 'User'
+        user: 'User',
+        deployment: str = 'undefined'
     ) -> t.Self:
         """Create event instance."""
         org = t.cast('Organization', user.organization)
-        super_props = await OrganizationEvent.from_organization(org)
+        super_props = await OrganizationEvent.from_organization(org, deployment=deployment)
 
         session = async_object_session(model)
         unloaded_relations = t.cast('set[str]', sa.inspect(model).unloaded)
@@ -275,11 +287,12 @@ class ModelVersionCreatedEvent(OrganizationEvent):
     async def create_event(
         cls,
         model_version: 'ModelVersion',
-        user: 'User'
+        user: 'User',
+        deployment: str = 'undefined'
     ):
         """Create event instance."""
         org = t.cast('Organization', user.organization)
-        super_props = await OrganizationEvent.from_organization(org)
+        super_props = await OrganizationEvent.from_organization(org, deployment=deployment)
 
         session = async_object_session(model_version)
         unloaded_relations = t.cast('set[str]', sa.inspect(model_version).unloaded)
@@ -318,11 +331,12 @@ class ProductionDataUploadEvent(OrganizationEvent):
         n_of_received_samples: int,
         n_of_accepted_samples: int,
         model_version: 'ModelVersion',
-        user: 'User'
+        user: 'User',
+        deployment: str = 'undefined'
     ):
         """Create event instance."""
         org = t.cast('Organization', user.organization)
-        super_props = await OrganizationEvent.from_organization(org)
+        super_props = await OrganizationEvent.from_organization(org, deployment=deployment)
 
         session = async_object_session(model_version)
         unloaded_relations = t.cast('set[str]', sa.inspect(model_version).unloaded)
@@ -360,11 +374,12 @@ class LabelsUploadEvent(OrganizationEvent):
         n_of_received_labels: int,
         n_of_accepted_labels: int,
         model: 'Model',
-        user: 'User'
+        user: 'User',
+        deployment: str = 'undefined'
     ):
         """Create event instance."""
         org = t.cast('Organization', user.organization)
-        super_props = await OrganizationEvent.from_organization(org)
+        super_props = await OrganizationEvent.from_organization(org, deployment=deployment)
         return cls(
             model_id=t.cast(int, model.id),
             model_name=t.cast(str, model.name),
@@ -406,9 +421,10 @@ class AlertRuleCreatedEvent(UserEvent):
         cls,
         alert_rule: 'AlertRule',
         user: 'User',
+        deployment: str = 'undefined'
     ):
         """Create event instance."""
-        super_props = await UserEvent.from_user(user)
+        super_props = await UserEvent.from_user(user, deployment=deployment)
         session = async_object_session(alert_rule)
 
         monitor = t.cast(Monitor, await session.scalar(
@@ -458,9 +474,10 @@ class AlertTriggeredEvent(OrganizationEvent):
     async def create_event(
         cls,
         alert: 'Alert',
-        organization: 'Organization'
+        organization: 'Organization',
+        deployment: str = 'undefined'
     ):
-        super_props = await OrganizationEvent.from_organization(organization)
+        super_props = await OrganizationEvent.from_organization(organization, deployment=deployment)
         session = async_object_session(alert)
         unloaded_relations = t.cast('set[str]', sa.inspect(alert).unloaded)
 
@@ -495,10 +512,14 @@ class HealthcheckEvent(OrganizationEvent):
     # latest_error: str
 
     @classmethod
-    async def create_event(cls, organization: 'Organization') -> t.Self:
+    async def create_event(
+        cls,
+        organization: 'Organization',
+        deployment: str = 'undefined'
+    ) -> t.Self:
         """Create event instance."""
         session = async_object_session(organization)
-        super_props = await OrganizationEvent.from_organization(organization)
+        super_props = await OrganizationEvent.from_organization(organization, deployment=deployment)
 
         n_of_users = await session.scalar(
             sa.select(sa.func.count(User.id))
