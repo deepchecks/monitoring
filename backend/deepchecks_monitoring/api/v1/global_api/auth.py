@@ -95,11 +95,10 @@ async def auth0_callback(
         if is_signup
         else LoginEvent
     )
-    resources_provider.report_mixpanel_event(
-        await MixpanelEvent.create_event(
-            user=user,
-            method='email'  # TODO:
-        )
+    await resources_provider.report_mixpanel_event(
+        MixpanelEvent.create_event,
+        user=user,
+        method='email'  # TODO:
     )
 
     if settings.debug_mode:
@@ -120,11 +119,10 @@ async def logout(
     resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Logout the user."""
-    resources_provider.report_mixpanel_event(
-        await LogoutEvent.create_event(
-            user=user,
-            method='email'  # TODO:
-        )
+    await resources_provider.report_mixpanel_event(
+        LogoutEvent.create_event,
+        user=user,
+        method='email'  # TODO:
     )
 
     resp = RedirectResponse(url=DEFAULT_RETURN_URI)

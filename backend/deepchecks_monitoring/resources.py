@@ -66,6 +66,9 @@ class BaseResourcesProvider:
         pass
 
 
+P = t.ParamSpec("P")
+
+
 class ResourcesProvider(BaseResourcesProvider):
     """Provider of resources."""
 
@@ -420,23 +423,44 @@ class ResourcesProvider(BaseResourcesProvider):
         except TopicAlreadyExistsError:
             return True
 
-    def report_mixpanel_event(self, event: BaseMixpanelEvent):
+    async def lazy_report_mixpanel_event(
+        self,
+        event_factory: t.Callable[P, t.Awaitable[BaseMixpanelEvent]],
+        *args: P.args,
+        **kwargs: P.kwargs
+    ) -> t.Callable[..., None]:
+        """Create 'report_mixpanel_event' callback for later use."""
+        if mixpanel := self._get_mixpanel_event_reporter():
+            event = await event_factory(*args, **kwargs)
+            return lambda: mixpanel.report(event)
+        else:
+            return lambda: None
+
+    async def report_mixpanel_event(
+        self,
+        event_factory: t.Callable[P, t.Awaitable[BaseMixpanelEvent]],
+        *args: P.args,
+        **kwargs: P.kwargs
+    ):
         """Send mixpanel event."""
+        if mixpanel := self._get_mixpanel_event_reporter():
+            event = await event_factory(*args, **kwargs)
+            mixpanel.report(event)
+
+    def _get_mixpanel_event_reporter(self) -> MixpanelEventReporter | None:
+        mixpanel = self._mixpanel_event_reporter
+
+        if mixpanel is not None:
+            return mixpanel
         if self.settings.enable_analytics is False:
             logging.getLogger("server").warning({"message": "Analytics gathering is disabled"})
             return
+        if token := self.settings.mixpanel_id:
+            mixpanel = MixpanelEventReporter.from_token(token)
+            self._mixpanel_event_reporter = mixpanel
+            return mixpanel
 
-        mixpanel = self._mixpanel_event_reporter
-
-        if mixpanel is None:
-            if token := self.settings.mixpanel_id:
-                mixpanel = MixpanelEventReporter.from_token(token)
-                self._mixpanel_event_reporter = mixpanel
-            else:
-                logging.getLogger("server").warning({"message": "Mixpanel token is not provided"})
-                return
-
-        mixpanel.report(event)
+        logging.getLogger("server").warning({"message": "Mixpanel token is not provided"})
 
     def get_features_control(self, user: User) -> FeaturesControl:  # pylint: disable=unused-argument
         """Return features control."""
@@ -458,4 +482,3 @@ class ResourcesProvider(BaseResourcesProvider):
             "hotjar_id": None,
             "hotjar_sv": None
         }
-

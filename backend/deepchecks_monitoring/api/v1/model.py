@@ -208,8 +208,10 @@ async def get_create_model(
         await connection.run_sync(versions_map_table.metadata.create_all)
         await session.commit()
 
-        resources_provider.report_mixpanel_event(
-            await ModelCreatedEvent.create_event(model=model, user=user)
+        await resources_provider.report_mixpanel_event(
+            ModelCreatedEvent.create_event,
+            model=model,
+            user=user
         )
 
     return {"id": model.id, "name": model.name}
@@ -578,7 +580,11 @@ async def delete_model(
     # NOTE:
     # mixpanel event must be created before model deletion
     # to be able to gather info about the model
-    mixpanel_event = await ModelDeletedEvent.create_event(model=model, user=user)
+    report_mixpanel_event = await resources_provider.lazy_report_mixpanel_event(
+        ModelDeletedEvent.create_event,
+        model=model,
+        user=user
+    )
 
     organization_schema = user.organization.schema_name
     tables = [f'"{organization_schema}"."{model.get_sample_labels_table_name()}"',
@@ -591,8 +597,7 @@ async def delete_model(
     await insert_delete_db_table_task(session=session, full_table_paths=tables)
     await session.execute(sa.delete(Model).where(model_identifier.as_expression))
     await session.commit()
-
-    resources_provider.report_mixpanel_event(mixpanel_event)
+    report_mixpanel_event()
 
 
 async def drop_tables(

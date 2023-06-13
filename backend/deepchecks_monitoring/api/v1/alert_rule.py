@@ -98,11 +98,10 @@ async def create_alert_rule(
     rule_id = (await session.execute(stm)).scalar_one()
     await session.commit()
 
-    resources_provider.report_mixpanel_event(
-        await AlertRuleCreatedEvent.create_event(
-            alert_rule=await session.get(AlertRule, rule_id),
-            user=user
-        )
+    await resources_provider.report_mixpanel_event(
+        AlertRuleCreatedEvent.create_event,
+        alert_rule=await session.get(AlertRule, rule_id),
+        user=user
     )
 
     return {"id": rule_id}

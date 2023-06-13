@@ -89,11 +89,10 @@ class AlertsTask(BackgroundWorker):
                 resources_provider=resources_provider,
                 logger=self._logger.getChild("alert-notificator")
             )
-            resources_provider.report_mixpanel_event(
-                await AlertTriggeredEvent.create_event(
-                    alert=alert,
-                    organization=await session.get(Organization, organization_id)
-                )
+            await resources_provider.report_mixpanel_event(
+                AlertTriggeredEvent.create_event,
+                alert=alert,
+                organization=await session.get(Organization, organization_id)
             )
             await notificator.notify()
 

@@ -117,11 +117,10 @@ async def create_invite(
         }
     )
 
-    resources_provicer.report_mixpanel_event(
-        await InvitationEvent.create_event(
-            user=admin,
-            invitees=[str(it) for it in body.emails]
-        )
+    await resources_provicer.report_mixpanel_event(
+        InvitationEvent.create_event,
+        user=admin,
+        invitees=[str(it) for it in body.emails]
     )
 
     return Response(status_code=status.HTTP_200_OK)
