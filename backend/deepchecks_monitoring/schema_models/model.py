@@ -174,8 +174,21 @@ class Model(Base, MetadataMixin, PermissionMixin):
     async def n_of_predictions(self):
         """Return number of non nullable predictions."""
         # TODO: check if versions are loaded
-        session = async_object_session(self)
-        versions = t.cast("list[ModelVersion]", self.versions)
+        session = t.cast(AsyncSession, async_object_session(self))
+        unloaded_relations = t.cast('set[str]', sa.inspect(self).unloaded)
+
+        if 'versions' not in unloaded_relations:
+            versions = self.versions
+        else:
+            from deepchecks_monitoring.schema_models.model_version import ModelVersion
+            q = sa.select(ModelVersion).where(ModelVersion.model_id == self.id)
+            versions = (await session.scalars(q)).all()
+
+        versions = t.cast("list[ModelVersion]", versions)
+
+        if len(versions) == 0:
+            return 0
+
         prediction_column = sa.column(SAMPLE_PRED_COL)
 
         tables = [
