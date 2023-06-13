@@ -67,7 +67,7 @@ class BaseResourcesProvider:
 
 
 P = t.ParamSpec("P")
-T_MixpanelEvent = t.TypeVar("T_MixpanelEvent", bound=BaseMixpanelEvent)
+TMixpanelEvent = t.TypeVar("TMixpanelEvent", bound=BaseMixpanelEvent)
 
 
 class ResourcesProvider(BaseResourcesProvider):
@@ -426,10 +426,10 @@ class ResourcesProvider(BaseResourcesProvider):
 
     async def lazy_report_mixpanel_event(
         self,
-        event_factory: t.Callable[P, t.Awaitable[T_MixpanelEvent]],
+        event_factory: t.Callable[P, t.Awaitable[TMixpanelEvent]],
         *args: P.args,
         **kwargs: P.kwargs
-    ) -> t.Callable[..., T_MixpanelEvent | None]:
+    ) -> t.Callable[..., TMixpanelEvent | None]:
         """Create 'report_mixpanel_event' callback for later use."""
         if mixpanel := self._get_mixpanel_event_reporter():
             event = await event_factory(*args, **kwargs)
@@ -443,10 +443,10 @@ class ResourcesProvider(BaseResourcesProvider):
 
     async def report_mixpanel_event(
         self,
-        event_factory: t.Callable[P, t.Awaitable[T_MixpanelEvent]],
+        event_factory: t.Callable[P, t.Awaitable[TMixpanelEvent]],
         *args: P.args,
         **kwargs: P.kwargs
-    ) -> T_MixpanelEvent | None:
+    ) -> TMixpanelEvent | None:
         """Send mixpanel event."""
         if mixpanel := self._get_mixpanel_event_reporter():
             event = await event_factory(*args, **kwargs)

@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-# pylint: disable=import-outside-toplevel
+# pylint: disable=import-outside-toplevel,redefined-outer-name
 """Module defining the model ORM model."""
 import typing as t
 from datetime import datetime
@@ -182,7 +182,6 @@ class Model(Base, MetadataMixin, PermissionMixin):
         if "versions" not in unloaded_relations:
             versions = self.versions
         else:
-            # pylint: disable=redefined-outer-name
             from deepchecks_monitoring.schema_models.model_version import ModelVersion
             q = sa.select(ModelVersion).where(ModelVersion.model_id == self.id)
             versions = (await session.scalars(q)).all()

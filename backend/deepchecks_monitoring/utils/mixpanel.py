@@ -579,7 +579,12 @@ class MixpanelEventReporter:
         try:
             self.mixpanel.track(**kwargs)
         except Exception:  # pylint: disable=broad-except
+            serialized_event = json.dumps(
+                kwargs,
+                indent=3,
+                cls=self.mixpanel._serializer  # pylint: disable=protected-access
+            )
             self.logger.exception(
                 'Failed to send mixpanel event.\n'
-                f'Event:\n{json.dumps(kwargs, indent=3, cls=self.mixpanel._serializer)}'
+                f'Event:\n{serialized_event}'
             )
