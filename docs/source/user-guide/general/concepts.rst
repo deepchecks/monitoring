@@ -20,7 +20,7 @@ you can run a `Test Suite <#test-suite>`__ for a specific point in time, which w
 different checks run on that time frame.
 
 Several core concepts, such as Checks and the Test Suite are in fact elements of the
-:doc:`Deepchecks Testing Package <deepchecks:getting-started/welcome>`__, used by Deepchecks Monitoring to test ML system over
+:doc:`Deepchecks Testing Package <deepchecks:getting-started/welcome>`, used by Deepchecks Monitoring to test ML system over
 time.
 
 All of these monitoring components - Chec:ks, Monitors, Alert Rules and Alerts - are defined on a per-model basis, and

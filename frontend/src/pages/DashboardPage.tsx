@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import {
   MonitorSchema,
@@ -17,16 +16,15 @@ import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
 import { getParams } from 'helpers/utils/getParams';
-import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
 import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 import { ONE_MINUTE, THIRTY_SECONDS } from 'helpers/base/time';
+import useOnboarding from 'helpers/hooks/useOnboarding';
 
 const constants = { snackbarAlertMessage: 'Initial first load can take a few minutes, we are processing your data' };
 
 let TIMEOUT: NodeJS.Timeout;
 
 export const DashboardPage = () => {
-  const navigate = useNavigate();
   const { data: versionData } = useRetrieveBackendVersionApiV1BackendVersionGet();
   const {
     data: dashboard,
@@ -38,9 +36,6 @@ export const DashboardPage = () => {
       refetchInterval: ONE_MINUTE
     }
   });
-  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
-
-  const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
 
   function refetchMonitors() {
     refetch();
@@ -64,11 +59,7 @@ export const DashboardPage = () => {
     setIsDrawerOpen(false);
   }, []);
 
-  useEffect(() => {
-    if (dashboard?.monitors?.length === 0 && (onboardingEnabled || !isCloud)) {
-      navigate({ pathname: '/onboarding' });
-    }
-  }, [dashboard, onboardingEnabled]);
+  const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
 
   useEffect(() => {
     if (!dashboard) {
@@ -88,6 +79,8 @@ export const DashboardPage = () => {
       o_deployment: isCloud ? 'saas' : 'on-prem'
     });
   }, [versionData]);
+
+  useOnboarding();
 
   return (
     <>

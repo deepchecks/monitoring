@@ -20,6 +20,7 @@ import AnalysisItem from 'components/Analysis/AnalysisItem/AnalysisItem';
 import { getParams } from 'helpers/utils/getParams';
 import { CheckType } from 'helpers/types/check';
 import { onDrawerOpen } from 'helpers/base/onDrawerOpen';
+import useOnboarding from 'helpers/hooks/useOnboarding';
 
 const AnalysisPage = () => {
   const location = useLocation();
@@ -93,6 +94,8 @@ const AnalysisPage = () => {
       refetch();
     }
   }, [modelId, refetch]);
+
+  useOnboarding();
 
   return (
     <>
