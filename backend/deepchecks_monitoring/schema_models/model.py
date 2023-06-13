@@ -177,11 +177,12 @@ class Model(Base, MetadataMixin, PermissionMixin):
         """Return number of non nullable predictions."""
         # TODO: check if versions are loaded
         session = t.cast(AsyncSession, async_object_session(self))
-        unloaded_relations = t.cast('set[str]', sa.inspect(self).unloaded)
+        unloaded_relations = t.cast("set[str]", sa.inspect(self).unloaded)
 
-        if 'versions' not in unloaded_relations:
+        if "versions" not in unloaded_relations:
             versions = self.versions
         else:
+            # pylint: disable=redefined-outer-name
             from deepchecks_monitoring.schema_models.model_version import ModelVersion
             q = sa.select(ModelVersion).where(ModelVersion.model_id == self.id)
             versions = (await session.scalars(q)).all()
