@@ -74,11 +74,7 @@ async def get_or_create_version(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
-<<<<<<< HEAD
         resources_provider: ResourcesProvider = ResourcesProviderDep
-=======
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
->>>>>>> main
 ):
     """Create a new model version.
 
