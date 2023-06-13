@@ -117,6 +117,8 @@ def create_application(
             # we use jsonformatter therefore messages must be passed as dictionaries
             # otherwise they will not appear the the log
             logger.info({"message": "Local ray instance is not instantiated"})
+        except ImportError:
+            logger.info({"message": "Ray is not installed"})
         else:
             logger.info({"message": "Connected to local ray instance"})
             # init actors

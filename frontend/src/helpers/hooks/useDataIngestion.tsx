@@ -9,6 +9,7 @@ import { setLineGraphOptions } from '../base/setGraphOptions';
 import useModels from './useModels';
 
 import { resError } from 'helpers/types/resError';
+import { ONE_MINUTE } from 'helpers/base/time';
 
 const useDataIngestion = (modelId: number | null = null, selectedPointType?: string, timeValue?: number) => {
   const { modelsMap } = useModels();
@@ -26,7 +27,8 @@ const useDataIngestion = (modelId: number | null = null, selectedPointType?: str
       },
       {
         query: {
-          enabled: modelId != undefined
+          enabled: modelId != undefined,
+          refetchInterval: ONE_MINUTE
         }
       }
     );
@@ -39,7 +41,8 @@ const useDataIngestion = (modelId: number | null = null, selectedPointType?: str
       },
       {
         query: {
-          enabled: modelId == undefined
+          enabled: modelId == undefined,
+          refetchInterval: ONE_MINUTE
         }
       }
     );

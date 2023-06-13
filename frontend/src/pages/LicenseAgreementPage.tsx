@@ -19,7 +19,6 @@ import { eulaAcceptanceApiV1UsersAcceptEulaGet } from 'api/generated';
 import { termsAndConditions } from 'helpers/base/termsAndConditions';
 
 import { theme } from '../components/lib/theme';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 export const LicenseAgreementPage = function () {
   const descriptionElementRef = React.useRef<HTMLElement>(null);
@@ -38,10 +37,6 @@ export const LicenseAgreementPage = function () {
     });
   };
 
-  useEffect(() => {
-    reportEvent(events.authentication.signUp);
-  }, []);
-
   return (
     <ThemeProvider theme={theme}>
       <Grid container component="main" sx={{ height: '100vh' }}>
@@ -49,11 +44,11 @@ export const LicenseAgreementPage = function () {
       </Grid>
       <Dialog open={true} scroll="paper" fullWidth={true} maxWidth="xl">
         <DialogTitle sx={{ ml: '45px' }}>Please review and approve our service terms and conditions</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ marginBottom: '16px' }}>
           <DialogContentText
             id="scroll-dialog-description"
             ref={descriptionElementRef}
-            sx={{ padding: '36px', width: 'calc(100% - 48px)' }}
+            sx={{ padding: '0 16px', width: 'calc(100% - 48px)' }}
           >
             <div dangerouslySetInnerHTML={{ __html: termsAndConditions }} />
           </DialogContentText>
@@ -64,7 +59,12 @@ export const LicenseAgreementPage = function () {
             label="I agree to the end user license agreement"
             sx={{ flex: 1, ml: 0 }}
           />
-          <Button disabled={!agree} onClick={handleSubscribe}>
+          <Button
+            disabled={!agree}
+            onClick={handleSubscribe}
+            sx={{ width: '100px', marginRight: '16px' }}
+            variant="contained"
+          >
             Continue
           </Button>
         </DialogActions>
