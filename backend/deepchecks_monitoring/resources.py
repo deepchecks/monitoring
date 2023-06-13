@@ -455,7 +455,7 @@ class ResourcesProvider(BaseResourcesProvider):
 
     @property
     def is_analytics_enabled(self) -> bool:
-        """Check whether analytics is enabled. """
+        """Check whether analytics is enabled."""
         return self._get_mixpanel_event_reporter() is not None
 
     def _get_mixpanel_event_reporter(self) -> MixpanelEventReporter | None:
