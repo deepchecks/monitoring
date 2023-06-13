@@ -36,3 +36,4 @@ jupytext>=1.14.5
 uvicorn==0.21.1
 ddtrace>=1.0,<2
 python-json-logger>=2.0.7
+mixpanel==4.10.0
