@@ -13,9 +13,10 @@ const constants = {
 
 interface GenerateTokenProps {
   regenerateApiToken: () => void;
+  isLocal: boolean;
 }
 
-const GenerateToken = ({ regenerateApiToken }: GenerateTokenProps) => {
+const GenerateToken = ({ regenerateApiToken, isLocal }: GenerateTokenProps) => {
   const theme = useTheme();
   const [copiedApiToken, setCopiedApiToken] = useState(false);
 
@@ -25,6 +26,10 @@ const GenerateToken = ({ regenerateApiToken }: GenerateTokenProps) => {
     regenerateApiToken();
     setCopiedApiToken(true);
   };
+
+  if (isLocal) {
+    return <div />;
+  }
 
   return (
     <StyledContainer
