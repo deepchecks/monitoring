@@ -144,7 +144,7 @@ async def log_labels(
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
-        await  resources_provider.report_mixpanel_event(
+        await resources_provider.report_mixpanel_event(
             LabelsUploadEvent.create_event,
             model=model,
             user=user,
