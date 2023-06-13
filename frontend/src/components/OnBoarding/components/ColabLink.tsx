@@ -17,37 +17,35 @@ const constants = {
 
 const ColabLink = ({
   dataType,
-  reportOnboardingStep
+  reportOnboardingStep,
+  isLocal
 }: {
   dataType: 'user' | 'demo';
+  isLocal: boolean;
   reportOnboardingStep: (src: string) => void;
-}) => {
-  const isLocal = window.location.href.includes('localhost');
-
-  return (
-    <Tooltip title={constants.localErrMsg(isLocal)}>
-      <div>
-        <a
-          href={constants.link[dataType]}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => reportOnboardingStep('colab')}
-          style={{ pointerEvents: isLocal ? 'none' : 'auto' }}
-        >
-          <StyledButton
-            label={
-              <>
-                <AllInclusiveIcon />
-                {constants.text}
-              </>
-            }
-            sx={{ width: '240px', height: '44px' }}
-            disabled={!!isLocal}
-          />
-        </a>
-      </div>
-    </Tooltip>
-  );
-};
+}) => (
+  <Tooltip title={constants.localErrMsg(isLocal)}>
+    <div>
+      <a
+        href={constants.link[dataType]}
+        target="_blank"
+        rel="noreferrer"
+        onClick={() => reportOnboardingStep('colab')}
+        style={{ pointerEvents: isLocal ? 'none' : 'auto' }}
+      >
+        <StyledButton
+          label={
+            <>
+              <AllInclusiveIcon />
+              {constants.text}
+            </>
+          }
+          sx={{ width: '240px', height: '44px' }}
+          disabled={!!isLocal}
+        />
+      </a>
+    </div>
+  </Tooltip>
+);
 
 export default ColabLink;
