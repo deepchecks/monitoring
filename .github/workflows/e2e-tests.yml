@@ -94,6 +94,7 @@ jobs:
             ${{ secrets.PUBLIC_IMAGE_NAME }}:latest
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
+            MIXPANEL_ID=${{ secrets.MIXPANEL_ID }}
       - name: Logout from Amazon ECR
         if: always()
         run: | 
