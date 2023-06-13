@@ -7,8 +7,8 @@ import { getStorageItem, removeStorageItem, setStorageItem, storageKeys } from '
 
 const useOnboarding = () => {
   const navigate = useNavigate();
-  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
   const { data } = useGetOrCreateDashboardApiV1DashboardsGet();
+  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
 
   const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
   const isOnboardingStorage = getStorageItem(storageKeys.is_onboarding);
