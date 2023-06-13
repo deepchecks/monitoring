@@ -47,6 +47,7 @@ jobs:
           registry-type: public
       - name: Tag image as latest-release
         run: |
+          echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
           docker buildx imagetools create \
             --tag ${{ secrets.MON_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
             --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
