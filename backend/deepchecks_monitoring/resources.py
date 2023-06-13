@@ -431,19 +431,22 @@ class ResourcesProvider(BaseResourcesProvider):
         **kwargs: P.kwargs
     ) -> t.Callable[..., TMixpanelEvent | None]:
         """Create 'report_mixpanel_event' callback for later use."""
-        if mixpanel := self._get_mixpanel_event_reporter():
+        if (mixpanel := self._get_mixpanel_event_reporter()) is None:
+            return lambda: None
+        else:
             if self.settings.is_cloud:
                 kwargs["deployment"] = "saas"
             elif self.settings.is_on_prem:
                 kwargs["deployment"] = "on-prem"
+
             event = await event_factory(*args, **kwargs)
+
             def fn():
                 nonlocal event, mixpanel
                 mixpanel.report(event)
                 return event
+
             return fn
-        else:
-            return lambda: None
 
     async def report_mixpanel_event(
         self,
