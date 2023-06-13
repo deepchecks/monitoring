@@ -43,17 +43,17 @@ export const DashboardPage = () => {
   const [currentMonitor, setCurrentMonitor] = useState<MonitorSchema | null>(null);
   const [selectedModelId, setSelectedModelId] = useState<number | null>(+getParams()?.modelId || null);
   const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogName, setDialogName] = useState(DialogNames.CreateMonitor);
 
   const handleOpenMonitorDialog = (dialogName: DialogNames, monitor?: MonitorSchema) => {
     if (monitor) setCurrentMonitor(monitor);
     setDialogName(dialogName);
-    setIsDrawerOpen(true);
+    setIsDialogOpen(true);
   };
 
   const handleCloseMonitorDialog = () => {
-    setIsDrawerOpen(false);
+    setIsDialogOpen(false);
     setTimeout(() => setCurrentMonitor(null), 100);
   };
 
@@ -110,7 +110,7 @@ export const DashboardPage = () => {
         monitor={currentMonitor}
         refetchMonitors={refetchMonitors}
         dialogName={dialogName}
-        open={isDrawerOpen}
+        open={isDialogOpen}
         onClose={handleCloseMonitorDialog}
         setMonitorToRefreshId={setMonitorToRefreshId}
         selectedModelId={selectedModelId}

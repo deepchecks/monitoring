@@ -138,7 +138,6 @@ export const AlertRuleDialog = ({
       ) : (
         <AlertRuleDialogContent
           activeStep={activeStep}
-          setActiveStep={setActiveStep}
           steps={STEPS}
           setNextButtonDisabled={setNextButtonDisabled}
           ref={ref}

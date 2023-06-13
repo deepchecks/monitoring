@@ -48,6 +48,7 @@ export const MonitorDialog = ({
   const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
     useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
 
+  const [activeStep, setActiveStep] = useState(0);
   const [graphData, setGraphData] = useState<ChartData<'line', GraphData> | null>(null);
   const [graphFrequency, setGraphFrequency] = useState<SelectValues>(monitor?.frequency || '');
   const [submitButtonDisabled, setSubmitButtonDisabled] = useState(false);
@@ -81,25 +82,43 @@ export const MonitorDialog = ({
 
   const closeDialog = () => {
     onClose();
-    setTimeout(() => setGraphData(null), 500);
+    setTimeout(() => {
+      setActiveStep(0);
+      setGraphData(null);
+    }, 150);
   };
 
-  const handleCloseDialog = () => {
-    closeDialog();
-  };
+  const handleCloseDialog = () => closeDialog();
 
   const isCreateAlert = dialogName === DialogNames.CreateAlert;
+
+  const handleSubmit = () => {
+    if (isCreateAlert) {
+      ref.current?.submit();
+    } else {
+      activeStep === 1 ? ref.current?.submit() : setActiveStep(1);
+    }
+  };
+
+  const handleCancel = () => {
+    if (isCreateAlert) {
+      handleCloseDialog();
+    } else {
+      activeStep === 0 ? handleCloseDialog() : setActiveStep(0);
+    }
+  };
 
   return (
     <StyledDialog
       open={!!open}
       closeDialog={handleCloseDialog}
       title={dialogName}
-      submitButtonLabel={constants.submitButtonLabel(isCreateAlert)}
-      submitButtonAction={() => ref.current?.submit()}
+      submitButtonLabel={constants.submitButtonLabel(isCreateAlert, activeStep)}
+      submitButtonAction={handleSubmit}
       submitButtonDisabled={submitButtonDisabled}
+      cancelButtonAction={handleCancel}
+      cancelButtonLabel={constants.cancelButtonLabel(activeStep)}
       maxWidth="sm"
-      fullWidth
     >
       <Stack justifyContent="space-between">
         <Box sx={{ maxHeight: '650px', overflowY: 'auto', marginTop: '-20px' }}>
@@ -114,12 +133,13 @@ export const MonitorDialog = ({
             />
           ) : (
             <MonitorForm
+              activeStep={activeStep}
               monitor={monitor}
               refetchMonitors={refetchMonitors}
               setMonitorToRefreshId={setMonitorToRefreshId}
               handleCloseDialog={closeDialog}
               runCheckLookBack={handleGraphLookBack}
-              isDrawerOpen={!!open}
+              isDialogOpen={!!open}
               setGraphFrequency={setGraphFrequency}
               selectedModelId={selectedModelId}
               reset={reset}

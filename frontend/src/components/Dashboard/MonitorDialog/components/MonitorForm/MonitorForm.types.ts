@@ -6,17 +6,18 @@ import { SelectValues, SetStateType } from 'helpers/types';
 import { FilteredValues } from 'helpers/utils/checkUtil';
 
 export interface MonitorFormProps extends StackProps {
+  activeStep: number;
   monitor: MonitorSchema | null;
   setMonitorToRefreshId: SetStateType<number | null>;
   runCheckLookBack: (checkId: SelectValues, data: MonitorOptions) => Promise<void>;
   handleCloseDialog: () => void;
-  isDrawerOpen: boolean;
+  isDialogOpen: boolean;
   refetchMonitors(): void;
   setGraphFrequency: SetStateType<SelectValues>;
   selectedModelId: number | null;
   reset: boolean;
   setReset: SetStateType<boolean>;
-  setSubmitButtonDisabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setSubmitButtonDisabled: SetStateType<boolean>;
 }
 
 export interface InitialState {

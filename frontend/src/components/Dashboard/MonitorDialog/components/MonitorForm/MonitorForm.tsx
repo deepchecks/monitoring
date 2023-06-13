@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
 
 import {
   useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
@@ -11,51 +11,29 @@ import {
 
 import useModels from 'helpers/hooks/useModels';
 
-import { MenuItem, Stack } from '@mui/material';
+import { Stack } from '@mui/material';
 
-import {
-  ControlledBaseDropdown,
-  ControlledBaseDropdownDisabledCallback
-} from 'components/base/InputDropdown/ControlledBaseDropdown';
-import { SelectCheck } from 'components/Select/SelectCheck';
-import { SelectColumn } from 'components/Select/SelectColumn';
-import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
-import { Subcategory } from 'components/Subcategory';
+import { MonitorFormSteps } from './components/MonitorFormSteps';
+import { MonitorFormStepOne } from './components/MonitorFormStepOne';
+import { MonitorFormStepTwo } from './components/MonitorFormStepTwo';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';
-import { BaseInput, BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
 
-import { StyledDivider, StyledLink } from './MonitorForm.style';
-
-import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/base/monitorFields.helpers';
+import { freqTimeWindow, buildFilters } from 'helpers/base/monitorFields.helpers';
 import { SelectValues } from 'helpers/types';
 import { timeValues } from 'helpers/base/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 import { InitialState, MonitorFormProps } from './MonitorForm.types';
-import { constants } from '../../monitorDialog.constants';
-
-const {
-  aggWindowLabel,
-  displayRangeLabel,
-  displayRangeTooltip,
-  frequencyLabel,
-  frequencyTooltip,
-  modelLabel,
-  monitorNameLabel,
-  aggWindowError,
-  resetToDefault,
-  advancedStr,
-  aggValueStr
-} = constants.monitorForm;
 
 export const MonitorForm = forwardRef(
   (
     {
+      activeStep,
       monitor,
       setMonitorToRefreshId,
       runCheckLookBack,
       handleCloseDialog,
-      isDrawerOpen,
+      isDialogOpen,
       refetchMonitors,
       setGraphFrequency,
       selectedModelId,
@@ -149,7 +127,7 @@ export const MonitorForm = forwardRef(
       }
     }, [reset]);
 
-    const { models: modelsList, getCurrentModel } = useModels();
+    const { getCurrentModel } = useModels();
     const currentModel = useMemo(
       () => (typeof model === 'number' ? getCurrentModel(model) : null),
       [getCurrentModel, model]
@@ -242,34 +220,13 @@ export const MonitorForm = forwardRef(
       setActiveAlertsModalOpen(false);
     };
 
-    const clearLookBack = useCallback(() => {
-      setLookBack('');
-    }, []);
-
     const resetForm = () => {
       setCheck('');
       setColumn('');
     };
 
-    const isDisabledLookback = useCallback(
-      (lookbackSelect: { label: string; value: number }) => {
-        if (frequency === undefined) return false;
-        if (lookbackSelect.value < +frequency) return true;
-        if (lookbackSelect.value > +frequency * 31) return true;
-        return false;
-      },
-      [frequency]
-    );
-
     useEffect(() => {
-      const filteredLookbacks = lookbackTimeWindow.filter(val => !isDisabledLookback(val)).map(val => val.value);
-      if (lookBack && !filteredLookbacks.includes(+lookBack)) {
-        setLookBack(filteredLookbacks.at(-1));
-      }
-    }, [frequency]);
-
-    useEffect(() => {
-      if (isDrawerOpen) {
+      if (isDialogOpen) {
         if (currentModel && lookBack && frequency && aggregationWindow) {
           const endTime = currentModel.latest_time ? new Date(currentModel.latest_time * 1000) : new Date();
           const data: MonitorOptions = {
@@ -284,7 +241,7 @@ export const MonitorForm = forwardRef(
         }
       }
     }, [
-      isDrawerOpen,
+      isDialogOpen,
       aggregationWindow,
       category,
       check,
@@ -297,127 +254,51 @@ export const MonitorForm = forwardRef(
       runCheckLookBack
     ]);
 
-    const aggregationWindowErr = aggregationWindow > 30;
-    const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']].toLowerCase()}${
-      aggregationWindow > 1 ? 's' : ''
-    }`;
-
     useEffect(() => {
-      setSubmitButtonDisabled(
-        !monitorName || !check || !frequency || !aggregationWindow || !lookBack || !isValidConfig
-      );
-    }, [monitorName, check, frequency, aggregationWindow, lookBack, isValidConfig]);
+      activeStep === 0
+        ? setSubmitButtonDisabled(!monitorName || !model)
+        : setSubmitButtonDisabled(!check || !frequency || !aggregationWindow || !lookBack || !isValidConfig);
+    }, [activeStep, monitorName, model, check, frequency, aggregationWindow, lookBack, isValidConfig]);
 
     return (
       <Stack spacing="30px" marginBottom="30px" {...otherProps}>
-        <BaseInput
-          label={monitorNameLabel}
-          value={monitorName}
-          onChange={event => setMonitorName(event.target.value)}
-          required={!monitor}
-          sx={{ marginTop: '10px' }}
-        />
-        <BaseDropdown
-          label={modelLabel}
-          value={model}
-          onChange={event => {
-            setModel(event.target.value as string);
-            resetForm();
-          }}
-          clearValue={() => {
-            setModel('');
-            resetForm();
-          }}
-          disabled={!!monitor}
-        >
-          {modelsList.map(({ name, id }) => (
-            <MenuItem key={id} value={id}>
-              {name}
-            </MenuItem>
-          ))}
-        </BaseDropdown>
-        <SelectCheck
-          monitor={monitor}
-          model={model}
-          check={check}
-          setCheck={setCheck}
-          filteredValues={filteredValues}
-          setFilteredValues={setFilteredValues}
-          resConf={resConf}
-          setResConf={setResConf}
-          setIsValidConfig={setIsValidConfig}
-          disabled={!!monitor || !model}
-        />
-        <StyledDivider />
-        <SelectColumn
-          model={model}
-          column={column}
-          setColumn={setColumn}
-          category={category}
-          setCategory={setCategory}
-          numericValue={numericValue}
-          setNumericValue={setNumericValue}
-        />
-        <StyledDivider />
-        <TooltipInputWrapper title={frequencyTooltip}>
-          <BaseDropdown
-            label={frequencyLabel}
-            value={frequency}
-            required
-            onChange={event => setFrequency(event.target.value as string)}
-            clearValue={() => {
-              setFrequency(freqTimeWindow[0].value);
-              setAggregationWindow(1);
-            }}
-          >
-            {freqTimeWindow.map(({ label, value }, index) => (
-              <MenuItem key={value + index} value={value}>
-                {label}
-              </MenuItem>
-            ))}
-          </BaseDropdown>
-        </TooltipInputWrapper>
-        {!advanced ? (
-          <StyledLink underline="hover" onClick={() => setAdvanced(true)}>
-            {advancedStr}
-          </StyledLink>
-        ) : (
-          <Subcategory sx={{ marginTop: '0 !important' }}>
-            <BaseInput
-              placeholder={aggWindowLabel}
-              value={aggregationWindow}
-              label={aggValueStr}
-              onChange={event => setAggregationWindow(Number(event.target.value))}
-              error={aggregationWindowErr}
-              helperText={aggregationWindowErr ? aggWindowError : ''}
-              inputProps={{ min: 0, max: 30 }}
-              InputProps={{ endAdornment: aggregationWindowSuffix }}
-              type="number"
-              fullWidth
-            />
-            <StyledLink
-              underline="hover"
-              onClick={() => {
-                setAdvanced(false);
-                setAggregationWindow(1);
-              }}
-            >
-              {resetToDefault}
-            </StyledLink>
-          </Subcategory>
-        )}
-        <TooltipInputWrapper title={displayRangeTooltip}>
-          <ControlledBaseDropdown
-            label={displayRangeLabel}
-            values={lookbackTimeWindow}
-            value={lookBack}
-            setValue={setLookBack}
-            clearValue={clearLookBack}
-            DisabledCallback={isDisabledLookback as ControlledBaseDropdownDisabledCallback}
-            required
+        <MonitorFormSteps activeStep={activeStep} />
+        {activeStep === 0 ? (
+          <MonitorFormStepOne
+            monitorName={monitorName}
+            setMonitorName={setMonitorName}
+            monitor={monitor}
+            model={model}
+            setModel={setModel}
+            resetForm={resetForm}
           />
-        </TooltipInputWrapper>
-
+        ) : (
+          <MonitorFormStepTwo
+            monitor={monitor}
+            model={model}
+            check={check}
+            setCheck={setCheck}
+            filteredValues={filteredValues}
+            setFilteredValues={setFilteredValues}
+            resConf={resConf}
+            setResConf={setResConf}
+            setIsValidConfig={setIsValidConfig}
+            column={column}
+            setColumn={setColumn}
+            category={category}
+            setCategory={setCategory}
+            numericValue={numericValue}
+            setNumericValue={setNumericValue}
+            frequency={frequency}
+            setFrequency={setFrequency}
+            aggregationWindow={aggregationWindow}
+            setAggregationWindow={setAggregationWindow}
+            advanced={advanced}
+            setAdvanced={setAdvanced}
+            lookBack={lookBack}
+            setLookBack={setLookBack}
+          />
+        )}
         <ActiveAlertsModal
           open={activeAlertsModalOpen}
           setActiveAlertsModalOpen={setActiveAlertsModalOpen}

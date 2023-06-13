@@ -1,5 +1,7 @@
 export const constants = {
-  submitButtonLabel: (isCreateAlert: boolean) => (isCreateAlert ? 'Save & Activate' : 'Save'),
+  submitButtonLabel: (isCreateAlert: boolean, activeStep: number) =>
+    isCreateAlert ? 'Save & Activate' : activeStep === 0 ? 'Next' : 'Save',
+  cancelButtonLabel: (activeStep: number) => (activeStep === 0 ? 'Cancel' : 'Back'),
   activeAlertsModal: {
     title: 'Confirmation',
     submitButtonLabel: 'OK',
@@ -16,6 +18,7 @@ export const constants = {
     thresholdPlaceholder: '0'
   },
   monitorForm: {
+    steps: { basicInfo: 'Basic Info', monitorData: 'Monitor Data' },
     monitorNameLabel: 'Monitor name',
     modelLabel: 'Model',
     frequencyLabel: 'Frequency',

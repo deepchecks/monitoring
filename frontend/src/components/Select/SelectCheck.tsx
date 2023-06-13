@@ -7,7 +7,7 @@ import {
   MonitorTypeConf
 } from 'api/generated';
 
-import { Stack, MenuItem } from '@mui/material';
+import { Stack, MenuItem, StackProps } from '@mui/material';
 
 import { Subcategory } from 'components/Subcategory';
 import { BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
@@ -18,7 +18,7 @@ import { CheckFilterTypes, FilteredValues, initFilteredValues, TypeMap, unionChe
 import { getNameFromData } from '../Analysis/AnalysisItem/components/AnalysisChartItemWithFilters/AnalysisItemSelect/MultiSelect';
 import { CheckTypeOptions } from 'helpers/types/check';
 
-interface SelectCheckProps {
+interface SelectCheckProps extends StackProps {
   monitor: MonitorSchema | null;
   model: SelectValues;
   check: SelectValues;
@@ -47,7 +47,8 @@ export const SelectCheckComponent = ({
   setIsValidConfig,
   disabled,
   error,
-  size = 'small'
+  size = 'small',
+  ...otherProps
 }: SelectCheckProps) => {
   const { data: checksList = [] } = useGetChecksApiV1ModelsModelIdChecksGet(model);
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(
@@ -144,7 +145,7 @@ export const SelectCheckComponent = ({
   }, [filteredValues?.feature?.[0], filteredValues?.scorer?.[0], resConf, isAgg, type, checkInfo]);
 
   return (
-    <Stack>
+    <Stack {...otherProps}>
       <ControlledBaseDropdown
         required
         error={error && !check}
