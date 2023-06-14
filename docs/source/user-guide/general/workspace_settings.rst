@@ -2,7 +2,7 @@
 Workspace Settings & Users
 ==========================
 
-The Workspace Settings is here to help the admin manage user provisioning, controls access of users to models and modifies the subscription plan.
+The Workspace Settings is here to help the admin manage user provisioning, control access of users to models and modify the subscription plan.
 This is also an easy way of separating the monitoring data in cases where you have completely independent teams, 
 with a significant number of models to monitor.
 
@@ -21,7 +21,7 @@ Member roles assignment
 Here you can edit users role to grant users various permissions.
     * Owner: has access to all areas of the system and is the only one that can assign users role, and update the subscription.
     * Admin: can set model permissions and configure integration.
-    * User: can create and edit models/monitors/alerts if he has permissions to the related model.
+    * User: can create and edit models/monitors/alerts if he has permissions to the relevant model.
 
 .. image:: /_static/images/user-guide/general/edit_user.png
     :width: 600
