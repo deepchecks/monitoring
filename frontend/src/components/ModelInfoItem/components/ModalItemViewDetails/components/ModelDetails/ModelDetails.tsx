@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
-import {
-  ConnectedModelSchema,
-  ConnectedModelVersionSchema,
-  useRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet
-} from 'api/generated';
-import { StyledModalTitle, StyledModalTitleText } from '../../ModalItemViewDetails.style';
-import { VersionDetails } from './components/VersionDetails';
-import { VersionsTable } from './components/VersionsTable';
+import React from 'react';
+
 import { Box, styled, Tab } from '@mui/material';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { TabContext } from '@mui/lab';
+
+import {
+  ConnectedModelSchema,
+  useRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet
+} from 'api/generated';
+
+import { ErrorsTable } from './components/ErrorsTable/ErrorsTable';
 import { Loader } from 'components/base/Loader/Loader';
 import { ModelNotes } from './components/ModelNotes';
 import { theme } from 'components/lib/theme';
+
+import { StyledModalTitle, StyledModalTitleText } from '../../ModalItemViewDetails.style';
 
 interface ModelDetailsProps {
   model: ConnectedModelSchema;
@@ -21,44 +23,37 @@ interface ModelDetailsProps {
 
 export const ModelDetails = ({ model }: ModelDetailsProps) => {
   const [value, setValue] = React.useState('1');
-  const [selectedVersionForDetails, setSelectedVersionForDetails] = useState<ConnectedModelVersionSchema | null>(null);
   const { data: versions, isLoading } = useRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet(
     model.id
   );
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => setValue(newValue);
-  const handleVersionDetailsOpen = (version: ConnectedModelVersionSchema) => setSelectedVersionForDetails(version);
-  const handleVersionDetailsClose = () => setSelectedVersionForDetails(null);
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => setValue(newValue);
 
   return (
     <>
-      {!selectedVersionForDetails ? (
-        <>
-          <StyledModalTitle>
-            <StyledModalTitleText>{model.name} Details</StyledModalTitleText>
-          </StyledModalTitle>
-          <StyledTabSection>
-            {isLoading ? (
-              <Loader />
-            ) : (
-              <TabContext value={value}>
-                <StyledTabList value={value} onChange={handleTabChange}>
-                  <StyledTab label={`All Versions (${versions?.length})`} value="1" />
-                  <StyledTab label="My notes" value="2" />
-                </StyledTabList>
-                <StyledTabPanel value="1">
-                  <VersionsTable onVersionDetailsOpen={handleVersionDetailsOpen} versions={versions} />
-                </StyledTabPanel>
-                <StyledTabPanel value="2">
-                  <ModelNotes model={model} />
-                </StyledTabPanel>
-              </TabContext>
-            )}
-          </StyledTabSection>
-        </>
-      ) : (
-        <VersionDetails onClose={handleVersionDetailsClose} modelId={model.id} version={selectedVersionForDetails} />
-      )}
+      <>
+        <StyledModalTitle>
+          <StyledModalTitleText>{model.name} Details</StyledModalTitleText>
+        </StyledModalTitle>
+        <StyledTabSection>
+          {isLoading ? (
+            <Loader />
+          ) : (
+            <TabContext value={value}>
+              <StyledTabList value={value} onChange={handleTabChange}>
+                <StyledTab label={`All Versions Logs (${versions?.length})`} value="1" />
+                <StyledTab label="My notes" value="2" />
+              </StyledTabList>
+              <StyledTabPanel value="1">
+                <ErrorsTable errors={[] as any} />
+              </StyledTabPanel>
+              <StyledTabPanel value="2">
+                <ModelNotes model={model} />
+              </StyledTabPanel>
+            </TabContext>
+          )}
+        </StyledTabSection>
+      </>
     </>
   );
 };

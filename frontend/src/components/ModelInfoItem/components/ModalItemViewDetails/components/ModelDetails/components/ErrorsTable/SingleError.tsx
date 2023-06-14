@@ -1,9 +1,12 @@
 import React from 'react';
-import { IngestionErrorSchema } from 'api/generated';
-import { styled, Tooltip, Typography } from '@mui/material';
-import { StyledTableCell, StyledTableRow } from '../../../ModelDetails.style';
+
 import dayjs from 'dayjs';
 
+import { styled, Tooltip, Typography } from '@mui/material';
+
+import { IngestionErrorSchema } from 'api/generated';
+
+import { StyledTableCell, StyledTableRow } from '../../ModelDetails.style';
 import { theme } from 'components/lib/theme';
 
 interface SingleErrorProps {
