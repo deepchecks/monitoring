@@ -4,13 +4,13 @@ import { Table, TableBody, TableContainer, TableHead, TableRow } from '@mui/mate
 import { IngestionErrorSchema } from 'api/generated';
 
 import { StyledTableHeadCell } from '../../ModelDetails.style';
-import { SingleError } from './SingleError';
+import { SingleLog } from './SingleLog';
 
 interface VersionErrorsListProps {
   errors: IngestionErrorSchema[] | undefined;
 }
 
-export const ErrorsTable = ({ errors }: VersionErrorsListProps) => (
+export const ModelLogs = ({ errors }: VersionErrorsListProps) => (
   <>
     {errors ? (
       <TableContainer sx={{ maxHeight: '539px', maxWidth: '100%' }}>
@@ -26,7 +26,7 @@ export const ErrorsTable = ({ errors }: VersionErrorsListProps) => (
           </TableHead>
           <TableBody>
             {errors.map(error => (
-              <SingleError key={`${error.id}-${error.sample_id}`} error={error} />
+              <SingleLog key={`${error.id}-${error.sample_id}`} error={error} />
             ))}
           </TableBody>
         </Table>

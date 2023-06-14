@@ -10,7 +10,7 @@ import {
   useRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet
 } from 'api/generated';
 
-import { ErrorsTable } from './components/ErrorsTable/ErrorsTable';
+import { ModelLogs } from './components/ModelLogs/ModelLogs';
 import { Loader } from 'components/base/Loader/Loader';
 import { ModelNotes } from './components/ModelNotes';
 import { theme } from 'components/lib/theme';
@@ -45,7 +45,7 @@ export const ModelDetails = ({ model }: ModelDetailsProps) => {
                 <StyledTab label="My notes" value="2" />
               </StyledTabList>
               <StyledTabPanel value="1">
-                <ErrorsTable errors={[] as any} />
+                <ModelLogs errors={[] as any} />
               </StyledTabPanel>
               <StyledTabPanel value="2">
                 <ModelNotes model={model} />

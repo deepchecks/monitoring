@@ -13,7 +13,7 @@ interface SingleErrorProps {
   error: IngestionErrorSchema;
 }
 
-export const SingleError = ({ error }: SingleErrorProps) => (
+export const SingleLog = ({ error }: SingleErrorProps) => (
   <StyledTableRow>
     <StyledTableCell width="12%">
       <StyledCellText weight={600} color={theme.palette.error.main}>
