@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import {
   MonitorSchema,
@@ -12,8 +12,8 @@ import { ModelList } from 'components/Dashboard/ModelList';
 import { DataIngestion } from 'components/Dashboard/DataIngestion';
 import { MonitorListHeader } from 'components/Dashboard/MonitorListHeader/MonitorListHeader';
 import { MonitorList } from 'components/Dashboard/MonitorList';
-import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
-import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { MonitorDialog } from 'components/Dashboard/MonitorDialog';
+import { DialogNames } from 'components/Dashboard/Dashboard.types';
 
 import { getParams } from 'helpers/utils/getParams';
 import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
@@ -44,20 +44,20 @@ export const DashboardPage = () => {
   const [currentMonitor, setCurrentMonitor] = useState<MonitorSchema | null>(null);
   const [selectedModelId, setSelectedModelId] = useState<number | null>(+getParams()?.modelId || null);
   const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerName, setDrawerName] = useState(DrawerNames.CreateMonitor);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogName, setDialogName] = useState(DialogNames.CreateMonitor);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-  const handleOpenMonitorDrawer = (drawerName: DrawerNames, monitor?: MonitorSchema) => {
+  const handleOpenMonitorDialog = (dialogName: DialogNames, monitor?: MonitorSchema) => {
     if (monitor) setCurrentMonitor(monitor);
-    setDrawerName(drawerName);
-    setIsDrawerOpen(true);
+    setDialogName(dialogName);
+    setIsDialogOpen(true);
   };
 
-  const handleCloseMonitorDrawer = useCallback(() => {
-    setCurrentMonitor(null);
-    setIsDrawerOpen(false);
-  }, []);
+  const handleCloseMonitorDialog = () => {
+    setIsDialogOpen(false);
+    setTimeout(() => setCurrentMonitor(null), 100);
+  };
 
   const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
 
@@ -99,7 +99,7 @@ export const DashboardPage = () => {
           <DataIngestion modelId={selectedModelId} />
         </Grid>
         <Grid item md={12}>
-          <MonitorListHeader onClick={handleOpenMonitorDrawer} />
+          <MonitorListHeader onClick={handleOpenMonitorDialog} />
         </Grid>
         <Grid item md={12}>
           <MonitorList
@@ -107,19 +107,19 @@ export const DashboardPage = () => {
             currentModelId={selectedModelId}
             currentMonitor={currentMonitor}
             setCurrentMonitor={setCurrentMonitor}
-            handleOpenMonitorDrawer={handleOpenMonitorDrawer}
+            handleOpenMonitorDialog={handleOpenMonitorDialog}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
             isLoading={isDashboardLoading}
           />
         </Grid>
       </Grid>
-      <MonitorDrawer
+      <MonitorDialog
         monitor={currentMonitor}
         refetchMonitors={refetchMonitors}
-        drawerName={drawerName}
-        open={isDrawerOpen}
-        onClose={handleCloseMonitorDrawer}
+        dialogName={dialogName}
+        open={isDialogOpen}
+        onClose={handleCloseMonitorDialog}
         setMonitorToRefreshId={setMonitorToRefreshId}
         selectedModelId={selectedModelId}
       />

@@ -10,17 +10,18 @@ import { Loader } from 'components/base/Loader/Loader';
 import { RootMenu } from './components/RootMenu';
 import { MonitorInfoWidget } from './components/MonitorInfoWidget';
 import { MonitorAlertRuleWidget } from './components/MonitorAlertRuleWidget';
-import { DrawerNames } from 'components/Dashboard/Dashboard.types';
-import { constants } from 'components/Dashboard/dashboard.constants';
+
 import { StyledContainer, StyledText } from './GraphicsSection.style';
 
+import { DialogNames } from 'components/Dashboard/Dashboard.types';
+import { constants } from 'components/Dashboard/dashboard.constants';
 import { GraphData } from 'helpers/types';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
 interface GraphicsSectionProps extends BoxProps {
   data: ChartData<'line', GraphData>;
   monitor: MonitorSchema;
-  onOpenMonitorDrawer: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
+  onOpenMonitorDrawer: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   onDeleteMonitor: (monitor: MonitorSchema) => void;
   isLoading?: boolean;
 }
@@ -54,7 +55,7 @@ export function GraphicsSection({
     setAnchorElRootMenu(null);
   };
 
-  const handleOpenMonitor = (drawerName: DrawerNames) => {
+  const handleOpenMonitor = (drawerName: DialogNames) => {
     onOpenMonitorDrawer(drawerName, monitor);
     setAnchorElRootMenu(null);
   };
