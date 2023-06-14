@@ -20,10 +20,10 @@ you can run a `Test Suite <#test-suite>`__ for a specific point in time, which w
 different checks run on that time frame.
 
 Several core concepts, such as Checks and the Test Suite are in fact elements of the
-`Deepchecks Testing Package <https://docs.deepchecks.com/>`__, used by Deepchecks Monitoring to test ML system over
+:doc:`Deepchecks Testing Package <deepchecks:getting-started/welcome>`, used by Deepchecks Monitoring to test ML system over
 time.
 
-All of these monitoring components - Checks, Monitors, Alert Rules and Alerts - are defined on a per-model basis, and
+All of these monitoring components - Chec:ks, Monitors, Alert Rules and Alerts - are defined on a per-model basis, and
 apply for all model versions that belong to a given model.
 
 
@@ -33,15 +33,15 @@ Checks
 ======
 
 Each check inspects a specific aspect of your data and model. Checks are the basic building blocks of
-Deepchecks Monitoring and of the :doc:`Deepchecks Testing Pacakge <deepchecks:user-guide/general/deepchecks_hierarchy>`.
+Deepchecks Monitoring and of the :ref:`Deepchecks Testing Pacakge <deepchecks:general__deepchecks_hierarchy>`.
 Each check either computes a quantity on the data, labels and predictions of a specific time frame, or computes a
 quantity by comparing these to the data, labels and predictions of the reference dataset.
 
 Few examples for important checks are:
 
-* :doc:`Single Dataset Performance (Computer Vision Version) <deepchecks:checks_gallery/vision/model_evaluation/plot_single_dataset_performance>` -
-   Computes the models' performance for the specified time window using the selected :doc:`metric <deepchecks:user-guide/general/metrics_guide>`.
-* :doc:`Train Test Feature Drift (Tabular Version) <deepchecks:checks_gallery/tabular/train_test_validation/plot_train_test_feature_drift>` -
+* :ref:`Single Dataset Performance (Computer Vision Version) <deepchecks:vision__single_dataset_performance>` -
+   Computes the models' performance for the specified time window using the selected :ref:`metric <deepchecks:metrics_user_guide>`.
+* :ref:`Feature Drift (Tabular Version) <deepchecks:tabular__feature_drift>` -
    Computes the data drift between the data distribution in the reference data and the data distribution in the
    specified time window.
 
@@ -49,8 +49,8 @@ Checks also have more elaborate displays, which can be viewed by running the `Te
 time window.
 
 Please refer to the Deepchecks Testing Package documentation to read more about the available
-:doc:`tabular checks <deepchecks:checks_gallery/tabular>` and
-:doc:`computer vision checks <deepchecks:checks_gallery/vision>`
+:ref:`tabular checks <deepchecks:tabular__checks_gallery>`, :ref:`nlp checks <nlp__checks_gallery>` and
+:ref:`computer vision checks <deepchecks:vision__checks_gallery>`
 
 Monitors
 --------
@@ -102,7 +102,7 @@ Test Suite
 
 The Test Suite is your way to deep-dive and identify various problems in a specific time window. The Test Suite
 is a compilation of the results of a pre-defined list of checks, also used to organize check results in the
-:doc:`Deepchecks Testing Package <deepchecks:user-guide/general/deepchecks_hierarchy>`.
+:ref:`Deepchecks Testing Package <deepchecks:general__deepchecks_hierarchy>`.
 
 In order to view the results of the Test Suite for a specific time window, select an Alert from the Alert Screen and
 then click the Run Test Suite button. You will then be transferred to the html output of the Suite, which contains a

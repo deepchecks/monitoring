@@ -4,7 +4,8 @@ export const storageKeys = {
   analysisPeriod: 'analysis_period',
   environment: 'environment',
   user: 'user',
-  loggedIn: 'logged_in'
+  loggedIn: 'logged_in',
+  is_onboarding: 'is_onboarding'
 };
 
 export const getStorageItem = (key: string) => {

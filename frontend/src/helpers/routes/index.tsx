@@ -151,10 +151,7 @@ export const pathsInfo: PathInfo[] = [
     Icon: null,
     ActiveIcon: null,
     ignoreLink: true
-  }
-];
-
-export const outLayoutRoutes: PathInfo[] = [
+  },
   {
     title: 'OnBoarding',
     link: '/onboarding',
@@ -162,7 +159,10 @@ export const outLayoutRoutes: PathInfo[] = [
     Icon: null,
     ActiveIcon: null,
     ignoreLink: true
-  },
+  }
+];
+
+export const outLayoutRoutes: PathInfo[] = [
   {
     title: 'Complete Details',
     link: '/complete-details',

@@ -7,6 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+#
+# pylint: disable=import-outside-toplevel,redefined-outer-name
 """Module defining the model ORM model."""
 import typing as t
 from datetime import datetime
@@ -14,13 +16,14 @@ from datetime import datetime
 import pendulum as pdl
 import sqlalchemy as sa
 from sqlalchemy import MetaData, PrimaryKeyConstraint, Table, func, update
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_object_session
 from sqlalchemy.orm import Mapped, Query, relationship
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
-                                                             column_types_to_table_columns, get_label_column_type)
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
+                                                             ColumnType, column_types_to_table_columns,
+                                                             get_label_column_type)
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.task_type import TaskType
 
@@ -110,13 +113,13 @@ class Model(Base, MetadataMixin, PermissionMixin):
     )
 
     @classmethod
-    def get_object_by_id(cls, obj_id, user):
+    async def has_object_permissions(cls, session, obj_id, user):
         # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
-        return (sa.select(cls).join(Model.members)
-                .where(ModelMember.user_id == user.id)
-                .where(cls.id == obj_id))
+        return await session.scalar(sa.select(1).join(Model.members)
+                                    .where(ModelMember.user_id == user.id)
+                                    .where(cls.id == obj_id))
 
     async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamps."""
@@ -170,6 +173,41 @@ class Model(Base, MetadataMixin, PermissionMixin):
         query = query.join(labels_table, onclause=data_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
         return query
 
+    async def n_of_predictions(self):
+        """Return number of non nullable predictions."""
+        # TODO: check if versions are loaded
+        session = t.cast(AsyncSession, async_object_session(self))
+        unloaded_relations = t.cast("set[str]", sa.inspect(self).unloaded)
+
+        if "versions" not in unloaded_relations:
+            versions = self.versions
+        else:
+            from deepchecks_monitoring.schema_models.model_version import ModelVersion
+            q = sa.select(ModelVersion).where(ModelVersion.model_id == self.id)
+            versions = (await session.scalars(q)).all()
+
+        versions = t.cast("list[ModelVersion]", versions)
+
+        if len(versions) == 0:
+            return 0
+
+        prediction_column = sa.column(SAMPLE_PRED_COL)
+
+        tables = [
+            it.get_monitor_table_name()
+            for it in versions
+        ]
+        q = sa.union_all(*(
+            sa.select(sa.func.count(prediction_column).label("count"))
+            .select_from(sa.text(table_name))
+            .where(prediction_column.isnot(None))
+            for table_name in tables
+        ))
+
+        return await session.scalar(
+            sa.select(sa.func.sum(q.c.count))
+        )
+
 
 class ModelNote(Base, MetadataMixin, PermissionMixin):
     """ORM Model to represent model notes."""
@@ -191,10 +229,10 @@ class ModelNote(Base, MetadataMixin, PermissionMixin):
     )
 
     @classmethod
-    def get_object_by_id(cls, obj_id, user):
+    async def has_object_permissions(cls, session, obj_id, user):
         # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
-        return (sa.select(cls).join(ModelNote.model).join(Model.members)
-                .where(ModelMember.user_id == user.id)
-                .where(cls.id == obj_id))
+        return await session.scalar(sa.select(1).join(ModelNote.model).join(Model.members)
+                                    .where(ModelMember.user_id == user.id)
+                                    .where(cls.id == obj_id))

@@ -12,12 +12,17 @@ import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
 import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { removeStorageItem, storageKeys } from 'helpers/utils/localStorage';
+
+import DownloadNotebook from './components/DownloadNotebook';
+import ColabLink from './components/ColabLink';
+import GenerateToken from './components/GenerateToken';
+import DownloadScript from './components/DownloadScript';
 
 import { constants } from './onBoarding.constants';
-import DownloadNotebook from './components/DownloadNotebook';
 
 interface OnBoardingProps {
-  dataType?: 'demo' | 'user';
+  dataType: 'demo' | 'user';
   initialStep: number;
 }
 
@@ -28,12 +33,23 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const [apiToken, setApiToken] = useState('API_TOKEN');
 
   const isLastStep = activeStep === 3;
+  const isLocal = window.location.href.includes('localhost');
 
   const redirectToDashboard = () => window.location.replace('/');
+
+  const reportOnboardingStep = (source?: string) => {
+    reportEvent(events.onBoarding.onboarding, {
+      step_name: source ? 'source click' : constants[dataType].steps[activeStep].title,
+      step_number: source ? 0 : activeStep,
+      type: `${dataType}`,
+      'click source': source ?? 'none'
+    });
+  };
 
   const regenerateApiToken = async () => {
     regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
       value && setApiToken(value);
+      navigator.clipboard.writeText(value);
     });
   };
 
@@ -41,13 +57,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
     activeStep === 1 && regenerateApiToken();
   }, []);
 
-  useEffect(() => {
-    reportEvent(events.onBoarding.onboarding, {
-      step_name: constants.steps[activeStep].title,
-      step_number: activeStep,
-      type: `${dataType}`
-    });
-  }, [activeStep]);
+  useEffect(() => reportOnboardingStep(), [activeStep]);
 
   useEffect((): void | (() => void) => {
     const handleUserStep = setInterval(async () => {
@@ -56,6 +66,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
       if (res?.step < 4) {
         setActiveStep(res?.step);
       } else if (res?.step === 4) {
+        removeStorageItem(storageKeys.is_onboarding);
         redirectToDashboard();
       }
     }, 5000);
@@ -66,7 +77,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   return (
     <OnBoardingStepperContainer>
       <Stepper activeStep={activeStep} orientation="vertical">
-        {constants.steps.map(step => (
+        {constants[dataType].steps.map(step => (
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
@@ -84,7 +95,10 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
         ))}
       </Stepper>
       <OnBoardingAdditionalContainer>
-        <DownloadNotebook token={apiToken} />
+        <DownloadScript dataType={dataType} token={apiToken} reportOnboardingStep={reportOnboardingStep} />
+        <DownloadNotebook dataType={dataType} token={apiToken} reportOnboardingStep={reportOnboardingStep} />
+        <ColabLink dataType={dataType} reportOnboardingStep={reportOnboardingStep} isLocal={isLocal} />
+        <GenerateToken regenerateApiToken={regenerateApiToken} isLocal={isLocal} />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );

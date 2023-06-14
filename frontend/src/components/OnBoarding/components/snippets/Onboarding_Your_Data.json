@@ -1,0 +1,241 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# **Welcome To Deepchecks !**\n",
+        "Here is how you can quickly create your first model in Deepchecks.\n",
+        "\n",
+        "All You need is a dataset of your choice and to follow the instructions below, Good luck!\n",
+        "\n",
+        "For a step-by-step example see the following [quickstart](https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_prepare_your_data.html)."
+      ],
+      "metadata": {
+        "id": "6ozMJDZcXunN"
+      }
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Installing Deepchecks' SDK**"
+      ],
+      "metadata": {
+        "id": "9YAl7u84uUld"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import sys \n",
+        "!{sys.executable} -m pip install -U deepchecks-client"
+      ],
+      "metadata": {
+        "id": "NvC7hrUCX8Qi"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# **Connect Deepchecks with your environment**\n",
+        "To create a model version in Deepchecks, we will need to define the feature schema and preferably also provide referance data.\n",
+        "\n",
+        "The reference data is optional but necessary for certain checks. The easiest way to create a feature schema and provide the referance data is via a deepschecks' Dataset object."
+      ],
+      "metadata": {
+        "id": "3mzmr6gfYBbK"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_prepare_your_data.html"
+      ],
+      "metadata": {
+        "id": "RlDtZDhDINen"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Creating a Dataset Object**\n",
+        "\n",
+        "Deepchecks' Dataset object contain the data alongside assosiated metadata and\n",
+        "can be easily initialized from a panadas DataFrame or a numpy ndarray.\n",
+        "For more information about the deepchecks' Dataset object see [link](https://docs.deepchecks.com/stable/tabular/usage_guides/dataset_object.html)."
+      ],
+      "metadata": {
+        "id": "WyOSC6eNHYhM"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "ref_data, prod_data = # Load your data (preferably as a pandas DataFrame)\n",
+        "ref_predictions, prod_predictions = # Optional - Generate model predictions\n",
+        "feature_importance = # Optional - Calculate model feature importance\n",
+        "\n",
+        "prod_data.head(2) "
+      ],
+      "metadata": {
+        "id": "DbZcVy7v9EbS"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from deepchecks.tabular import Dataset\n",
+        "\n",
+        "# MODIFY BASED ON YOUR DATA\n",
+        "LABEL_COL = 'price'\n",
+        "CAT_FEATURES = ['room_type', 'neighbourhood', 'neighbourhood_group', 'has_availability']\n",
+        "DATETIME_COL = 'timestamp'\n",
+        "\n",
+        "ref_dataset = Dataset(ref_data, label=LABEL_COL, cat_features=CAT_FEATURES) \n",
+        "ref_dataset"
+      ],
+      "metadata": {
+        "id": "cGARXoQvY_93"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Defining Data Schema**"
+      ],
+      "metadata": {
+        "id": "ckfyIlmXtrG-"
+      }
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "The data schema is a yaml file contaning the names and types of the different features for the model version. </br>\n",
+        "It can be generated autometically based on the Dataset object."
+      ],
+      "metadata": {
+        "id": "o1GsbBiT2TCy"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from deepchecks_client import DeepchecksClient, create_schema, read_schema \n",
+        "\n",
+        "schema_file_path = \"schema_file.yaml\"\n",
+        "create_schema(dataset=ref_dataset, schema_output_file=schema_file_path) \n",
+        "read_schema(schema_file_path) "
+      ],
+      "metadata": {
+        "id": "w90v4-Hatmrc"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Creating a Model Version**\n",
+        "****Please notice that you need to modify API_KEY and DEPLOYMENT_URL**"
+      ],
+      "metadata": {
+        "id": "sZc0Rw6ct-5g"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "dc_client = DeepchecksClient(host=\"YOUR_DEPLOYMENT_URL\", token=\"YOUR_API_TOKEN\")\n",
+        "# \n",
+        "\n",
+        "version_arguments = {\n",
+        "    'model_name' : \"Airbnb\",\n",
+        "    'version_name' : 'ver_1',\n",
+        "    'schema' : schema_file_path,\n",
+        "    'feature_importance' : feature_importance, # Optional\n",
+        "    'reference_dataset': ref_dataset, # Optional\n",
+        "    'reference_predictions' : ref_predictions, # Optional\n",
+        "    'task_type' : 'regression'\n",
+        "}\n",
+        "model_version = dc_client.create_tabular_model_version(**version_arguments)"
+      ],
+      "metadata": {
+        "id": "KLz_QEr5tf7o"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# **Uploading Production Data**\n",
+        "To start monitoring with Deepchecks, you need to upload the production data you want to monitor.\n",
+        "In this example, we will upload the data and predictions stored for a single month as a batch.\n",
+        "\n",
+        "Similar to the reference data, predicted probabilities can also be sent for classification tasks to compute probability-based metrics like AUC, log_loss, brier score, etc."
+      ],
+      "metadata": {
+        "id": "0Of1ZPTSZTY_"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Convert timestamp to UNIX timestamp format\n",
+        "timestamp_col = prod_data[DATETIME_COL].astype(int) // 10 ** 9 \n",
+        "model_version.log_batch(sample_ids=prod_data.index,\n",
+        "                        data=prod_data.drop([DATETIME_COL, LABEL_COL], axis=1), \n",
+        "                        timestamps=timestamp_col, predictions=prod_predictions)\n"
+      ],
+      "metadata": {
+        "id": "dTe3T2USZeEx"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# **Updating the Labels (Optional)**\n",
+        "In some real-world scenarios, data labels are only available later.\n",
+        "We can update them retrospectively using global sample IDs, which are not specific to a version but apply globally to the model. To upload the labels, we need the model client."
+      ],
+      "metadata": {
+        "id": "3-bUaXvXZgKY"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model_client = dc_client.get_or_create_model(version_arguments['model_name'])\n",
+        "model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[LABEL_COL])"
+      ],
+      "metadata": {
+        "id": "YzqDhw5KZnMr"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
