@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+
+import { RoleEnum } from 'api/generated';
+import useUser from 'helpers/hooks/useUser';
+
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
-
-import { RoleEnum, useRetrieveUserInfoApiV1UsersMeGet } from 'api/generated';
 
 import Billing from './components/Billing/Billing';
 import Members from './components/Members/Members';
@@ -24,11 +26,9 @@ const constants = {
 
 const WorkspaceSettings = () => {
   const [value, setValue] = useState(0);
-  const { data: user, isLoading } = useRetrieveUserInfoApiV1UsersMeGet({
-    query: {
-      refetchOnWindowFocus: false
-    }
-  });
+
+  const { user, isLoading, availableFeatures } = useUser();
+  const modelAssignment = availableFeatures?.model_assignment;
 
   const { is_cloud } = getStorageItem(storageKeys.environment);
 
@@ -57,15 +57,15 @@ const WorkspaceSettings = () => {
             onChange={handleTabChange}
           >
             <Tab label={constants.membersTabLabel} />
-            <Tab label={constants.modelsTabLabel} />
+            {modelAssignment && <Tab label={constants.modelsTabLabel} />}
             <Tab label={constants.billingTabLabel} />
           </Tabs>
         )}
       </Box>
       <Box sx={{ marginY: '32px' }}>
         {value === 0 && <Members />}
-        {value === 1 && <ModelsTab />}
-        {value === 2 && (showBilling ? <Billing /> : <NotOwnerMsg />)}
+        {modelAssignment && value === 1 && <ModelsTab />}
+        {value === (modelAssignment ? 2 : 1) && (showBilling ? <Billing /> : <NotOwnerMsg />)}
       </Box>
     </Box>
   );

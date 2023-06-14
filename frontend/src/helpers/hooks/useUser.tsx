@@ -12,8 +12,7 @@ import {
 } from 'api/generated';
 
 import { resError } from 'helpers/types/resError';
-import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
-import { events, reportEvent } from 'helpers/services/mixPanel';
+import { setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 export type UserProvider = {
   children: JSX.Element;
@@ -26,6 +25,7 @@ export type UserContext = {
   isOwner: boolean;
   availableFeatures: FeaturesSchema | undefined;
   refetchUser: () => void;
+  isLoading: boolean;
 };
 
 const UserContext = createContext<UserContext | null>(null);
@@ -45,7 +45,7 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   const [isOwner, setIsOwner] = useState(false);
   const [availableFeatures, setAvailableFeatures] = useState<FeaturesSchema>();
 
-  const { data, refetch } = useRetrieveUserInfoApiV1UsersMeGet({
+  const { data, refetch, isLoading } = useRetrieveUserInfoApiV1UsersMeGet({
     query: {
       refetchOnWindowFocus: false
     }
@@ -53,7 +53,6 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
 
   const refetchUser = () => refetch();
 
-  const loggedIn = getStorageItem(storageKeys.loggedIn);
   const userRole = data?.roles.includes('admin') ? (data?.roles.includes('owner') ? 'owner' : 'admin') : 'member';
   const isUserDetailsComplete = !!user?.organization;
 
@@ -92,11 +91,10 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   }, [user]);
 
   useEffect(() => {
-    !loggedIn && reportEvent(events.authentication.login);
     setStorageItem(storageKeys.loggedIn, true);
   }, []);
 
-  const value = { user, isUserDetailsComplete, availableFeatures, isAdmin, isOwner, refetchUser };
+  const value = { user, isUserDetailsComplete, availableFeatures, isAdmin, isOwner, refetchUser, isLoading };
 
   if (user && isUserDetailsComplete && hotjar.initialized()) {
     hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });

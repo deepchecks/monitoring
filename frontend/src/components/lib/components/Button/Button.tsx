@@ -40,7 +40,14 @@ export const Button = (props: ButtonProps) => {
   const loaderColor = !isHollow ? theme.palette.grey[100] : '';
 
   return (
-    <StyledMUIButton variant={variant} width={width} margin={margin} buttonTextColor={buttonTextColor} {...otherProps}>
+    <StyledMUIButton
+      variant={variant}
+      width={width}
+      margin={margin}
+      buttonTextColor={buttonTextColor}
+      sx={{ pointerEvents: loading ? 'none' : 'auto' }}
+      {...otherProps}
+    >
       {loading ? <CircularProgress sx={{ color: loaderColor }} size={20} /> : label}
     </StyledMUIButton>
   );

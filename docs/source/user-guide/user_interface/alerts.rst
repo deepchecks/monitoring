@@ -72,7 +72,7 @@ Run test suite
 
 Another way of getting further insights for understanding the root cause of your issue is to run the full test suite. 
 Its result is a detailed view of many Check's results that ran on the selected point in time, all combined into a single html report.
-The output is of a preconfigured :doc:`Deepchecks Testing Suite <deepchecks:user-guide/general/deepchecks_hierarchy>`, 
+The output is of a preconfigured :ref:`Deepchecks Testing Suite <deepchecks:general__deepchecks_hierarchy>`, 
 similar to the Suites that are compatible for running within your testing and CI/CD environments.
 
 

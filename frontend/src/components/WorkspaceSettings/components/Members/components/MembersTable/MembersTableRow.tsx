@@ -27,6 +27,7 @@ interface MembersTableRowProps extends TableRowProps {
   removeMember: (member: MemberSchema) => void;
   assignModels: (member: MemberSchema) => void;
   models: ModelManagmentSchema[];
+  modelAssignment: boolean | undefined;
 }
 
 const { roles, allModels, assignModels } = constants.table;
@@ -59,6 +60,7 @@ export const MembersTableRow = ({
   selected,
   assignModels,
   models,
+  modelAssignment,
   ...otherProps
 }: MembersTableRowProps) => {
   const { id, full_name, email, created_at, roles } = member;
@@ -79,13 +81,15 @@ export const MembersTableRow = ({
       <StyledTableCell>{email}</StyledTableCell>
       <StyledTableCell>{dayjs(created_at).format('L')}</StyledTableCell>
       <StyledTableCell>{getRole(roles)}</StyledTableCell>
-      <StyledTableCell align="center">
-        <StyledTableCellButton
-          label={calculateButtonLabel(member.id, models)}
-          variant="text"
-          onClick={e => handleMemberActions(e, 'assign')}
-        />
-      </StyledTableCell>
+      {modelAssignment && (
+        <StyledTableCell align="center">
+          <StyledTableCellButton
+            label={calculateButtonLabel(member.id, models)}
+            variant="text"
+            onClick={e => handleMemberActions(e, 'assign')}
+          />
+        </StyledTableCell>
+      )}
       <StyledTableCell align="right">
         <StyledIconButton onClick={handleMemberActions}>
           <ModeEditIcon />

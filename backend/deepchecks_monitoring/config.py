@@ -149,12 +149,14 @@ class Settings(
 
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
     is_cloud: bool = False
-    parallel_enabled: bool = True
+    is_on_prem: bool = False
     deployment_url: AnyHttpUrl = 'http://localhost:8000'
     auth_jwt_secret: t.Optional[str] = secrets.token_hex(20)
     oauth_url: AnyHttpUrl
     oauth_client_id: str
     oauth_client_secret: str
+    mixpanel_id: str | None
+    enable_analytics: bool = True
 
     init_local_ray_instance: str | None = None
     total_number_of_check_executor_actors: int = os.cpu_count() or 8

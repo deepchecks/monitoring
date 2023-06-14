@@ -71,6 +71,5 @@ class Settings(
     debug_mode: bool = False
     lauchdarkly_sdk_key: str = ''
     access_audit: bool = False
-    mixpanel_id: str = ''
     hotjar_sv: str = ''
     hotjar_id: str = ''

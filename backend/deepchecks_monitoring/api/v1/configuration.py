@@ -77,7 +77,8 @@ async def get_all_alert_rules(
         "severity:desc",
     ]] = Query(default=[]),
     user: User = Depends(auth.CurrentUser()),
-    session: AsyncSession = AsyncSessionDep
+    session: AsyncSession = AsyncSessionDep,
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Return all alert rules for the configuration screen.
 
@@ -137,11 +138,11 @@ async def get_all_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
-        .join(Model.members)
-        .where(ModelMember.user_id == user.id)
         .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == AlertRule.id)
         .outerjoin(total_count, total_count.c.alert_rule_id == AlertRule.id)
     )
+    if resources_provider.get_features_control(user).model_assignment:
+        q = q.join(Model.members).where(ModelMember.user_id == user.id)
     if models:
         q = q.where(Check.model_id.in_(models))
     if severity:

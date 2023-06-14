@@ -36,6 +36,8 @@ from deepchecks_monitoring.notifications import AlertNotificator
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.utils.mixpanel import BaseEvent as BaseMixpanelEvent
+from deepchecks_monitoring.utils.mixpanel import MixpanelEventReporter
 
 __all__ = ["ResourcesProvider"]
 
@@ -64,6 +66,10 @@ class BaseResourcesProvider:
         pass
 
 
+P = t.ParamSpec("P")
+TMixpanelEvent = t.TypeVar("TMixpanelEvent", bound=BaseMixpanelEvent)
+
+
 class ResourcesProvider(BaseResourcesProvider):
     """Provider of resources."""
 
@@ -82,6 +88,7 @@ class ResourcesProvider(BaseResourcesProvider):
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
         self._parallel_check_executors = None
+        self._mixpanel_event_reporter: MixpanelEventReporter | None = None
         self._topics = set()
 
     @property
@@ -346,8 +353,12 @@ class ResourcesProvider(BaseResourcesProvider):
     def parallel_check_executors_pool(self):
         """Return parallel check executors actors."""
         # pylint: disable=import-outside-toplevel
-        import ray  # noqa
-        from ray.util.actor_pool import ActorPool  # noqa
+        try:
+            import ray  # noqa
+            from ray.util.actor_pool import ActorPool  # noqa
+        except ImportError:
+            logging.getLogger("server").info({"message": "Ray is not installed"})
+            return
 
         if not ray.is_initialized():
             logging.getLogger("server").info({
@@ -412,6 +423,66 @@ class ResourcesProvider(BaseResourcesProvider):
         # 2 workers might try to create topic at the same time so ignoring if already exists
         except TopicAlreadyExistsError:
             return True
+
+    async def lazy_report_mixpanel_event(
+        self,
+        event_factory: t.Callable[P, t.Awaitable[TMixpanelEvent]],
+        *args: P.args,
+        **kwargs: P.kwargs
+    ) -> t.Callable[..., TMixpanelEvent | None]:
+        """Create 'report_mixpanel_event' callback for later use."""
+        if (mixpanel := self._get_mixpanel_event_reporter()) is None:
+            return lambda: None
+        else:
+            if self.settings.is_cloud:
+                kwargs["deployment"] = "saas"
+            elif self.settings.is_on_prem:
+                kwargs["deployment"] = "on-prem"
+
+            event = await event_factory(*args, **kwargs)
+
+            def fn():
+                nonlocal event, mixpanel
+                mixpanel.report(event)
+                return event
+
+            return fn
+
+    async def report_mixpanel_event(
+        self,
+        event_factory: t.Callable[P, t.Awaitable[TMixpanelEvent]],
+        *args: P.args,
+        **kwargs: P.kwargs
+    ) -> TMixpanelEvent | None:
+        """Send mixpanel event."""
+        if mixpanel := self._get_mixpanel_event_reporter():
+            if self.settings.is_cloud:
+                kwargs["deployment"] = "saas"
+            elif self.settings.is_on_prem:
+                kwargs["deployment"] = "on-prem"
+            event = await event_factory(*args, **kwargs)
+            mixpanel.report(event)
+            return event
+
+    @property
+    def is_analytics_enabled(self) -> bool:
+        """Check whether analytics is enabled."""
+        return self._get_mixpanel_event_reporter() is not None
+
+    def _get_mixpanel_event_reporter(self) -> MixpanelEventReporter | None:
+        mixpanel = self._mixpanel_event_reporter
+
+        if mixpanel is not None:
+            return mixpanel
+        if self.settings.enable_analytics is False:
+            logging.getLogger("server").warning({"message": "Analytics gathering is disabled"})
+            return
+        if token := self.settings.mixpanel_id:
+            mixpanel = MixpanelEventReporter.from_token(token)
+            self._mixpanel_event_reporter = mixpanel
+            return mixpanel
+
+        logging.getLogger("server").warning({"message": "Mixpanel token is not provided"})
 
     def get_features_control(self, user: User) -> FeaturesControl:  # pylint: disable=unused-argument
         """Return features control."""

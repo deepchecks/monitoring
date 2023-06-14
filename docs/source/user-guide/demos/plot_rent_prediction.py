@@ -77,10 +77,9 @@ dc_client = DeepchecksClient(host=host, token=token)
 # We'll start by downloading the training data from the deepchecks testing package. This training data will be used
 # to set the reference for the model version. We'll also download the pre-calculated predictions for this data.
 
-from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction
+from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions
 
-ref_df, _ = load_data(data_format='Dataframe')
-ref_predictions, _ = load_pre_calculated_prediction()
+ref_df, ref_predictions = load_data_and_predictions(data_format='Dataframe')
 ref_df.head(2)
 
 # %%
@@ -103,7 +102,7 @@ ref_df.head(2)
 # **It is highly recommended to review the created schema file before moving forward to creating the model version.**
 #
 # In order to create a schema file, the easiest way is to first define a deepchecks
-# :doc:`Dataset <deepchecks:user-guide/tabular/dataset_object>` object, which contains the actual data (DataFrame)
+# :ref:`Dataset <deepchecks:tabular__dataset_object>` object, which contains the actual data (DataFrame)
 # together with metadata about the role of each column.
 
 from deepchecks.tabular import Dataset
@@ -137,7 +136,7 @@ read_schema(schema_file_path)
 #
 # In order to provide the best analysis and alerts, we should let Deepchecks know about the relative importance of
 # the features to the model's prediction. In this example we'll load pre-calculated features importnaces,
-# but these can be easily calculated using :doc:`deepchecks <deepchecks:user-guide/tabular/feature_importance>`,
+# but these can be easily calculated using :ref:`deepchecks <deepchecks:tabular__feature_importance>`,
 # or other methods (such as SHAP). Note that the feature importance values should be normalized to sum to 1.
 
 from deepchecks.tabular.datasets.regression.airbnb import load_pre_calculated_feature_importance
@@ -174,8 +173,7 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # read more, refer to the :doc:`Production Data Guide </user-guide/tabular/tabular-production>`. Here we'll
 # show how to use the batch upload method.
 
-_, prod_data = load_data(data_format='DataFrame')
-_, prod_predictions = load_pre_calculated_prediction()
+prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_000)
 
 # %%
 # Uploading a Batch of Data
@@ -305,4 +303,4 @@ model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label
 
 # dc_client.delete_model(model_name)
 
-# sphinx_gallery_thumbnail_path = '_static/images/examples/rent/manhattan.png'
+# sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/examples/rent/manhattan.png'
