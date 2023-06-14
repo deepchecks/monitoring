@@ -101,7 +101,7 @@ class CacheFunctions:
         """Get the user's organization samples count for the given minute, and increase by the given amount."""
         key = f"rate-limit:{user.organization.id}:{time.minute}"
         if is_label:
-            key += ':label'
+            key += ":label"
         p = self.redis.pipeline()
         p.incr(key, count_added)
         p.expire(key, 60)
