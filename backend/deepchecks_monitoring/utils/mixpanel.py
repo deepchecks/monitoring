@@ -108,14 +108,14 @@ class UserEvent(OrganizationEvent):
         else:
             from deepchecks_monitoring.public_models import Organization  # pylint: disable=redefined-outer-name
             q = sa.select(Organization).where(Organization.id == user.organization_id)
-            org = session.scalar(q)
+            org = await session.scalar(q)
 
         if 'roles' not in unloaded_relations:
             roles = user.roles
         else:
             from deepchecks_monitoring.public_models import Role
             q = sa.select(Role).where(Role.user_id == user.id)
-            roles = session.scalars(q)
+            roles = (await session.scalars(q)).all()
 
         org = t.cast('Organization', org)
         roles = t.cast('list[Role]', roles)
