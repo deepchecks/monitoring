@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_object_session
 from sqlalchemy.orm import Mapped, Query, relationship
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
+from deepchecks_monitoring.schema_models import IngestionError
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
                                                              ColumnType, column_types_to_table_columns,
@@ -106,6 +107,14 @@ class Model(Base, MetadataMixin, PermissionMixin):
     )
     notes: Mapped[t.List["ModelNote"]] = relationship(
         "ModelNote",
+        back_populates="model",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
+    )
+
+    ingestion_errors: Mapped[t.List["IngestionError"]] = relationship(
+        "IngestionError",
         back_populates="model",
         cascade="save-update, merge, delete",
         passive_deletes=True,

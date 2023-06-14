@@ -18,6 +18,8 @@ from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models import Model
+
 
 
 __all__ = ["IngestionError"]
@@ -31,17 +33,28 @@ class IngestionError(Base, PermissionMixin):
     id = sa.Column(sa.Integer, primary_key=True)
     created_at = sa.Column(
         sa.DateTime(timezone=True),
-        server_default=sa.func.now(),
-        index=True,
+        server_default=sa.func.now()
     )
     sample = sa.Column(sa.String)
     sample_id = sa.Column(sa.String, nullable=True)
     error = sa.Column(sa.String, index=True)
 
+    model_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=True,
+        index=True
+    )
+    model: Mapped["Model"] = relationship(
+        "Model",
+        back_populates="ingestion_errors"
+    )
+
     model_version_id = sa.Column(
         sa.Integer,
         sa.ForeignKey("model_versions.id", ondelete="CASCADE", onupdate="RESTRICT"),
-        nullable=False
+        nullable=True,
+        index=True
     )
     model_version: Mapped["ModelVersion"] = relationship(
         "ModelVersion",
