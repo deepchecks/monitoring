@@ -54,8 +54,7 @@ class TasksQueuer:
             redis_client,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
-            run_interval,
-            retries_interval: int = 600
+            run_interval: int,
     ):
         self.resource_provider = resource_provider
         self.logger = logger
@@ -63,15 +62,27 @@ class TasksQueuer:
         self.redis = redis_client
 
         # Build the query once to be used later
-        intervals_by_type = case([
-            (Task.bg_worker_task == bg_worker.queue_name(), datetime.timedelta(seconds=bg_worker.delay_seconds()))
-            for bg_worker in workers
-        ], else_=datetime.timedelta(seconds=0))
-        retry_interval = Task.num_pushed * datetime.timedelta(seconds=retries_interval)
-        condition = Task.creation_time + intervals_by_type + retry_interval
+        delay_by_type = case(
+            [(
+                Task.bg_worker_task == bg_worker.queue_name(),
+                datetime.timedelta(seconds=bg_worker.delay_seconds())
+            ) for bg_worker in workers],
+            else_=datetime.timedelta(seconds=0)
+        )
+        retry_by_type = case(
+            [(
+                Task.bg_worker_task == bg_worker.queue_name(),
+                datetime.timedelta(seconds=bg_worker.retry_seconds())
+            ) for bg_worker in workers],
+            else_=datetime.timedelta(seconds=0)
+        )
+
+        retry_expression = Task.num_pushed * retry_by_type
+        next_execution_time = Task.creation_time + delay_by_type + retry_expression
+
         self.query = (
             update(Task)
-            .where(condition <= func.statement_timestamp())
+            .where(next_execution_time <= func.statement_timestamp())
             .values({Task.num_pushed: Task.num_pushed + 1})
             .returning(Task.id)
         )
