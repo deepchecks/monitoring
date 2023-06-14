@@ -77,6 +77,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
       setIsLoading(false);
     } else {
       refetch();
+      setError('');
       setIsLoading(false);
       handleClose();
     }
