@@ -152,7 +152,7 @@ class UserEvent(BaseEvent):
     def to_properties(self) -> dict[str, t.Any]:
         """Prepare data to be send to the mixpanel."""
         data = self.dict()
-        org = t.cast('dict[str, t.Any] | None', data.pop("u_org", None))
+        org = t.cast('dict[str, t.Any] | None', data.pop('u_org', None))
         return data if not org else {**data, **org}
 
 
