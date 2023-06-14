@@ -18,15 +18,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.api.v1.alert import AlertSchema
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.monitoring_utils import IdResponse
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
+from deepchecks_monitoring.utils.mixpanel import AlertRuleCreatedEvent
 
 from .router import router
 
@@ -83,6 +85,7 @@ async def create_alert_rule(
         alert_rule: AlertRuleCreationSchema,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Create new alert rule on a given check."""
     stm = insert(AlertRule).values(
@@ -93,6 +96,14 @@ async def create_alert_rule(
     ).returning(AlertRule.id)
 
     rule_id = (await session.execute(stm)).scalar_one()
+    await session.commit()
+
+    await resources_provider.report_mixpanel_event(
+        AlertRuleCreatedEvent.create_event,
+        alert_rule=await session.get(AlertRule, rule_id),
+        user=user
+    )
+
     return {"id": rule_id}
 
 
@@ -114,7 +125,8 @@ async def get_alert_rules(
         ]] = Query(default=[]),
         monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         user: User = Depends(auth.CurrentUser()),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Return all the alert rules.
 
@@ -168,10 +180,11 @@ async def get_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
-        .join(Model.members)
         .join(alerts_info, alerts_info.c.alert_rule_id == AlertRule.id)
-        .where(ModelMember.user_id == user.id)
     )
+
+    if resources_provider.get_features_control(user).model_assignment:
+        q = q.join(Model.members).where(ModelMember.user_id == user.id)
 
     if monitor is not None:
         q = q.where(AlertRule.monitor_id == monitor_id)

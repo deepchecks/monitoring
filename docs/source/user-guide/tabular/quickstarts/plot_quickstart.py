@@ -33,11 +33,11 @@ types of the features. It is also highly recommended to provide the feature impo
 which is used by the system to prioritize features in various calculations and displays.
 
 The easiest way to create a model version, which is demonstrated
-here, requires a :doc:`Dataset <deepchecks:user-guide/tabular/dataset_object>` object
+here, requires a :ref:`Dataset <deepchecks:tabular__dataset_object>` object
 containing the reference data for the version. Reference data is a dataset to which we wish to compare
 our production data stream. Typically, this will be the dataset on which the model was trained.
-Providing reference data is optional yet many important :doc:`checks <deepchecks:user-guide/general/deepchecks_hierarchy>`
-such as :doc:`Train Test Feature Drift (Tabular Version) <deepchecks:checks_gallery/tabular/train_test_validation/plot_train_test_feature_drift>`
+Providing reference data is optional yet many important :ref:`checks <deepchecks:general__deepchecks_hierarchyy>`
+such as :ref:`Feature Drift (Tabular Version) <deepchecks:tabular__feature_drift>`
 cannot run without it.
 
 """
@@ -45,14 +45,12 @@ cannot run without it.
 # %%
 # Preparing the Reference Data
 # -------------------------------
-# See :doc:`link <deepchecks:user-guide/tabular/dataset_object>` for more information on the Dataset object and how
+# See :ref:`link <deepchecks:tabular__dataset_object>` for more information on the Dataset object and how
 # to create it from different data sources.
 
-from deepchecks.tabular.datasets.regression.airbnb import load_data, \
-    load_pre_calculated_prediction, load_pre_calculated_feature_importance
+from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions, load_pre_calculated_feature_importance
 
-ref_dataset, _ = load_data(data_format='Dataset')
-ref_predictions, _ = load_pre_calculated_prediction()
+ref_dataset, ref_predictions = load_data_and_predictions(data_format='Dataset')
 feature_importance = load_pre_calculated_feature_importance() # Optional
 feature_importance
 
@@ -119,8 +117,7 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # enabling computation of probability based metrics such as AUC, log_loss, brier scorer and more.
 
 timestamp, label_col = 'timestamp', 'price'
-_, prod_data = load_data(data_format='DataFrame')
-_, prod_predictions = load_pre_calculated_prediction()
+prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_000)
 timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 # Convert to second-based epoch time
 model_version.log_batch(sample_ids=prod_data.index,
                         data=prod_data.drop([timestamp, label_col], axis=1),
@@ -162,4 +159,6 @@ model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label
 # If we wish to remove the model do free up space for new models we can do it in the following way:
 
 # CAUTION: This will delete the model, all model versions, and all associated datasets.
-# dc_client.delete_model(model_name)
+dc_client.delete_model(model_name)
+
+# sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/quickstarts/tabular_quickstart_gray.png'

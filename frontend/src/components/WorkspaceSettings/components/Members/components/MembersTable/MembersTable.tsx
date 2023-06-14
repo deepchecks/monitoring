@@ -2,6 +2,7 @@ import React from 'react';
 
 import { MemberSchema } from 'api/generated';
 import useModels from 'helpers/hooks/useModels';
+import useUser from 'helpers/hooks/useUser';
 
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -25,6 +26,8 @@ interface MembersTableProps {
 
 export const MembersTable = ({ members, selected, setSelected, handleOpenActionDialog }: MembersTableProps) => {
   const { models } = useModels('showAll');
+  const { availableFeatures } = useUser();
+  const modelAssignment = availableFeatures?.model_assignment;
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -43,13 +46,14 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
     handleOpenActionDialog(MembersActionDialogOptions.assignModels, member);
 
   return (
-    <StyledTableContainer component={Paper} sx={{ height: 'calc(100vh - 446px)' }}>
+    <StyledTableContainer component={Paper} sx={{ height: 'calc(100vh - 356px)' }}>
       <Table stickyHeader sx={{ minWidth: 650 }} aria-label={constants.table.ariaLabel}>
         <MembersTableHead
           numSelected={selected.length}
           rowCount={members.length}
           selectAllClick={handleSelectAllClick}
           onClick={() => handleSelectAllClick}
+          modelAssignment={modelAssignment}
         />
         <TableBody>
           {members.map(member => {
@@ -68,6 +72,7 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
                 selected={isItemSelected}
                 onClick={e => selectMultiple(e, id, selected, setSelected)}
                 models={models}
+                modelAssignment={modelAssignment}
               />
             );
           })}

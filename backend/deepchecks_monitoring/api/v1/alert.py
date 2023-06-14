@@ -17,8 +17,9 @@ from sqlalchemy import false, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
-# from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
+from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, ModelMember, Monitor
 from deepchecks_monitoring.utils import auth
 
@@ -50,7 +51,8 @@ class AlertSchema(AlertCreationSchema):
 @router.get("/alerts/count_active", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
 async def count_alerts(
     session: AsyncSession = AsyncSessionDep,
-    user=Depends(auth.CurrentUser()),
+    user: User = Depends(auth.CurrentUser()),
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Count alerts."""
     select_alert = (select(AlertRule.alert_severity, func.count())
@@ -58,11 +60,11 @@ async def count_alerts(
                     .join(AlertRule.monitor)
                     .join(Monitor.check)
                     .join(Check.model)
-                    .join(Model.members)
-                    .where(ModelMember.user_id == user.id)
                     .where(Alert.resolved == false()))
-    q = select_alert.group_by(AlertRule.alert_severity)
-    results = await session.execute(q)
+    if resources_provider.get_features_control(user).model_assignment:
+        select_alert = select_alert.join(Model.members).where(ModelMember.user_id == user.id)
+    select_alert = select_alert.group_by(AlertRule.alert_severity)
+    results = await session.execute(select_alert)
     total = results.all()
     return dict(total)
 

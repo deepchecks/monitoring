@@ -11,11 +11,18 @@ interface MembersTableHeadProps extends TableHeadProps {
   numSelected: number;
   rowCount: number;
   selectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  modelAssignment: boolean | undefined;
 }
 
 const { name, email, activeSince, role, actions, modelAccess } = constants.table;
 
-export const MembersTableHead = ({ numSelected, rowCount, selectAllClick, ...otherProps }: MembersTableHeadProps) => (
+export const MembersTableHead = ({
+  numSelected,
+  rowCount,
+  selectAllClick,
+  modelAssignment,
+  ...otherProps
+}: MembersTableHeadProps) => (
   <TableHead {...otherProps}>
     <StyledTableRow>
       <StyledTableCellBold padding="checkbox">
@@ -29,9 +36,11 @@ export const MembersTableHead = ({ numSelected, rowCount, selectAllClick, ...oth
       <StyledTableCellBold width="25%">{email}</StyledTableCellBold>
       <StyledTableCellBold width="15%">{activeSince}</StyledTableCellBold>
       <StyledTableCellBold width="10%">{role}</StyledTableCellBold>
-      <StyledTableCellBold align="center" width="15%">
-        {modelAccess}
-      </StyledTableCellBold>
+      {modelAssignment && (
+        <StyledTableCellBold align="center" width="15%">
+          {modelAccess}
+        </StyledTableCellBold>
+      )}
       <StyledTableCellBold align="right" width="10%">
         {actions}
       </StyledTableCellBold>

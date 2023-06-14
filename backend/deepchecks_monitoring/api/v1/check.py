@@ -125,6 +125,7 @@ async def add_checks(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: ExtendedAsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[t.Dict[t.Any, t.Any]]:
     """Add a new check or checks to the model.
 
@@ -148,7 +149,8 @@ async def add_checks(
         .options(joinedload(Model.checks)),
         message=f'Model with next set of arguments does not exist: {repr(model_identifier)}'
     ))
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     checks = (
         [checks]
         if not isinstance(checks, t.Sequence)  # pylint: disable=isinstance-second-argument-not-valid-type
@@ -190,10 +192,12 @@ async def delete_check_by_id(
         check_identifier: CheckIdentifier = CheckIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Delete check instance by identifier."""
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     await exists_or_404(session, Check, **check_identifier.as_kwargs)
     await delete(Check).where(check_identifier.as_expression)
 
@@ -204,6 +208,7 @@ async def delete_checks_by_name(
         names: t.List[str] = Query(..., description='Checks names'),
         session: ExtendedAsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Delete check instances by name if they exist, otherwise returns 404."""
     model = (await session.fetchone_or_404(
@@ -213,7 +218,8 @@ async def delete_checks_by_name(
         .limit(1),
         message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
     ))
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.assert_user_assigend_to_model(session, model.id, user)
 
     model = t.cast(Model, model)
     existing_checks = {check.name: check.id for check in model.checks}
@@ -239,6 +245,7 @@ async def get_checks(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[CheckSchema]:
     """Return all the checks for a given model.
 
@@ -255,10 +262,28 @@ async def get_checks(
         All the checks for a given model.
     """
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.assert_user_assigend_to_model(session, model.id, user)
     q = select(Check).join(Check.model).where(model_identifier.as_expression)
     results = (await session.scalars(q)).all()
-    return [CheckSchema.from_orm(res) for res in results]
+    check_schemas = [CheckSchema.from_orm(res) for res in results]
+
+    def get_check_order(check):
+        order_by_name = ['SingleDatasetPerformance',
+                         'FeatureDrift',
+                         'LabelDrift',
+                         'PredictionDrift',
+                         ]
+        if check.config['class_name'] in order_by_name:
+            return order_by_name.index(check.config['class_name'])
+        # If not in the list, first show checks from model_evaluation module
+        if check.config['module_name'].startswith('deepchecks.tabular.checks.model_evaluation'):
+            return len(order_by_name)
+        # Then show the rest
+        return len(order_by_name) + 1
+
+    # Secondary sort by name
+    return sorted(check_schemas, key=lambda x: (get_check_order(x), x.config['class_name']))
 
 
 @router.get(
@@ -270,10 +295,12 @@ async def get_model_auto_frequency(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Infer from the data the best frequency to show for analysis screen."""
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    await Model.fetch_or_403(session, model.id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await Model.assert_user_assigend_to_model(session, model.id, user)
 
     model_timezone = t.cast(str, model.timezone)
 
@@ -410,8 +437,7 @@ async def run_standalone_check_per_window_in_range(
     return await run_check_per_window_in_range(
         check_id,
         session,
-        monitor_options,
-        parallel=resources_provider.settings.parallel_enabled,
+        monitor_options
     )
 
 
@@ -564,8 +590,7 @@ async def run_check_group_by_feature(
         model_version_id: int,
         feature: str,
         monitor_options: SingleCheckRunOptions,
-        session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Run check window with a group by on given feature.
 
@@ -663,8 +688,7 @@ async def run_check_group_by_feature(
         # Get value from check to run
         model_results_per_window = await get_results_for_model_versions_per_window(
             {model_version.id: session_info}, [model_version], model_version.model, check,
-            monitor_options.additional_kwargs, with_display=False,
-            parallel=resources_provider.settings.parallel_enabled)
+            monitor_options.additional_kwargs, with_display=False)
         # The function we called is more general, but we know here we have single version and window
         result = model_results_per_window[model_version][0]
         if result['result'] is not None:
@@ -682,8 +706,7 @@ async def get_check_display(
         check_id: int,
         model_version_id: int,
         monitor_options: SingleCheckRunOptions,
-        session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        session: AsyncSession = AsyncSessionDep
 ):
     check: Check = await fetch_or_404(session, Check, id=check_id)
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
@@ -710,7 +733,7 @@ async def get_check_display(
     # Get value from check to run
     model_results_per_window = await get_results_for_model_versions_per_window(
         {model_version.id: model_version_data}, [model_version], model_version.model, check,
-        monitor_options.additional_kwargs, with_display=True, parallel=resources_provider.settings.parallel_enabled)
+        monitor_options.additional_kwargs, with_display=True)
 
     # The function we called is more general, but we know here we have single version and window
     result = model_results_per_window[model_version][0]

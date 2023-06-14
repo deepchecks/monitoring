@@ -35,7 +35,7 @@ export const typographyOptions: TypographyOptions = {
   h6: {
     fontWeight: 500,
     fontSize: '10px',
-    lineHeight: '14px'
+    lineHeight: '14.1px'
   },
   body1: {
     fontSize: 14,
@@ -52,7 +52,7 @@ export const typographyOptions: TypographyOptions = {
   subtitle1: {
     fontSize: 12,
     fontWeight: 700,
-    lineHeight: '12px',
+    lineHeight: '14.1px',
     color: paletteOptions.grey?.[500]
   },
   subtitle2: {

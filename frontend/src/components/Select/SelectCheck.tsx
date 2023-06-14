@@ -7,18 +7,18 @@ import {
   MonitorTypeConf
 } from 'api/generated';
 
-import { Stack, MenuItem } from '@mui/material';
+import { Stack, MenuItem, StackProps } from '@mui/material';
 
-import { ControlledMarkedSelect } from 'components/base/MarkedSelect/ControlledMarkedSelect';
-import { MarkedSelect } from 'components/base/MarkedSelect';
 import { Subcategory } from 'components/Subcategory';
+import { BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
+import { ControlledBaseDropdown } from 'components/base/InputDropdown/ControlledBaseDropdown';
 
 import { SetStateType, SelectValues } from 'helpers/types';
 import { CheckFilterTypes, FilteredValues, initFilteredValues, TypeMap, unionCheckConf } from 'helpers/utils/checkUtil';
 import { getNameFromData } from '../Analysis/AnalysisItem/components/AnalysisChartItemWithFilters/AnalysisItemSelect/MultiSelect';
 import { CheckTypeOptions } from 'helpers/types/check';
 
-interface SelectCheckProps {
+interface SelectCheckProps extends StackProps {
   monitor: MonitorSchema | null;
   model: SelectValues;
   check: SelectValues;
@@ -47,7 +47,8 @@ export const SelectCheckComponent = ({
   setIsValidConfig,
   disabled,
   error,
-  size = 'small'
+  size = 'small',
+  ...otherProps
 }: SelectCheckProps) => {
   const { data: checksList = [] } = useGetChecksApiV1ModelsModelIdChecksGet(model);
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(
@@ -93,7 +94,7 @@ export const SelectCheckComponent = ({
       const confType = conf.type as CheckFilterTypes;
       getFilteredValue(filteredValues[confType]?.[0] || null, conf);
     });
-    if (type === null) setIsAgg(true);
+    if (!type) setIsAgg(true);
   }, [type, checkInfo]);
 
   useEffect(() => {
@@ -135,8 +136,8 @@ export const SelectCheckComponent = ({
     return conf.is_agg_shown != null && conf.is_agg_shown != isAgg;
   }
 
-  useMemo(() => {
-    if (checkInfo === undefined || (type === CheckTypeOptions.Class && !filteredValues?.scorer?.[0])) {
+  useEffect(() => {
+    if (!checkInfo || (type === CheckTypeOptions.Class && !filteredValues?.scorer?.[0])) {
       setIsValidConfig(false);
     } else {
       setIsValidConfig(isAgg || !!filteredValues?.feature?.[0] || !!resConf);
@@ -144,8 +145,8 @@ export const SelectCheckComponent = ({
   }, [filteredValues?.feature?.[0], filteredValues?.scorer?.[0], resConf, isAgg, type, checkInfo]);
 
   return (
-    <Stack>
-      <ControlledMarkedSelect
+    <Stack {...otherProps}>
+      <ControlledBaseDropdown
         required
         error={error && !check}
         label="Check"
@@ -171,7 +172,7 @@ export const SelectCheckComponent = ({
         <>
           {checkInfo?.check_conf?.map((conf, confIndex) => (
             <Subcategory key={confIndex}>
-              <MarkedSelect
+              <BaseDropdown
                 label={`Select ${conf.type}`}
                 value={isDisabled(conf) ? '' : getSelectedVal(conf)}
                 onChange={e => updateFilteredValue(e.target.value as string, conf)}
@@ -196,12 +197,12 @@ export const SelectCheckComponent = ({
                     {value.name}
                   </MenuItem>
                 ))}
-              </MarkedSelect>
+              </BaseDropdown>
             </Subcategory>
           ))}
           {checkInfo?.res_conf && (
             <Subcategory>
-              <MarkedSelect
+              <BaseDropdown
                 label={`Select ${checkInfo?.res_conf.type}`}
                 onChange={e => setResConf((e.target.value as string) || undefined)}
                 clearValue={() => setResConf(undefined)}
@@ -222,7 +223,7 @@ export const SelectCheckComponent = ({
                     {value.name}
                   </MenuItem>
                 ))}
-              </MarkedSelect>
+              </BaseDropdown>
             </Subcategory>
           )}
         </>

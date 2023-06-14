@@ -51,6 +51,29 @@ services:
       default:
         ipv4_address: 10.5.0.7
 
+  zookeeper:
+    image: zookeeper:3.8
+    restart: on-failure
+    networks:
+      default:
+        ipv4_address: 10.5.0.8
+
+  kafka:
+    image: bitnami/kafka:3.4.1
+    restart: on-failure
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_ENABLE_KRAFT=no
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://127.0.0.1:9092
+    networks:
+      default:
+        ipv4_address: 10.5.0.9
+
   app:
     image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
     command:

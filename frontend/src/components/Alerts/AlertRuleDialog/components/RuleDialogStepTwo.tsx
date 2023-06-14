@@ -176,7 +176,6 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
           setCategory={setCategory}
           numericValue={numericValue}
           setNumericValue={setNumericValue}
-          size="medium"
         />
         <FormControlLabel
           style={{ marginTop: '8px' }}
