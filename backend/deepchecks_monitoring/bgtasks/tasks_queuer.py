@@ -74,7 +74,7 @@ class TasksQueuer:
                 Task.bg_worker_task == bg_worker.queue_name(),
                 datetime.timedelta(seconds=bg_worker.retry_seconds())
             ) for bg_worker in workers],
-            else_=datetime.timedelta(seconds=0)
+            else_=datetime.timedelta(seconds=600)
         )
 
         retry_expression = Task.num_pushed * retry_by_type
