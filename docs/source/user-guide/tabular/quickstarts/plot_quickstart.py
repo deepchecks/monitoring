@@ -48,11 +48,9 @@ cannot run without it.
 # See :ref:`link <deepchecks:tabular__dataset_object>` for more information on the Dataset object and how
 # to create it from different data sources.
 
-from deepchecks.tabular.datasets.regression.airbnb import load_data, \
-    load_pre_calculated_prediction, load_pre_calculated_feature_importance
+from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions, load_pre_calculated_feature_importance
 
-ref_dataset, _ = load_data(data_format='Dataset')
-ref_predictions, _ = load_pre_calculated_prediction()
+ref_dataset, ref_predictions = load_data_and_predictions(data_format='Dataset')
 feature_importance = load_pre_calculated_feature_importance() # Optional
 feature_importance
 
@@ -119,8 +117,7 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # enabling computation of probability based metrics such as AUC, log_loss, brier scorer and more.
 
 timestamp, label_col = 'timestamp', 'price'
-_, prod_data = load_data(data_format='DataFrame')
-_, prod_predictions = load_pre_calculated_prediction()
+prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_000)
 timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 # Convert to second-based epoch time
 model_version.log_batch(sample_ids=prod_data.index,
                         data=prod_data.drop([timestamp, label_col], axis=1),
