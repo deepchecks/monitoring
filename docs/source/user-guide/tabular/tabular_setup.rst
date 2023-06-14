@@ -119,7 +119,7 @@ An example of creating a model version (for a regression model, so ``model_class
    :hide:
 
     >>> from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions
-    >>> ref_dataset, _ = load_data_and_predictions(data_format='DataFrame')
+    >>> ref_dataset, _ = load_data_and_predictions(data_format='Dataset')
     >>> from deepchecks_client import create_schema, read_schema
     >>> schema_file_path = 'schema_file.yaml'
     >>> create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
