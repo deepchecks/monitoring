@@ -6,7 +6,7 @@ import { StyledButton, StyledContainer, StyledText } from 'components/lib';
 
 const constants = {
   title: 'Generate API Token',
-  description: 'Our tokens are valid until you are generating a new one. \nClick here to get new token.',
+  description: 'Your token is valid until you generate a new one. \nClick here to get new token.',
   buttonLabel: 'Generate and copy',
   buttonCopiedLabel: 'Copied!'
 };
