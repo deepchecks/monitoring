@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useTheme } from '@mui/material';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { RemoveCircleOutlineOutlined, AddCircleOutlineOutlined } from '@mui/icons-material';
 
 import { StyledContainer, StyledDialog, StyledInput, StyledText } from 'components/lib';
 
@@ -13,6 +13,7 @@ import {
 } from 'api/generated';
 
 import { resError } from 'helpers/types/resError';
+import { convertArrayToDictionary, convertDictionaryToArray } from 'helpers/utils/arrDictConverter';
 
 interface WebhookDialogProps {
   open: boolean;
@@ -26,12 +27,12 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('GET');
   const [webhookId, setWebhookId] = useState(1);
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [headers, setHeaders] = useState<{ [key: string]: any }>({ 'HEADER-NAME': 'Value' });
+  const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('GET');
+  const [headers, setHeaders] = useState([{ name: '', value: '' }]);
 
   const dialogTitleAndBtn = isWebhookConnected ? 'Edit Webhook' : 'Create New Webhook';
 
@@ -41,27 +42,28 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
     description: description,
     http_url: url,
     http_method: httpMethod,
-    http_headers: headers,
+    http_headers: convertArrayToDictionary(headers),
     notification_levels: []
   };
 
-  const handleAddHeader = () =>
-    headers['HEADER-NAME']
-      ? setError('Please fill the existing header name input before adding a new one.')
-      : setHeaders({ ...headers, 'HEADER-NAME': 'Value' });
+  const handleAddHeader = () => setHeaders([...headers, { name: '', value: '' }]);
+  const handleRemoveHeader = () => {
+    setHeaders(prevHeaders => {
+      const newHeaders = prevHeaders.slice(0, -1);
+      return newHeaders;
+    });
+  };
 
-  const handleHeaderChange = (key: string, value: string, prevKey?: string) => {
-    if (key) {
-      if (prevKey) {
-        const updatedHeaders = { ...headers };
-
-        delete updatedHeaders[prevKey];
-
-        setHeaders({ ...updatedHeaders, [key]: value });
+  const handleHeaderChange = (i: number, value: string, isValue?: boolean) => {
+    setHeaders(prevHeaders => {
+      const updatedHeaders = [...prevHeaders];
+      if (isValue) {
+        updatedHeaders[i] = { ...updatedHeaders[i], value };
       } else {
-        setHeaders({ ...headers, [key]: value });
+        updatedHeaders[i] = { ...updatedHeaders[i], name: value };
       }
-    }
+      return updatedHeaders;
+    });
   };
 
   const handleSubmitWebhookForm = async () => {
@@ -89,7 +91,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
         setUrl(res[0].http_url);
         setName(res[0].name);
         setDescription(res[0].description as string);
-        setHeaders(res[0].http_headers as { [key: string]: any });
+        setHeaders(convertDictionaryToArray(res[0].http_headers));
       }
     }
   };
@@ -134,7 +136,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
           onChange={e => setDescription(e.target.value)}
           onCloseIconClick={() => setDescription('')}
         />
-        {Object.keys(headers).map((headerKey, i) => (
+        {headers.map((header, i) => (
           <StyledContainer
             key={i}
             borderTop={`2px dashed ${theme.palette.grey[300]}`}
@@ -143,22 +145,38 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
             padding="24px 0 0"
           >
             <StyledInput
-              label="Header Name (Cant be null / duplicated)"
+              label="Header Name (Can't be null / duplicated)"
               placeholder="Enter Header Name"
-              value={headerKey}
-              onChange={e => handleHeaderChange(e.target.value, headers[headerKey], headerKey)}
+              value={header.name}
+              onChange={e => handleHeaderChange(i, e.target.value)}
             />
             <StyledInput
               label="Header Value"
               placeholder="Enter Header Value"
-              value={headers[headerKey]}
-              onChange={e => handleHeaderChange(headerKey, e.target.value)}
+              value={header.value}
+              onChange={e => handleHeaderChange(i, e.target.value, true)}
             />
           </StyledContainer>
         ))}
-        <StyledContainer flexDirection="row" alignItems="center" sx={{ cursor: 'pointer' }} onClick={handleAddHeader}>
-          <AddCircleOutlineIcon color="primary" />
-          <StyledText text="Add Header" color={theme.palette.primary.main} type="bodyBold" />
+        <StyledContainer flexDirection="row" alignItems="center" justifyContent="space-between" padding="8px 0">
+          <StyledContainer
+            flexDirection="row"
+            alignItems="center"
+            sx={{ cursor: 'pointer', padding: 0 }}
+            onClick={handleAddHeader}
+          >
+            <AddCircleOutlineOutlined color="primary" />
+            <StyledText text="Add Header" color={theme.palette.primary.main} type="bodyBold" />
+          </StyledContainer>
+          <StyledContainer
+            flexDirection="row"
+            alignItems="center"
+            sx={{ cursor: 'pointer', padding: 0, width: '220px' }}
+            onClick={handleRemoveHeader}
+          >
+            <RemoveCircleOutlineOutlined color="primary" />
+            <StyledText text="Remove Header" color={theme.palette.primary.main} type="bodyBold" />
+          </StyledContainer>
         </StyledContainer>
         <StyledText text={error} color={theme.palette.error.main} />
       </StyledContainer>
