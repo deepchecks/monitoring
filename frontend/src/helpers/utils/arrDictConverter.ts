@@ -1,7 +1,7 @@
 export const convertDictionaryToArray = (dictionary: Record<string, string>): any[] => {
   const headers: any[] = [];
   for (const [name, value] of Object.entries(dictionary)) {
-    headers.push({ name, value });
+    name !== '' && headers.push({ name, value });
   }
   return headers;
 };
