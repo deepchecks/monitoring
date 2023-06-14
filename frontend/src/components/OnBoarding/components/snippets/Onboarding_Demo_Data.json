@@ -64,11 +64,9 @@
     {
       "cell_type": "code",
       "source": [
-        "from deepchecks.tabular.datasets.regression.airbnb import load_data,\\\n",
-        "load_pre_calculated_prediction, load_pre_calculated_feature_importance \n",
+        "from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions, load_pre_calculated_feature_importance \n",
         "\n",
-        "ref_dataset, _ = load_data(data_format=\"Dataset\") \n",
-        "ref_predictions, _ = load_pre_calculated_prediction() \n",
+        "ref_dataset, ref_predictions = load_data_and_predictions(data_format='Dataset')\n",
         "feature_importance = load_pre_calculated_feature_importance() # Optional \n",
         "feature_importance "
       ],
@@ -149,8 +147,7 @@
       "cell_type": "code",
       "source": [
         "timestamp, label_col = \"timestamp\", \"price\"\n",
-        "_, prod_data = load_data(data_format=\"DataFrame\")\n",
-        "_, prod_predictions = load_pre_calculated_prediction()\n",
+        "prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_000)\n",
         "timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 \n",
         "model_version.log_batch(sample_ids=prod_data.index,\n",
         "data=prod_data.drop([timestamp, label_col], axis=1), \n",

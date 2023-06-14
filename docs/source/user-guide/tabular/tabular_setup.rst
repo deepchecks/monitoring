@@ -118,8 +118,8 @@ An example of creating a model version (for a regression model, so ``model_class
 .. doctest::
    :hide:
 
-    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction
-    >>> ref_dataset, _ = load_data(data_format='Dataset')
+    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions
+    >>> ref_dataset, _ = load_data_and_predictions(data_format='Dataset')
     >>> from deepchecks_client import create_schema, read_schema
     >>> schema_file_path = 'schema_file.yaml'
     >>> create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
@@ -184,9 +184,9 @@ In the following example we'll use an already existing dataset object.
 
 .. doctest::
 
-    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction
+    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions
 
-    >>> ref_dataset, _ = load_data(data_format='Dataset')
+    >>> ref_dataset, ref_predictions = load_data_and_predictions(data_format='Dataset')
 
     >>> from deepchecks_client import create_schema, read_schema
     >>> schema_file_path = 'schema_file.yaml'
@@ -290,12 +290,6 @@ Apart from the dataset itself that contains the features, metadata and labels, w
    better drift scores on the model predictions.
 
 To upload reference data for the previously created version, simply run:
-
-.. doctest::
-   :hide:
-
-    >>> from deepchecks.tabular.datasets.regression.airbnb import load_pre_calculated_prediction
-    >>> ref_predictions, _ = load_pre_calculated_prediction()
 
 .. doctest::
 
