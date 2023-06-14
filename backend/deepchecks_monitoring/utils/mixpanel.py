@@ -49,6 +49,10 @@ class BaseEvent(pydantic.BaseModel):
 
     EVENT_NAME: t.ClassVar[str]
 
+    def to_properties(self) -> dict[str, t.Any]:
+        """Prepare data to be send to the mixpanel."""
+        return self.dict()
+
 
 class OrganizationEvent(BaseEvent):
     """Organization event definition."""
@@ -82,7 +86,7 @@ class OrganizationEvent(BaseEvent):
         return value
 
 
-class UserEvent(OrganizationEvent):
+class UserEvent(BaseEvent):
     """User event definition."""
 
     u_id: int
@@ -90,6 +94,7 @@ class UserEvent(OrganizationEvent):
     u_email: str
     u_name: str
     u_created_at: str
+    u_org: OrganizationEvent | None
 
     @classmethod
     async def from_user(
@@ -105,6 +110,8 @@ class UserEvent(OrganizationEvent):
         # create a utility function to load unloaded relationships
         if 'organization' not in unloaded_relations:
             org = user.organization
+        elif user.organization_id is None:
+            org = None
         else:
             from deepchecks_monitoring.public_models import Organization  # pylint: disable=redefined-outer-name
             q = sa.select(Organization).where(Organization.id == user.organization_id)
@@ -117,9 +124,8 @@ class UserEvent(OrganizationEvent):
             q = sa.select(Role).where(Role.user_id == user.id)
             roles = (await session.scalars(q)).all()
 
-        org = t.cast('Organization', org)
+        org = t.cast('Organization | None', org)
         roles = t.cast('list[Role]', roles)
-        super_props = await OrganizationEvent.from_organization(org, deployment=deployment)
 
         roles = (
             ((role := t.cast('RoleEnum', it.role)).value, role.role_index)
@@ -136,8 +142,18 @@ class UserEvent(OrganizationEvent):
             u_name=t.cast(str, user.full_name),
             u_role=max_role[0],
             u_created_at=str(user.created_at),
-            **super_props.dict()
+            u_org=(
+                await OrganizationEvent.from_organization(org, deployment=deployment)
+                if org
+                else None
+            )
         )
+
+    def to_properties(self) -> dict[str, t.Any]:
+        """Prepare data to be send to the mixpanel."""
+        data = self.dict()
+        org = t.cast('dict[str, t.Any] | None', data.pop('u_org', None))
+        return data if not org else {**data, **org}
 
 
 class InvitationEvent(UserEvent):
@@ -582,13 +598,13 @@ class MixpanelEventReporter:
             kwargs = {
                 'distinct_id': event.u_email,  # TODO: should be id
                 'event_name': event.EVENT_NAME,
-                'properties': event.dict()
+                'properties': event.to_properties()
             }
         elif isinstance(event, OrganizationEvent):
             kwargs = {
                 'distinct_id': event.o_name,
                 'event_name': event.EVENT_NAME,
-                'properties': event.dict()
+                'properties': event.to_properties()
             }
         else:
             raise TypeError(f'Unsupported event type - {type(event)}')
