@@ -7,19 +7,15 @@ import { MenuItem } from '@mui/material';
 import { SelectCheck } from 'components/Select/SelectCheck';
 import { SelectColumn } from 'components/Select/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
-import { Subcategory } from 'components/Subcategory';
-import { BaseInput, BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
-
-import { StyledLink } from '../MonitorForm.style';
+import { BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
+import { MonitorFormAdvancedSection } from './MonitorFormAdvancedSection';
 
 import { freqTimeWindow } from 'helpers/base/monitorFields.helpers';
 import { SelectValues, SetStateType } from 'helpers/types';
 import { FilteredValues } from 'helpers/utils/checkUtil';
-import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 import { constants } from '../../../monitorDialog.constants';
 
-const { aggWindowLabel, frequencyLabel, frequencyTooltip, aggWindowError, resetToDefault, advancedStr, aggValueStr } =
-  constants.monitorForm;
+const { frequencyLabel, frequencyTooltip } = constants.monitorForm;
 
 interface MonitorFormStepTwoProps {
   monitor: MonitorSchema | null;
@@ -41,8 +37,6 @@ interface MonitorFormStepTwoProps {
   setFrequency: (value: React.SetStateAction<SelectValues>) => void;
   aggregationWindow: number;
   setAggregationWindow: (value: React.SetStateAction<number>) => void;
-  advanced: boolean;
-  setAdvanced: (value: React.SetStateAction<boolean>) => void;
 }
 
 export const MonitorFormStepTwo = ({
@@ -64,15 +58,8 @@ export const MonitorFormStepTwo = ({
   frequency,
   setFrequency,
   aggregationWindow,
-  setAggregationWindow,
-  advanced,
-  setAdvanced
+  setAggregationWindow
 }: MonitorFormStepTwoProps) => {
-  const aggregationWindowErr = aggregationWindow > 30;
-  const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']].toLowerCase()}${
-    aggregationWindow > 1 ? 's' : ''
-  }`;
-
   return (
     <>
       <SelectCheck
@@ -115,35 +102,11 @@ export const MonitorFormStepTwo = ({
           ))}
         </BaseDropdown>
       </TooltipInputWrapper>
-      {!advanced ? (
-        <StyledLink underline="hover" onClick={() => setAdvanced(true)}>
-          {advancedStr}
-        </StyledLink>
-      ) : (
-        <Subcategory sx={{ marginTop: '0 !important' }}>
-          <BaseInput
-            placeholder={aggWindowLabel}
-            value={aggregationWindow}
-            label={aggValueStr}
-            onChange={event => setAggregationWindow(Number(event.target.value))}
-            error={aggregationWindowErr}
-            helperText={aggregationWindowErr ? aggWindowError : ''}
-            inputProps={{ min: 0, max: 30 }}
-            InputProps={{ endAdornment: aggregationWindowSuffix }}
-            type="number"
-            fullWidth
-          />
-          <StyledLink
-            underline="hover"
-            onClick={() => {
-              setAdvanced(false);
-              setAggregationWindow(1);
-            }}
-          >
-            {resetToDefault}
-          </StyledLink>
-        </Subcategory>
-      )}
+      <MonitorFormAdvancedSection
+        aggregationWindow={aggregationWindow}
+        setAggregationWindow={setAggregationWindow}
+        frequency={frequency}
+      />
     </>
   );
 };

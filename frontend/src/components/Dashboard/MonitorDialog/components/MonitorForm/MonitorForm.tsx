@@ -60,8 +60,6 @@ export const MonitorForm = forwardRef(
     const [monitorName, setMonitorName] = useState(monitor?.name || '');
     const [model, setModel] = useState<SelectValues>(monitor?.check.model_id || selectedModelId || '');
 
-    const [advanced, setAdvanced] = useState(false);
-
     const [check, setCheck] = useState<SelectValues>(monitor?.check.id || '');
 
     const [filteredValues, setFilteredValues] = useState<FilteredValues>(
@@ -264,7 +262,7 @@ export const MonitorForm = forwardRef(
     }, [activeStep, monitorName, model, check, frequency, aggregationWindow, lookBack, isValidConfig]);
 
     return (
-      <Stack spacing="30px" marginBottom="30px" {...otherProps}>
+      <Stack spacing="30px" marginBottom={activeStep === 0 ? '30px' : '20px'} {...otherProps}>
         <MonitorFormSteps activeStep={activeStep} />
         {activeStep === 0 ? (
           <MonitorFormStepOne
@@ -296,8 +294,6 @@ export const MonitorForm = forwardRef(
             setFrequency={setFrequency}
             aggregationWindow={aggregationWindow}
             setAggregationWindow={setAggregationWindow}
-            advanced={advanced}
-            setAdvanced={setAdvanced}
           />
         )}
         <ActiveAlertsModal

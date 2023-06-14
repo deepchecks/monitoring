@@ -23,10 +23,7 @@ export const constants = {
     modelLabel: 'Model',
     frequencyLabel: 'Frequency',
     frequencyTooltip: 'The frequency of sampling the monitor data',
-    aggWindowLabel: 'Aggregation window',
-    aggWindowError: 'Aggregation window max value is 30<',
-    resetToDefault: 'Reset to default',
     advancedStr: 'Advanced',
-    aggValueStr: 'Aggregation value'
+    aggregationStr: 'Aggregation'
   }
 };
