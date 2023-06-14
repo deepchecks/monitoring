@@ -31,7 +31,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('GET');
+  const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('POST');
   const [headers, setHeaders] = useState([{ name: '', value: '' }]);
 
   const dialogTitleAndBtn = isWebhookConnected ? 'Edit Webhook' : 'Create New Webhook';
@@ -91,6 +91,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
         setUrl(res[0].http_url);
         setName(res[0].name);
         setDescription(res[0].description as string);
+        setHttpMethod(res[0].http_method);
         setHeaders(convertDictionaryToArray(res[0].http_headers));
       }
     }
