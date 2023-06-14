@@ -35,6 +35,7 @@ from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
+from deepchecks_monitoring.utils.mixpanel import LabelsUploadEvent, ProductionDataUploadEvent
 from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
 from .router import router
@@ -77,6 +78,13 @@ async def log_data_batch(
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
+        await resources_provider.report_mixpanel_event(
+            ProductionDataUploadEvent.create_event,
+            model_version=model_version,
+            user=user,
+            n_of_received_samples=len(data),
+            n_of_accepted_samples=0
+        )
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
@@ -86,6 +94,14 @@ async def log_data_batch(
         )
 
     await data_ingest.log_samples(model_version, data[:remains], session, user.organization_id, time)
+
+    await resources_provider.report_mixpanel_event(
+        ProductionDataUploadEvent.create_event,
+        model_version=model_version,
+        user=user,
+        n_of_received_samples=len(data),
+        n_of_accepted_samples=remains
+    )
 
     if remains < len(data):
         return ORJSONResponse(
@@ -128,6 +144,13 @@ async def log_labels(
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
+        await resources_provider.report_mixpanel_event(
+            LabelsUploadEvent.create_event,
+            model=model,
+            user=user,
+            n_of_received_labels=len(data),
+            n_of_accepted_labels=0
+        )
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
@@ -138,6 +161,13 @@ async def log_labels(
 
     await data_ingest.log_labels(model, data[:remains], session, user.organization_id)
 
+    await resources_provider.report_mixpanel_event(
+        LabelsUploadEvent.create_event,
+        model=model,
+        user=user,
+        n_of_received_labels=len(data),
+        n_of_accepted_labels=remains
+    )
     if remains < len(data):
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,

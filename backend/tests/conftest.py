@@ -7,13 +7,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-#  pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,unused-argument,invalid-name
 import asyncio
 import os
 import random
 import string
 import typing as t
-from unittest.mock import patch
+import json
+from unittest.mock import patch, MagicMock
 
 import dotenv
 import faker
@@ -166,7 +167,23 @@ def settings(async_engine, smtp_server):
         auth_jwt_secret="secret",
         kafka_host=None,
         is_cloud=True,
+        mixpanel_id="xxxxxx",
+        enable_analytics=True
     )
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+def _mock_mixpanel_client():
+    mixpanel_mock = MagicMock()
+    with patch("deepchecks_monitoring.utils.mixpanel.Mixpanel", new=mixpanel_mock) as MockClass:
+        instance = MockClass.return_value
+        def track(distinct_id, event_name, properties=None, meta=None):
+            nonlocal instance, mixpanel_mock
+            if properties:
+                serializer = mixpanel_mock.call_args.kwargs["serializer"]
+                json.dumps(properties, cls=serializer)
+        instance.track = track
+        yield
 
 
 @pytest.fixture(scope="function")

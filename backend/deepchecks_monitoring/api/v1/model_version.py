@@ -44,6 +44,7 @@ from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils.mixpanel import ModelVersionCreatedEvent
 
 from .router import router
 
@@ -73,7 +74,7 @@ async def get_or_create_version(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Create a new model version.
 
@@ -264,6 +265,12 @@ async def get_or_create_version(
     # Create indices
     for index in reference_table.indexes:
         await session.execute(CreateIndex(index))
+
+    await resources_provider.report_mixpanel_event(
+        ModelVersionCreatedEvent.create_event,
+        model_version=model_version,
+        user=user
+    )
 
     return {'id': model_version.id}
 
