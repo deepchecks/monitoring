@@ -123,7 +123,7 @@ async def log_labels(
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
 
     # Atomically getting the count and increasing in order to avoid race conditions
-    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
+    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data), is_label=True)
     remains = minute_rate - curr_count
 
     # Remains can be negative because we don't check the limit before incrementing
@@ -131,7 +131,7 @@ async def log_labels(
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
-                "error_message": f"Rate limit exceeded, you can send {minute_rate} rows per minute",
+                "error_message": f"Rate limit exceeded, you can send {minute_rate} labels per minute",
                 "additional_information": {"num_saved": 0}
             }
         )
@@ -143,8 +143,8 @@ async def log_labels(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
                 "error_message": (
-                    f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
-                    f"{remains} first rows were received"
+                    f"Rate limit exceeded, you can send {minute_rate} labels per minute. "
+                    f"{remains} first labels were received"
                 ),
                 "additional_information": {"num_saved": remains}
             }

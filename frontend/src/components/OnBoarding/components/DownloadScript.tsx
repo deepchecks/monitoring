@@ -11,11 +11,12 @@ const constants = {
   text: 'Download Script.py',
   notebook: {
     demo: (token: string) => `
-from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction, load_pre_calculated_feature_importance
+from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions, load_pre_calculated_feature_importance
 from deepchecks_client import DeepchecksClient, create_schema, read_schema
 
-ref_dataset, prod_data = load_data(data_format="Dataset")
-ref_predictions, prod_predictions = load_pre_calculated_prediction()
+ref_dataset, ref_predictions = load_data_and_predictions(data_format="Dataset")
+prod_data, prod_predictions = load_data_and_predictions(data_format="DataFrame", load_train=False, data_size=100_00)
+
 feature_importance = load_pre_calculated_feature_importance()  # Optional
 
 schema_file_path = "schema_file.yaml"
@@ -33,7 +34,6 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
                                                         task_type="regression")
 
 timestamp, label_col = "timestamp", "price"
-prod_data = prod_data.data
 timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9
 model_version.log_batch(sample_ids=prod_data.index, data=prod_data.drop([timestamp, label_col], axis=1),
                         timestamps=timestamp_col, predictions=prod_predictions)

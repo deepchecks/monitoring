@@ -97,9 +97,11 @@ class CacheFunctions:
         """Remove a given key from the cache."""
         self.redis.delete(key)
 
-    def get_and_incr_user_rate_count(self, user, time, count_added):
+    def get_and_incr_user_rate_count(self, user, time, count_added, is_label=True):
         """Get the user's organization samples count for the given minute, and increase by the given amount."""
         key = f"rate-limit:{user.organization.id}:{time.minute}"
+        if is_label:
+            key += ':label'
         p = self.redis.pipeline()
         p.incr(key, count_added)
         p.expire(key, 60)

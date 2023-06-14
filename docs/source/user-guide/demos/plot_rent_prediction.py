@@ -77,10 +77,9 @@ dc_client = DeepchecksClient(host=host, token=token)
 # We'll start by downloading the training data from the deepchecks testing package. This training data will be used
 # to set the reference for the model version. We'll also download the pre-calculated predictions for this data.
 
-from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction
+from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions
 
-ref_df, _ = load_data(data_format='Dataframe')
-ref_predictions, _ = load_pre_calculated_prediction()
+ref_df, ref_predictions = load_data_and_predictions(data_format='Dataframe')
 ref_df.head(2)
 
 # %%
@@ -174,8 +173,7 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # read more, refer to the :doc:`Production Data Guide </user-guide/tabular/tabular-production>`. Here we'll
 # show how to use the batch upload method.
 
-_, prod_data = load_data(data_format='DataFrame')
-_, prod_predictions = load_pre_calculated_prediction()
+prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_00)
 
 # %%
 # Uploading a Batch of Data
