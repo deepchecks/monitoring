@@ -24,8 +24,6 @@ export const constants = {
     frequencyLabel: 'Frequency',
     frequencyTooltip: 'The frequency of sampling the monitor data',
     aggWindowLabel: 'Aggregation window',
-    displayRangeLabel: 'Display range',
-    displayRangeTooltip: 'The range of viewing the monitor: e.g. from <date> to <date>',
     aggWindowError: 'Aggregation window max value is 30<',
     resetToDefault: 'Reset to default',
     advancedStr: 'Advanced',

@@ -20,7 +20,7 @@ import { ActiveAlertsModal } from '../ActiveAlertsModal';
 
 import { freqTimeWindow, buildFilters } from 'helpers/base/monitorFields.helpers';
 import { SelectValues } from 'helpers/types';
-import { timeValues } from 'helpers/base/time';
+import { getLookBack } from './MonitorForm.helpers';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 import { InitialState, MonitorFormProps } from './MonitorForm.types';
@@ -49,9 +49,11 @@ export const MonitorForm = forwardRef(
     const [frequency, setFrequency] = useState<SelectValues>(
       FrequencyMap[monitor?.frequency as Frequency] ?? freqTimeWindow[0].value
     );
+    const [lookBack, setLookBack] = useState<SelectValues>(monitor?.lookback || getLookBack(frequency));
 
     useEffect(() => {
       setGraphFrequency(frequency);
+      setLookBack(getLookBack(frequency));
     }, [frequency, setGraphFrequency]);
 
     const [isValidConfig, setIsValidConfig] = useState(true);
@@ -68,7 +70,6 @@ export const MonitorForm = forwardRef(
     const [resConf, setResConf] = useState<string | undefined>(monitor?.additional_kwargs?.res_conf?.[0]);
 
     const [aggregationWindow, setAggregationWindow] = useState<number>(monitor?.aggregation_window ?? 1);
-    const [lookBack, setLookBack] = useState<SelectValues>(monitor?.lookback || timeValues.month);
 
     const [column, setColumn] = useState<string | undefined>(monitor?.data_filters?.filters?.[0]?.column || '');
     const [category, setCategory] = useState<SelectValues>(() => {
@@ -255,9 +256,11 @@ export const MonitorForm = forwardRef(
     ]);
 
     useEffect(() => {
-      activeStep === 0
-        ? setSubmitButtonDisabled(!monitorName || !model)
-        : setSubmitButtonDisabled(!check || !frequency || !aggregationWindow || !lookBack || !isValidConfig);
+      setSubmitButtonDisabled(
+        activeStep === 0
+          ? !monitorName || !model
+          : !check || !frequency || !aggregationWindow || !lookBack || !isValidConfig
+      );
     }, [activeStep, monitorName, model, check, frequency, aggregationWindow, lookBack, isValidConfig]);
 
     return (
@@ -295,8 +298,6 @@ export const MonitorForm = forwardRef(
             setAggregationWindow={setAggregationWindow}
             advanced={advanced}
             setAdvanced={setAdvanced}
-            lookBack={lookBack}
-            setLookBack={setLookBack}
           />
         )}
         <ActiveAlertsModal

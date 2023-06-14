@@ -1,8 +1,4 @@
-import { styled, Divider, Link } from '@mui/material';
-
-export const StyledDivider = styled(Divider)({
-  border: '1px dashed #94A4AD'
-});
+import { styled, Link } from '@mui/material';
 
 export const StyledLink = styled(Link)({
   cursor: 'pointer',

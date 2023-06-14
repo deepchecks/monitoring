@@ -1,38 +1,25 @@
-import React, { useEffect, useCallback } from 'react';
+import React from 'react';
 
 import { MonitorSchema } from 'api/generated';
 
 import { MenuItem } from '@mui/material';
 
-import {
-  ControlledBaseDropdown,
-  ControlledBaseDropdownDisabledCallback
-} from 'components/base/InputDropdown/ControlledBaseDropdown';
 import { SelectCheck } from 'components/Select/SelectCheck';
 import { SelectColumn } from 'components/Select/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { Subcategory } from 'components/Subcategory';
 import { BaseInput, BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
 
-import { StyledDivider, StyledLink } from '../MonitorForm.style';
+import { StyledLink } from '../MonitorForm.style';
 
-import { freqTimeWindow, lookbackTimeWindow } from 'helpers/base/monitorFields.helpers';
+import { freqTimeWindow } from 'helpers/base/monitorFields.helpers';
 import { SelectValues, SetStateType } from 'helpers/types';
 import { FilteredValues } from 'helpers/utils/checkUtil';
 import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 import { constants } from '../../../monitorDialog.constants';
 
-const {
-  aggWindowLabel,
-  displayRangeLabel,
-  displayRangeTooltip,
-  frequencyLabel,
-  frequencyTooltip,
-  aggWindowError,
-  resetToDefault,
-  advancedStr,
-  aggValueStr
-} = constants.monitorForm;
+const { aggWindowLabel, frequencyLabel, frequencyTooltip, aggWindowError, resetToDefault, advancedStr, aggValueStr } =
+  constants.monitorForm;
 
 interface MonitorFormStepTwoProps {
   monitor: MonitorSchema | null;
@@ -56,8 +43,6 @@ interface MonitorFormStepTwoProps {
   setAggregationWindow: (value: React.SetStateAction<number>) => void;
   advanced: boolean;
   setAdvanced: (value: React.SetStateAction<boolean>) => void;
-  lookBack: SelectValues;
-  setLookBack: SetStateType<SelectValues>;
 }
 
 export const MonitorFormStepTwo = ({
@@ -81,31 +66,12 @@ export const MonitorFormStepTwo = ({
   aggregationWindow,
   setAggregationWindow,
   advanced,
-  setAdvanced,
-  lookBack,
-  setLookBack
+  setAdvanced
 }: MonitorFormStepTwoProps) => {
   const aggregationWindowErr = aggregationWindow > 30;
   const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']].toLowerCase()}${
     aggregationWindow > 1 ? 's' : ''
   }`;
-
-  const isDisabledLookback = useCallback(
-    (lookbackSelect: { label: string; value: number }) => {
-      if (frequency === undefined) return false;
-      if (lookbackSelect.value < +frequency) return true;
-      if (lookbackSelect.value > +frequency * 31) return true;
-      return false;
-    },
-    [frequency]
-  );
-
-  useEffect(() => {
-    const filteredLookbacks = lookbackTimeWindow.filter(val => !isDisabledLookback(val)).map(val => val.value);
-    if (lookBack && !filteredLookbacks.includes(+lookBack)) {
-      setLookBack(filteredLookbacks.at(-1));
-    }
-  }, [frequency]);
 
   return (
     <>
@@ -122,7 +88,6 @@ export const MonitorFormStepTwo = ({
         disabled={!!monitor || !model}
         sx={{ marginTop: '15px !important' }}
       />
-      <StyledDivider />
       <SelectColumn
         model={model}
         column={column}
@@ -132,7 +97,6 @@ export const MonitorFormStepTwo = ({
         numericValue={numericValue}
         setNumericValue={setNumericValue}
       />
-      <StyledDivider />
       <TooltipInputWrapper title={frequencyTooltip}>
         <BaseDropdown
           label={frequencyLabel}
@@ -180,17 +144,6 @@ export const MonitorFormStepTwo = ({
           </StyledLink>
         </Subcategory>
       )}
-      <TooltipInputWrapper title={displayRangeTooltip}>
-        <ControlledBaseDropdown
-          label={displayRangeLabel}
-          values={lookbackTimeWindow}
-          value={lookBack}
-          setValue={setLookBack}
-          clearValue={() => setLookBack('')}
-          DisabledCallback={isDisabledLookback as ControlledBaseDropdownDisabledCallback}
-          required
-        />
-      </TooltipInputWrapper>
     </>
   );
 };

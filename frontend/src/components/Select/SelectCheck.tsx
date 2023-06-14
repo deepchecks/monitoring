@@ -94,7 +94,7 @@ export const SelectCheckComponent = ({
       const confType = conf.type as CheckFilterTypes;
       getFilteredValue(filteredValues[confType]?.[0] || null, conf);
     });
-    if (type === null) setIsAgg(true);
+    if (!type) setIsAgg(true);
   }, [type, checkInfo]);
 
   useEffect(() => {
