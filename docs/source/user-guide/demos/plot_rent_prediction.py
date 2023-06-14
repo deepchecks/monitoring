@@ -173,7 +173,7 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # read more, refer to the :doc:`Production Data Guide </user-guide/tabular/tabular-production>`. Here we'll
 # show how to use the batch upload method.
 
-prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_00)
+prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_000)
 
 # %%
 # Uploading a Batch of Data

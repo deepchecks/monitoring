@@ -15,7 +15,7 @@ from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predicti
 from deepchecks_client import DeepchecksClient, create_schema, read_schema
 
 ref_dataset, ref_predictions = load_data_and_predictions(data_format="Dataset")
-prod_data, prod_predictions = load_data_and_predictions(data_format="DataFrame", load_train=False, data_size=100_00)
+prod_data, prod_predictions = load_data_and_predictions(data_format="DataFrame", load_train=False, data_size=100_000)
 
 feature_importance = load_pre_calculated_feature_importance()  # Optional
 

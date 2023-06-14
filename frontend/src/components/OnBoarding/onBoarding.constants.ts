@@ -36,7 +36,7 @@ export const constants = {
         description:
           'To start monitoring with Deepchecks, you need to upload the production data you want to monitor. In this example, we will upload the data and predictions stored for a single month as a batch. Similar to the reference data, predicted probabilities can also be sent for classification tasks to compute probability-based metrics like AUC, log_loss, brier score, etc.',
         codeSnippet:
-          'timestamp, label_col = "timestamp", "price"\nprod_data, prod_predictions = load_data_and_predictions(data_format="DataFrame", load_train=False, data_size=100_00)\ntimestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 \nmodel_version.log_batch(sample_ids=prod_data.index,\ndata=prod_data.drop([timestamp, label_col], axis=1), \ntimestamps=timestamp_col, predictions=prod_predictions)',
+          'timestamp, label_col = "timestamp", "price"\nprod_data, prod_predictions = load_data_and_predictions(data_format="DataFrame", load_train=False, data_size=100_000)\ntimestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 \nmodel_version.log_batch(sample_ids=prod_data.index,\ndata=prod_data.drop([timestamp, label_col], axis=1), \ntimestamps=timestamp_col, predictions=prod_predictions)',
         secondCodeSnippet: (_token?: string) => ``,
         docLink: {
           label: 'Read more >',

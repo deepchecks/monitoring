@@ -94,7 +94,7 @@ Batch Upload
    :hide:
 
     >>> prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False,
-                                                                data_size=100_00)
+                                                                data_size=100_000)
 
 
 To upload a batch of data, use the

@@ -117,7 +117,7 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # enabling computation of probability based metrics such as AUC, log_loss, brier scorer and more.
 
 timestamp, label_col = 'timestamp', 'price'
-prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_00)
+prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_000)
 timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 # Convert to second-based epoch time
 model_version.log_batch(sample_ids=prod_data.index,
                         data=prod_data.drop([timestamp, label_col], axis=1),
