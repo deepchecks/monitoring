@@ -17,9 +17,9 @@ from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models.model_version import ModelVersion
     from deepchecks_monitoring.schema_models import Model
-
 
 
 __all__ = ["IngestionError"]

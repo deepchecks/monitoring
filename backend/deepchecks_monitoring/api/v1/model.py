@@ -1029,7 +1029,7 @@ async def retrieve_connected_model_ingestion_errors(
         q = q.where(IngestionError.model_version_id == model_version_id)
 
     if msg_contains:
-        q = q.where(IngestionError.error.ilike(f'%{msg_contains}%'))
+        q = q.where(IngestionError.error.ilike(f"%{msg_contains}%"))
 
     if start_time_epoch:
         dt = datetime.fromtimestamp(start_time_epoch, tz=pytz.UTC)
