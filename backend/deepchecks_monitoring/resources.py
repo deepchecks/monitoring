@@ -434,13 +434,8 @@ class ResourcesProvider(BaseResourcesProvider):
         if (mixpanel := self._get_mixpanel_event_reporter()) is None:
             return lambda: None
         else:
-            if self.settings.is_cloud:
-                kwargs["deployment"] = "saas"
-            elif self.settings.is_on_prem:
-                kwargs["deployment"] = "on-prem"
-
+            kwargs["settings"] = self.settings
             event = await event_factory(*args, **kwargs)
-
             def fn():
                 nonlocal event, mixpanel
                 mixpanel.report(event)

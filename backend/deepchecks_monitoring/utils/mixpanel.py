@@ -168,7 +168,7 @@ class UserEvent(DeploymentEvent):
             key=lambda it: it[1],
             default=('member', -1)
         )
-        u_org=(
+        u_org = (
             OrganizationEvent.from_organization(org, settings=settings)
             if org
             else None
@@ -313,7 +313,7 @@ class ModelDeletedEvent(OrganizationEvent):
     ) -> t.Self:
         """Create event instance."""
         super_props = OrganizationEvent.from_organization(
-            org = t.cast('Organization', _is_in_org(user).organization),
+            org=t.cast('Organization', _is_in_org(user).organization),
             settings=settings,
         )
 
@@ -358,7 +358,7 @@ class ModelVersionCreatedEvent(OrganizationEvent):
     ):
         """Create event instance."""
         super_props = OrganizationEvent.from_organization(
-            org = t.cast('Organization', _is_in_org(user).organization),
+            org=t.cast('Organization', _is_in_org(user).organization),
             settings=settings,
         )
 
