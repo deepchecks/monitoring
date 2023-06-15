@@ -134,7 +134,7 @@ async def log_data(
     logged_samples = [v for k, v in valid_data.items() if k in logged_ids]
     not_logged_samples = [v for k, v in valid_data.items() if k not in logged_ids]
     for sample in not_logged_samples:
-        errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error="Duplicate index on log",
+        errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error=f"Duplicate index on log for id {sample[SAMPLE_ID_COL]}",
                            model_version_id=model_version.id))
 
     if len(logged_samples) == 0:
@@ -228,7 +228,7 @@ async def log_labels(
                         errors.append(dict(sample=str(valid_data[sample_id]),
                                            sample_id=valid_data[sample_id],
                                            error=f"More than 2 classes in binary model. {classes} present, " +
-                                           f"received: {valid_data[sample_id][SAMPLE_LABEL_COL]}",
+                                           f"received: {valid_data[sample_id][SAMPLE_LABEL_COL]}, sample id: {valid_data[sample_id]}",
                                            model_version_id=model_version.id))
                         del valid_data[sample_id]
             await save_failures(session, errors, logger)
@@ -464,7 +464,7 @@ class DataIngestionBackend(object):
             if entity == "model-version":
                 errors = [{"sample_id": json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL),
                            "sample": m.value.decode(),
-                           "error": str(exception),
+                           "error": f'{str(exception)}, sample id: {json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL)}',
                            "model_version_id": id}
                           for m in messages]
                 async with self.resources_provider.create_async_database_session(organization_id) as session:
