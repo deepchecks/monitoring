@@ -41,7 +41,7 @@ from deepchecks_monitoring.schema_models.task_type import TaskType
 from deepchecks_monitoring.utils.database import sqlalchemy_exception_to_asyncpg_exception
 from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
-__all__ = ["DataIngestionBackend", "log_data", "log_labels"]
+__all__ = ["DataIngestionBackend", "log_data", "log_labels", "save_failures"]
 
 
 async def log_data(
@@ -345,7 +345,7 @@ class DataIngestionBackend(object):
 
             send_futures = []
             for sample in data:
-                key = sample.get(SAMPLE_ID_COL, "").encode()
+                key = str(sample.get(SAMPLE_ID_COL, "")).encode()
                 message = json.dumps({"data": sample, "log_time": log_time.to_iso8601_string()}).encode("utf-8")
                 send_futures.append(await self._producer.send(topic_name, value=message, key=key))
             await asyncio.gather(*send_futures)
