@@ -81,7 +81,7 @@ async def log_data(
             errors.append({
                 "sample": str(sample),
                 "sample_id": sample.get(SAMPLE_ID_COL),
-                "error": f'Exception: {str(e)}, for id: {sample.get(SAMPLE_ID_COL)}',
+                "error": f"Exception: {str(e)}, for id: {sample.get(SAMPLE_ID_COL)}",
                 "model_id": model_version.model_id,
                 "model_version_id": model_version.id
             })
@@ -231,7 +231,7 @@ async def log_labels(
                         errors.append(dict(sample=str(valid_data[sample_id]),
                                            sample_id=valid_data[sample_id],
                                            error=f"More than 2 classes in binary model. {classes} present, " +
-                                           f"""received: {valid_data[sample_id][SAMPLE_LABEL_COL]}, 
+                                           f"""received: {valid_data[sample_id][SAMPLE_LABEL_COL]},
                                            sample id: {valid_data[sample_id]}""",
                                            model_id=model_version.model_id,
                                            model_version_id=model_version.id))
@@ -469,7 +469,7 @@ class DataIngestionBackend(object):
             if entity == "model-version":
                 errors = [{"sample_id": json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL),
                            "sample": m.value.decode(),
-                           "error": f'''{str(exception)}, 
+                           "error": f'''{str(exception)},
                            sample id: {json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL)}'''}
                           for m in messages]
                 async with self.resources_provider.create_async_database_session(organization_id) as session:
