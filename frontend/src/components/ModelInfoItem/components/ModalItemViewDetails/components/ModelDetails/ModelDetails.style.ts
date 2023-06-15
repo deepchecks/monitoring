@@ -1,4 +1,5 @@
 import { IconButton, styled, TableCell, TableRow, Box } from '@mui/material';
+import { StyledContainer } from 'components/lib';
 
 import { theme } from 'components/lib/theme';
 
@@ -43,8 +44,14 @@ export const StyledIconButton = styled(IconButton)({
 });
 
 export const StyledDivider = styled(Box)({
-  width: '2px',
+  width: '1.5px',
   height: '36px',
   margin: '0 12px',
-  background: theme.palette.primary.main
+  background: theme.palette.grey[400]
+});
+
+export const StyledLogsFiltersContainer = styled(StyledContainer)({
+  flexDirection: 'row',
+  alignItems: 'center',
+  margin: '16px 0 0'
 });

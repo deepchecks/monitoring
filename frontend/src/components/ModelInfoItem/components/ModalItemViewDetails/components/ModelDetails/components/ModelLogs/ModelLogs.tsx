@@ -3,9 +3,9 @@ import { Table, TableBody, TableContainer, TableHead, TableRow, TextField } from
 
 import { IngestionErrorSchema } from 'api/generated';
 
-import { StyledDivider, StyledTableHeadCell } from '../../ModelDetails.style';
+import { StyledDivider, StyledLogsFiltersContainer, StyledTableHeadCell } from '../../ModelDetails.style';
 import { SingleLog } from './components/SingleLog';
-import { StyledContainer, StyledInput } from 'components/lib';
+import { StyledInput } from 'components/lib';
 import { DatePicker } from 'components/base/DatePicker/DatePicker';
 import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimary';
 
@@ -37,7 +37,20 @@ export const ModelLogs = ({ logs }: VersionErrorsListProps) => {
     <div>
       {logs && (
         <TableContainer sx={{ maxHeight: '539px', maxWidth: '100%' }}>
-          <StyledContainer flexDirection="row" alignItems="center" margin="16px 0 0">
+          <StyledLogsFiltersContainer>
+            <SelectPrimary
+              label="Version"
+              onChange={e => setVersion(e.target.value as string)}
+              value={version}
+              size="small"
+            >
+              {['version1', 'version2'].map(value => (
+                <SelectPrimaryItem value={value} key={value}>
+                  {value}
+                </SelectPrimaryItem>
+              ))}
+            </SelectPrimary>
+            <StyledDivider />
             <DatePicker
               inputFormat="L"
               onChange={handleStartDateChange}
@@ -56,19 +69,6 @@ export const ModelLogs = ({ logs }: VersionErrorsListProps) => {
               renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
             />
             <StyledDivider />
-            <SelectPrimary
-              label="Version"
-              onChange={e => setVersion(e.target.value as string)}
-              value={version}
-              size="small"
-            >
-              {['version1', 'version2'].map(value => (
-                <SelectPrimaryItem value={value} key={value}>
-                  {value}
-                </SelectPrimaryItem>
-              ))}
-            </SelectPrimary>
-            <StyledDivider />
             <StyledInput
               value={reason}
               onChange={e => setReason(e.target.value)}
@@ -76,7 +76,7 @@ export const ModelLogs = ({ logs }: VersionErrorsListProps) => {
               sx={{ width: '500px', height: '36px' }}
               placeholder="Search reason..."
             />
-          </StyledContainer>
+          </StyledLogsFiltersContainer>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
