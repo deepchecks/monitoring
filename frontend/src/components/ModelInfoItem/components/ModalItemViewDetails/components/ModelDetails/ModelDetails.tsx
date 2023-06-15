@@ -93,5 +93,68 @@ export const logs = [
       "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
     created_at: '2023-06-08T13:39:03.068176+00:00',
     model_version_id: 1
+  },
+  {
+    id: 19996,
+    sample_id: '417428',
+    error: 'Duplicate index on log',
+    sample:
+      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
+    created_at: '2023-06-08T13:39:03.068176+00:00',
+    model_version_id: 1
+  },
+  {
+    id: 19996,
+    sample_id: '417428',
+    error: 'Duplicate index on log',
+    sample:
+      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
+    created_at: '2023-06-08T13:39:03.068176+00:00',
+    model_version_id: 1
+  },
+  {
+    id: 19996,
+    sample_id: '417428',
+    error: 'Duplicate index on log',
+    sample:
+      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
+    created_at: '2023-06-08T13:39:03.068176+00:00',
+    model_version_id: 1
+  },
+  {
+    id: 19996,
+    sample_id: '417428',
+    error: 'Duplicate index on log',
+    sample:
+      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
+    created_at: '2023-06-08T13:39:03.068176+00:00',
+    model_version_id: 1
+  },
+  {
+    id: 19996,
+    sample_id: '417428',
+    error: 'Duplicate index on log',
+    sample:
+      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
+    created_at: '2023-06-08T13:39:03.068176+00:00',
+    model_version_id: 1
+  },
+  {
+    id: 19996,
+    sample_id: '417428',
+    error: 'Duplicate index on log',
+    sample:
+      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
+    created_at: '2023-06-08T13:39:03.068176+00:00',
+    model_version_id: 1
+  },
+  {
+    id: 19996,
+    sample_id: '417428',
+    error: 'Duplicate index on log',
+    sample:
+      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
+    created_at: '2023-06-08T13:39:03.068176+00:00',
+    model_version_id: 1
   }
 ];

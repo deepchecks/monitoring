@@ -1,4 +1,4 @@
-import { IconButton, styled, TableCell, TableRow } from '@mui/material';
+import { IconButton, styled, TableCell, TableRow, Box } from '@mui/material';
 
 import { theme } from 'components/lib/theme';
 
@@ -40,4 +40,11 @@ export const StyledIconButton = styled(IconButton)({
   width: '48px',
   height: '48px',
   background: 'transparent'
+});
+
+export const StyledDivider = styled(Box)({
+  width: '2px',
+  height: '36px',
+  margin: '0 12px',
+  background: theme.palette.primary.main
 });
