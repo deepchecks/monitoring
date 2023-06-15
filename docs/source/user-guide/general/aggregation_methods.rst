@@ -5,7 +5,7 @@ Aggregation Methods
 ===================
 
 Aggregation methods are used in checks that return multiple values, for examples the
-:doc:`Feature Drift <deepchecks:abular/auto_checks/train_test_validation/plot_feature_drift>` check
+:doc:`Feature Drift <deepchecks:tabular/auto_checks/train_test_validation/plot_feature_drift>` check
 that returns a value for every feature, to aggregate them into a single value.
 
 The following aggregation methods are available:
