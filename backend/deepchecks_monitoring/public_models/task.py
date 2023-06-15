@@ -41,6 +41,11 @@ class BackgroundWorker(abc.ABC):
         """The delay in seconds between the time task is queued to when it is executed."""
         pass
 
+    @classmethod
+    def retry_seconds(cls) -> int:
+        """The retry in seconds between the task executions."""
+        return 600
+
     @abc.abstractmethod
     async def run(self, task: 'Task', session: AsyncSession, resources_provider, lock: Lock):
         """Main logic of the worker."""

@@ -137,7 +137,7 @@ const AnalysisItem = ({
   const chartItemProps = {
     subtitle: `Last Update: ${dayjs(lastUpdate).format('L')}`,
     title: check?.name || '-',
-    sx: { height: { xs: height - 104, xl: height }, minHeight: { xs: height - 104, xl: height } },
+    sx: { height: { sm: 'auto', xl: height }, minHeight: { xs: height - 104, xl: height } },
     docsLink: check.docs_link
   };
 

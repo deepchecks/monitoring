@@ -18,6 +18,7 @@ export const CodeSnippet = ({ code, maxWidth = '770px', width = '100%' }: CodeSn
     customStyle={{
       width: width,
       maxWidth: maxWidth,
+      minWidth: '400px',
       borderRadius: '16px',
       border: `1px solid lightgray`,
       padding: '24px',

@@ -1,5 +1,5 @@
-export enum DrawerNames {
-  CreateAlert = 'New alert',
-  CreateMonitor = 'Create monitor',
-  EditMonitor = 'Edit monitor'
+export enum DialogNames {
+  CreateAlert = 'Create New Alert',
+  CreateMonitor = 'Create Monitor',
+  EditMonitor = 'Edit Monitor'
 }

@@ -25,8 +25,9 @@ export const StyledDrawer = styled(Drawer, { shouldForwardProp: prop => prop !==
       width: 1090,
       height: '100%',
       padding,
-      '@media (max-width: 1536px)': {
-        width: 800
+
+      '@media (max-width: 1090px)': {
+        width: '100vw'
       }
     }
   })

@@ -7,7 +7,7 @@ import { Loader } from 'components/base/Loader/Loader';
 import { MonitorsGroup } from './components/MonitorsGroup';
 import { DeleteMonitor } from './components/DeleteMonitor';
 
-import { DrawerNames } from '../Dashboard.types';
+import { DialogNames } from '../Dashboard.types';
 import { SetStateType } from 'helpers/types';
 
 interface MonitorsListProps {
@@ -15,7 +15,7 @@ interface MonitorsListProps {
   currentModelId: number | null;
   currentMonitor: MonitorSchema | null;
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
-  handleOpenMonitorDrawer: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
+  handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
   isLoading?: boolean;
@@ -26,7 +26,7 @@ export const MonitorList = ({
   currentModelId,
   currentMonitor,
   setCurrentMonitor,
-  handleOpenMonitorDrawer,
+  handleOpenMonitorDialog,
   monitorToRefreshId,
   setMonitorToRefreshId,
   isLoading
@@ -74,7 +74,7 @@ export const MonitorList = ({
             key={model.id}
             model={model}
             monitors={monitors.filter(mon => mon.check.model_id === model.id)}
-            handleOpenMonitorDrawer={handleOpenMonitorDrawer}
+            handleOpenMonitorDialog={handleOpenMonitorDialog}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
             setCurrentMonitor={setCurrentMonitor}
