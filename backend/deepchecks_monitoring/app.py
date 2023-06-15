@@ -171,13 +171,15 @@ def create_application(
 
     @app.on_event("startup")
     async def app_startup():
+        settings = t.cast(Settings, app.state.settings)
         ingestion_backend = app.state.data_ingestion_backend
         resources_provider = t.cast(ResourcesProvider, app.state.resources_provider)
 
-        if resources_provider.is_analytics_enabled:
-            async with resources_provider.create_async_database_session() as session:
-                from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
-                await MixpanelSystemStateEvent.enqueue_task(session=session)
+        if not settings.is_cloud or settings.is_on_prem:
+            if resources_provider.is_analytics_enabled:
+                async with resources_provider.create_async_database_session() as session:
+                    from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
+                    await MixpanelSystemStateEvent.enqueue_task(session=session)
 
         if ingestion_backend.use_kafka:
             app.state.ingestion_task = asyncio.create_task(app.state.data_ingestion_backend.run_data_consumer())

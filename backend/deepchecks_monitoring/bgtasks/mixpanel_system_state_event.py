@@ -54,6 +54,8 @@ class MixpanelSystemStateEvent(BackgroundWorker):
         """Run task."""
         if not resources_provider.is_analytics_enabled:
             return
+        if not resources_provider.settings.is_on_prem or resources_provider.settings.is_cloud:
+            return
 
         organizations = (await session.scalars(
             sa.select(Organization))

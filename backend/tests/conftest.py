@@ -9,12 +9,12 @@
 # ----------------------------------------------------------------------------
 # pylint: disable=redefined-outer-name,unused-argument,invalid-name
 import asyncio
+import json
 import os
 import random
 import string
 import typing as t
-import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import dotenv
 import faker
