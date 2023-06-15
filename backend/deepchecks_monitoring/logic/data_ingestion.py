@@ -81,7 +81,8 @@ async def log_data(
             errors.append({
                 "sample": str(sample),
                 "sample_id": sample.get(SAMPLE_ID_COL),
-                "error": str(e),
+                "error": f'Exception: {str(e)}, for id: {sample.get(SAMPLE_ID_COL)}',
+                "model_id": model_version.model_id,
                 "model_version_id": model_version.id
             })
         else:
@@ -93,13 +94,14 @@ async def log_data(
                 error = f"Got duplicate sample id: {sample[SAMPLE_ID_COL]}"
             # If got future timestamp prevent save
             elif sample[SAMPLE_TS_COL] > now:
-                error = f"Got future timestamp: {sample[SAMPLE_TS_COL]}"
+                error = f"Got future timestamp: {sample[SAMPLE_TS_COL]}, for sample id: {sample[SAMPLE_ID_COL]}"
 
             if error:
                 errors.append({
                     "sample": str(sample),
                     "sample_id": sample.get(SAMPLE_ID_COL),
                     "error": error,
+                    "model_id": model_version.model_id,
                     "model_version_id": model_version.id
                 })
             else:
@@ -135,7 +137,7 @@ async def log_data(
     not_logged_samples = [v for k, v in valid_data.items() if k not in logged_ids]
     for sample in not_logged_samples:
         errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error=f"Duplicate index on log for id {sample[SAMPLE_ID_COL]}",
-                           model_version_id=model_version.id))
+                           model_id=model_version.model_id, model_version_id=model_version.id))
 
     if len(logged_samples) == 0:
         # If did not log any samples, only needs to save the errors. If did log samples, will save the errors later
@@ -229,6 +231,7 @@ async def log_labels(
                                            sample_id=valid_data[sample_id],
                                            error=f"More than 2 classes in binary model. {classes} present, " +
                                            f"received: {valid_data[sample_id][SAMPLE_LABEL_COL]}, sample id: {valid_data[sample_id]}",
+                                           model_id=model_version.model_id,
                                            model_version_id=model_version.id))
                         del valid_data[sample_id]
             await save_failures(session, errors, logger)
@@ -464,8 +467,7 @@ class DataIngestionBackend(object):
             if entity == "model-version":
                 errors = [{"sample_id": json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL),
                            "sample": m.value.decode(),
-                           "error": f'{str(exception)}, sample id: {json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL)}',
-                           "model_version_id": id}
+                           "error": f'{str(exception)}, sample id: {json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL)}'}
                           for m in messages]
                 async with self.resources_provider.create_async_database_session(organization_id) as session:
                     await save_failures(session, errors, self.logger)
