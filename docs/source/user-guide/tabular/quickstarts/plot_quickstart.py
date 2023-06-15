@@ -65,8 +65,10 @@ from deepchecks_client import DeepchecksClient, create_schema, read_schema
 schema_file_path = 'schema_file.yaml'
 create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
 read_schema(schema_file_path)
-# Note: for conveniently changing the auto-inferred schema it's recommended to edit the textual file with an app of your choice.
-# After editing, you can use the `read_schema` function to verify the validity of the syntax in your updated schema.
+# Note: for conveniently changing the auto-inferred schema it's recommended to 
+# edit the textual file with an app of your choice.
+# After editing, you can use the `read_schema` function to verify the validity 
+# of the syntax in your updated schema.
 
 # %%
 # Creating a model version
@@ -74,8 +76,8 @@ read_schema(schema_file_path)
 # In order to create a model version we must first create an organization in the
 # `deepchecks app <https://app.deepchecks.com/>`_. If you are using the SaaS version of Deepchecks, you can
 # find the app at `https://app.deepchecks.com <https://app.deepchecks.com/>`_ and if you are using deepchecks
-# 'open-source deployment <https://docs.deepchecks.com/monitoring/stable/installation/self_host.html>'_
-# you can find the app at your specified deployment address (`here <https://localhost>`_. by default).
+# :ref:`the open-source self-hosted deployment <installation__self_host_deepchecks>`
+# you can find the app at your specified deployment address (by default it's http://localhost).
 #
 # After creating an organization you can generate a personal API token using the application's dashboard.
 #
@@ -96,12 +98,14 @@ host = os.environ.get('DEEPCHECKS_API_HOST') # Replace with your host
 dc_client = DeepchecksClient(host=host, token=os.getenv('DEEPCHECKS_API_TOKEN'))
 
 model_name = 'Airbnb'
-model_version = dc_client.create_tabular_model_version(model_name=model_name, version_name='ver_1',
-                                                       schema=schema_file_path,
-                                                       feature_importance=feature_importance,
-                                                       reference_dataset=ref_dataset,
-                                                       reference_predictions=ref_predictions,
-                                                       task_type='regression')
+model_version = \
+    dc_client.create_tabular_model_version(model_name=model_name, 
+                                           version_name='ver_1',
+                                           schema=schema_file_path,
+                                           feature_importance=feature_importance,
+                                           reference_dataset=ref_dataset,
+                                           reference_predictions=ref_predictions,
+                                           task_type='regression')
 
 #%%
 # Uploading Production Data
@@ -117,7 +121,8 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # enabling computation of probability based metrics such as AUC, log_loss, brier scorer and more.
 
 timestamp, label_col = 'timestamp', 'price'
-prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_000)
+prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', 
+                                                        load_train=False, data_size=100_000)
 timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 # Convert to second-based epoch time
 model_version.log_batch(sample_ids=prod_data.index,
                         data=prod_data.drop([timestamp, label_col], axis=1),
@@ -161,4 +166,4 @@ model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label
 # CAUTION: This will delete the model, all model versions, and all associated datasets.
 dc_client.delete_model(model_name)
 
-# sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/quickstarts/tabular_quickstart_gray.png'
+# sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/quickstarts/tabular-quickstart-rocket.png'

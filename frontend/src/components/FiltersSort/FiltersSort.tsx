@@ -199,7 +199,7 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
   return (
     <>
       <StyledMainWrapper>
-        <Stack direction="row">
+        <Stack direction="row" flexWrap="wrap" gap="16px">
           {isFilterByTimeLine && (
             <>
               <StyledDateWrapper>

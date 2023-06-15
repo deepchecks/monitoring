@@ -10,7 +10,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <!-- End Google Tag Manager -->
 <meta name="title" content="{{ title }} | Deepchecks Documentation">
 <meta name="description" content="Do you need to know more about {{ title }}? Read more at Deepchecks Online Documentation">
-<meta name="docsearch:version" content="{{ version }}">
 
 
 <!-- Warning: 
@@ -57,7 +56,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         require.config({
             paths: {
                 "docsearchLib": "https://cdn.jsdelivr.net/npm/@docsearch/js@3?noext",
-                "clipboardjs": "/{{ version }}/_static/clipboard.min"
+                "clipboardjs": "/monitoring/stable/_static/clipboard.min"
             }
         }
 
@@ -74,8 +73,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             window.ClipboardJS=clipboardJS
         });
     </script>
-    <script data-url_root="/" id="documentation_options" src="/{{ version }}/_static/documentation_options.js"></script>
-    <script src="/{{ version }}/_static/copybutton.js"></script>
+    <script data-url_root="/" id="documentation_options" src="/monitoring/stable/_static/documentation_options.js"></script>
+    <script src="/monitoring/stable/_static/copybutton.js"></script>
 {% endblock %}
 
 {% block docs_main %}

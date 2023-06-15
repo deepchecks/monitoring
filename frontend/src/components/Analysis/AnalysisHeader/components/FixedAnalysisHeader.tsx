@@ -44,7 +44,14 @@ const StyledHeaderWrapper = styled(Stack, {
   background: theme.palette.grey[100],
   transition: 'all 0.35s ease-in-out',
   zIndex: 10,
-  borderBottom: `1px solid ${theme.palette.grey.light}`
+  borderBottom: `1px solid ${theme.palette.grey.light}`,
+
+  '@media (max-width: 1200px)': {
+    width: '100%',
+    flexWrap: 'wrap',
+    height: '200px',
+    left: '0'
+  }
 }));
 
 const StyledSelectContainer = styled(Stack)({
@@ -52,5 +59,13 @@ const StyledSelectContainer = styled(Stack)({
   alignItems: 'center',
   height: '36px',
   width: '100%',
-  margin: '0 38px'
+  margin: '0 38px',
+
+  '@media (max-width: 1200px)': {
+    marginTop: '-24px',
+    flexWrap: 'wrap',
+    height: '200px',
+
+    '& .MuiDivider-root': { borderColor: 'transparent' }
+  }
 });

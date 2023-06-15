@@ -59,7 +59,7 @@ Running the following commands in the terminal will spin up a new Deepchecks dep
 .. code-block:: bash
     
     pip install deepchecks-installer
-    deepchecks-installer monitoring-install
+    deepchecks-installer install-monitoring
 
 During the installation you'll be asked for:
 

@@ -93,14 +93,15 @@ async def log_data_batch(
             }
         )
 
-    await data_ingest.log_samples(model_version, data[:remains], session, user.organization_id, time)
+    truncated_data = data[:remains]
+    await data_ingest.log_samples(model_version, truncated_data, session, user.organization_id, time)
 
     await resources_provider.report_mixpanel_event(
         ProductionDataUploadEvent.create_event,
         model_version=model_version,
         user=user,
         n_of_received_samples=len(data),
-        n_of_accepted_samples=remains
+        n_of_accepted_samples=len(truncated_data)
     )
 
     if remains < len(data):
@@ -159,14 +160,15 @@ async def log_labels(
             }
         )
 
-    await data_ingest.log_labels(model, data[:remains], session, user.organization_id)
+    truncated_data = data[:remains]
+    await data_ingest.log_labels(model, truncated_data, session, user.organization_id)
 
     await resources_provider.report_mixpanel_event(
         LabelsUploadEvent.create_event,
         model=model,
         user=user,
         n_of_received_labels=len(data),
-        n_of_accepted_labels=remains
+        n_of_accepted_labels=len(truncated_data)
     )
     if remains < len(data):
         return ORJSONResponse(
