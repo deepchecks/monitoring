@@ -72,7 +72,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   useEffect(() => setStorageItem(storageKeys.dataIngestionTimeFilter, JSON.stringify(currentTime)), [currentTime]);
 
   return (
-    <StyledDataIngestionContainer type="card">
+    <StyledDataIngestionContainer type="card" minWidth="410px">
       <StyledHeader>
         <StyledTitle>Samples status</StyledTitle>
         <StyledFiltersContainer>

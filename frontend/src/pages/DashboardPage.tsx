@@ -88,7 +88,7 @@ export const DashboardPage = () => {
         container
         sx={{
           padding: '30px 0',
-          maxWidth: { xs: 'calc(100vw - 196px - 65px)', xl: 'calc(100vw - 237px - 65px)' }
+          maxWidth: { xs: 'calc(100vw - 250px)', xl: 'calc(100vw - 237px - 65px)' }
         }}
         spacing={{ md: 2.5, xl: 4 }}
       >

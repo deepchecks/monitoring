@@ -8,12 +8,17 @@ export const StyledMainWrapper = styled(Box)(({ theme }) => ({
   height: 100,
   width: '100%',
   position: 'relative',
+
   ':hover': {
     cursor: 'pointer',
     outline: `3px solid ${theme.palette.primary.contrastText}`
   },
   '@media (max-width: 1536px)': {
     height: 70
+  },
+  '@media (max-width: 1000px)': {
+    height: 'auto',
+    flexDirection: 'column'
   }
 }));
 
