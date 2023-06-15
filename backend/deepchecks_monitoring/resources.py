@@ -436,6 +436,7 @@ class ResourcesProvider(BaseResourcesProvider):
         else:
             kwargs["settings"] = self.settings
             event = await event_factory(*args, **kwargs)
+
             def fn():
                 nonlocal event, mixpanel
                 mixpanel.report(event)
