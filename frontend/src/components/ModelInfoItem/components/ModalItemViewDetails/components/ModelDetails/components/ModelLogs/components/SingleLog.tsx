@@ -17,8 +17,11 @@ export const SingleLog = ({ log }: SingleErrorProps) => (
   <StyledTableRow>
     <StyledTableCell width="20%">
       <StyledCellText weight={600} color={theme.palette.primary.main}>
-        {log.sample_id}
+        {log.id}
       </StyledCellText>
+    </StyledTableCell>
+    <StyledTableCell width="20%">
+      <StyledCellText>{log.sample_id}</StyledCellText>
     </StyledTableCell>
     <StyledTableCell width="20%">
       <Tooltip title={`${log.sample}`}>
@@ -36,9 +39,6 @@ export const SingleLog = ({ log }: SingleErrorProps) => (
     </StyledTableCell>
     <StyledTableCell width="20%">
       <StyledCellText>{log.created_at ? `${dayjs(log.created_at).format('L LT')}` : '- '}</StyledCellText>
-    </StyledTableCell>
-    <StyledTableCell width="20%">
-      <StyledCellText weight={600}>{log.sample_id}</StyledCellText>
     </StyledTableCell>
   </StyledTableRow>
 );

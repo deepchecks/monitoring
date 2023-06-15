@@ -11,6 +11,8 @@ interface VersionErrorsListProps {
   logs: IngestionErrorSchema[] | undefined;
 }
 
+const tableHeaders = ['Version', 'Sample ID', 'Sample', 'Reason', 'Date'];
+
 export const ModelLogs = ({ logs }: VersionErrorsListProps) => (
   <div>
     {logs && (
@@ -24,11 +26,11 @@ export const ModelLogs = ({ logs }: VersionErrorsListProps) => (
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <StyledTableHeadCell width="20%">Version</StyledTableHeadCell>
-              <StyledTableHeadCell width="20%">Sample ID</StyledTableHeadCell>
-              <StyledTableHeadCell width="20%">Sample</StyledTableHeadCell>
-              <StyledTableHeadCell width="20%">Reason of error</StyledTableHeadCell>
-              <StyledTableHeadCell width="20%">Timestamp</StyledTableHeadCell>
+              {tableHeaders.map((header: string) => (
+                <StyledTableHeadCell key={header} width="20%">
+                  {header}
+                </StyledTableHeadCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
