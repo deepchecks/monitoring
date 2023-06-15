@@ -101,7 +101,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                 config=Config(region_name=region)
             )
             sts.get_caller_identity()
-        except (ClientError, EndpointConnectionError) as _:
+        except (ClientError, EndpointConnectionError):
             self.logger.exception({'message': 'Invalid credentials to AWS'})
             self._handle_error(errors, 'Invalid credentials to AWS', model_id)
             await self._finalize_before_exit(session, errors)
@@ -162,7 +162,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                     await lock.extend(120, replace_ttl=True)
 
             model.obj_store_last_scan_time = new_scan_time
-        except Exception as _:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             self.logger.exception({'message': 'General Error when ingesting data'})
             self._handle_error(errors, 'General Error when ingesting data', model_id)
         finally:
@@ -244,4 +244,3 @@ class ObjectStorageIngestor(BackgroundWorker):
     async def _finalize_before_exit(self, session, errors):
         await save_failures(session, errors, self.logger)
         await session.commit()
-
