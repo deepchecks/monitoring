@@ -84,7 +84,7 @@ class ObjectStorageIngestor(BackgroundWorker):
         # Get s3 authentication info
         s3_data_source = (await session.scalar(select(DataSource).where(DataSource.type == 's3')))
         if s3_data_source is None:
-            self._handle_error(errors, f'No data source of type s3 found', model_id)
+            self._handle_error(errors, 'No data source of type s3 found', model_id)
             await self._finalize_before_exit(session, errors)
             return
 
@@ -101,7 +101,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                 config=Config(region_name=region)
             )
             sts.get_caller_identity()
-        except (ClientError, EndpointConnectionError) as e:
+        except (ClientError, EndpointConnectionError) as _:
             self.logger.exception({'message': 'Invalid credentials to AWS'})
             self._handle_error(errors, 'Invalid credentials to AWS', model_id)
             await self._finalize_before_exit(session, errors)
@@ -145,7 +145,8 @@ class ObjectStorageIngestor(BackgroundWorker):
                     for df, time in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time,
                                                        errors, version.model_id, version.id):
                         await self.ingestion_backend.log_samples(version, df, session, organization_id, new_scan_time)
-                        version.latest_file_time = max(version.latest_file_time or pdl.datetime(year=1970, month=1, day=1), time)
+                        version.latest_file_time = max(version.latest_file_time or
+                                                       pdl.datetime(year=1970, month=1, day=1), time)
                         # For each file, set lock expiry to 120 seconds from now
                         await lock.extend(120, replace_ttl=True)
 
@@ -155,14 +156,15 @@ class ObjectStorageIngestor(BackgroundWorker):
                 for df, time in self.ingest_prefix(s3, bucket, labels_path, model.latest_labels_file_time,
                                                    errors, model_id):
                     await self.ingestion_backend.log_labels(model, df, session, organization_id)
-                    model.latest_labels_file_time = max(model.latest_labels_file_time or pdl.datetime(year=1970, month=1, day=1), time)
+                    model.latest_labels_file_time = max(model.latest_labels_file_time
+                                                        or pdl.datetime(year=1970, month=1, day=1), time)
                     # For each file, set lock expiry to 120 seconds from now
                     await lock.extend(120, replace_ttl=True)
 
             model.obj_store_last_scan_time = new_scan_time
-        except Exception as e:
+        except Exception as _:  # pylint: disable=broad-except
             self.logger.exception({'message': 'General Error when ingesting data'})
-            self._handle_error(errors, f'General Error when ingesting data', model_id)
+            self._handle_error(errors, 'General Error when ingesting data', model_id)
         finally:
             await self._finalize_before_exit(session, errors)
             s3.close()

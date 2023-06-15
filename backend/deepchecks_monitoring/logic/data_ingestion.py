@@ -136,7 +136,8 @@ async def log_data(
     logged_samples = [v for k, v in valid_data.items() if k in logged_ids]
     not_logged_samples = [v for k, v in valid_data.items() if k not in logged_ids]
     for sample in not_logged_samples:
-        errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error=f"Duplicate index on log for id {sample[SAMPLE_ID_COL]}",
+        errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL],
+                           error=f"Duplicate index on log for id {sample[SAMPLE_ID_COL]}",
                            model_id=model_version.model_id, model_version_id=model_version.id))
 
     if len(logged_samples) == 0:
@@ -230,7 +231,8 @@ async def log_labels(
                         errors.append(dict(sample=str(valid_data[sample_id]),
                                            sample_id=valid_data[sample_id],
                                            error=f"More than 2 classes in binary model. {classes} present, " +
-                                           f"received: {valid_data[sample_id][SAMPLE_LABEL_COL]}, sample id: {valid_data[sample_id]}",
+                                           f"""received: {valid_data[sample_id][SAMPLE_LABEL_COL]}, 
+                                           sample id: {valid_data[sample_id]}""",
                                            model_id=model_version.model_id,
                                            model_version_id=model_version.id))
                         del valid_data[sample_id]
@@ -467,7 +469,8 @@ class DataIngestionBackend(object):
             if entity == "model-version":
                 errors = [{"sample_id": json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL),
                            "sample": m.value.decode(),
-                           "error": f'{str(exception)}, sample id: {json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL)}'}
+                           "error": f'''{str(exception)}, 
+                           sample id: {json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL)}'''}
                           for m in messages]
                 async with self.resources_provider.create_async_database_session(organization_id) as session:
                     await save_failures(session, errors, self.logger)
