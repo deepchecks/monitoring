@@ -40,7 +40,7 @@ const buildPointPropertiesArray = (
     const datasetLabel = label?.split('|');
 
     timeLabels.forEach(timeLabel => {
-      const currentAlert = alerts.find(alert => new Date(alert.end_time).getTime() + 1 === timeLabel); // millisecond correction
+      const currentAlert = alerts.find(alert => new Date(alert.end_time).getTime() === timeLabel);
 
       if (Object.keys(currentAlert?.failed_values[datasetLabel[1]] || {}).includes(datasetLabel[0])) {
         pointColors.push(ALERT_COLOR);
