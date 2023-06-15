@@ -191,7 +191,7 @@ class UserEvent(DeploymentEvent):
     def to_properties(self) -> dict[str, t.Any]:
         """Prepare data to be send to the mixpanel."""
         data = self.dict()
-        org = t.cast('dict[str, t.Any]', data.pop('u_org', OrganizationEvent._empty_template()))
+        org = t.cast('dict[str, t.Any]', data.pop('u_org')) or OrganizationEvent._empty_template()
         # NOTE: 'org' var must be placed before 'data' var
         return {**org, **data}
 
