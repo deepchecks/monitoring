@@ -37,7 +37,11 @@ export function APIKey() {
     <>
       <StyledContainer flexDirection="row">
         <StyledText text={text} marginLeft="-6px" />
-        <a href="https://docs.deepchecks.com/stable/getting-started/welcome.html" target="_blank" rel="noreferrer">
+        <a
+          href="https://docs.deepchecks.com/monitoring/stable/user-guide/user_interface/configuration.html#api-key"
+          target="_blank"
+          rel="noreferrer"
+        >
           {link}
         </a>
       </StyledContainer>
