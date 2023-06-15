@@ -7,7 +7,8 @@ const FirstOnBoardingTitle = styled(Typography)(({ theme }) => ({
   fontSize: 32,
   fontWeight: 600,
   color: theme.palette.primary.main,
-  margin: '40px 0'
+  margin: '40px 0',
+  lineHeight: '30px'
 }));
 
 const FirstOnBoardingOutlinedBox = styled(StyledContainer)(() => ({

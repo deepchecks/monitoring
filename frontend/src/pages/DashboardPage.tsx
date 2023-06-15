@@ -88,20 +88,20 @@ export const DashboardPage = () => {
         container
         sx={{
           padding: '30px 0',
-          maxWidth: { xs: 'calc(100vw - 250px)', xl: 'calc(100vw - 237px - 65px)' }
+          maxWidth: { lg: '100vw', xl: '100vw - 280px' }
         }}
         spacing={{ md: 2.5, xl: 4 }}
       >
-        <Grid item md={6} lg={6} xl={4}>
+        <Grid item md={6} lg={6} xl={4} width="100%">
           <ModelList selectedModelId={selectedModelId} setSelectedModelId={setSelectedModelId} />
         </Grid>
-        <Grid item md={6} lg={6} xl={8}>
+        <Grid item md={6} lg={6} xl={8} width="100%" marginTop="24px">
           <DataIngestion modelId={selectedModelId} />
         </Grid>
-        <Grid item md={12}>
+        <Grid item md={12} width="100%">
           <MonitorListHeader onClick={handleOpenMonitorDialog} />
         </Grid>
-        <Grid item md={12}>
+        <Grid item md={12} width="100%">
           <MonitorList
             dashboard={dashboard}
             currentModelId={selectedModelId}
