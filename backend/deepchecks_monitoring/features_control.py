@@ -103,7 +103,7 @@ class FeaturesControl:
     @property
     def email_enabled(self) -> bool:
         """Whether email is enabled."""
-        return self.settings.email_smtp_host is not None
+        return bool(self.settings.email_smtp_host)
 
     def get_all_features(self) -> FeaturesSchema:
         """Get all features for the client."""
