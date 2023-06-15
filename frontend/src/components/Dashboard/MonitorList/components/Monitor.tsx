@@ -87,7 +87,7 @@ const MonitorComponent = ({
   };
 
   return (
-    <Grid ref={observedContainerRef} item md={6} lg={6} xl={4} {...props}>
+    <Grid ref={observedContainerRef} item md={6} lg={6} xl={4} {...props} width="100%">
       <GraphicsSection
         data={data}
         monitor={monitor}
