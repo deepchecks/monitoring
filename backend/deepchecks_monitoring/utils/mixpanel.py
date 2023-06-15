@@ -1,4 +1,4 @@
-# pylint: disable=unused-import,import-outside-toplevel
+# pylint: disable=unused-import,import-outside-toplevel,protected-access
 """Mixpanel events definitions."""
 import enum
 import json
