@@ -49,6 +49,7 @@ const StyledHeaderWrapper = styled(Stack, {
   '@media (max-width: 1200px)': {
     width: '100%',
     flexWrap: 'wrap',
+    height: '200px',
     left: '0'
   }
 }));
@@ -58,5 +59,13 @@ const StyledSelectContainer = styled(Stack)({
   alignItems: 'center',
   height: '36px',
   width: '100%',
-  margin: '0 38px'
+  margin: '0 38px',
+
+  '@media (max-width: 1200px)': {
+    marginTop: '-24px',
+    flexWrap: 'wrap',
+    height: '200px',
+
+    '& .MuiDivider-root': { borderColor: 'transparent' }
+  }
 });
