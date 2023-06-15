@@ -11,7 +11,7 @@ interface VersionErrorsListProps {
   logs: IngestionErrorSchema[] | undefined;
 }
 
-const tableHeaders = ['Version', 'Sample ID', 'Sample', 'Reason', 'Date'];
+const tableHeaders = ['Version', 'Date', 'Reason', 'Sample ID', 'Sample'];
 
 export const ModelLogs = ({ logs }: VersionErrorsListProps) => (
   <div>
