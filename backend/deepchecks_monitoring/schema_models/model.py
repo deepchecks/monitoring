@@ -37,7 +37,6 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models import IngestionError
 
 
-
 __all__ = ["Model", "ModelNote"]
 
 
