@@ -350,7 +350,7 @@ class DataIngestionBackend(object):
 
             send_futures = []
             for sample in data:
-                key = str(sample.get(SAMPLE_ID_COL, "")).encode()
+                key = sample.get(SAMPLE_ID_COL, "").encode()
                 message = json.dumps({"data": sample, "log_time": log_time.to_iso8601_string()}).encode("utf-8")
                 send_futures.append(await self._producer.send(topic_name, value=message, key=key))
             await asyncio.gather(*send_futures)
