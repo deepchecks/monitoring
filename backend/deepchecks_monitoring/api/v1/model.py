@@ -1033,11 +1033,11 @@ async def retrieve_connected_model_ingestion_errors(
 
     if start_time_epoch:
         dt = datetime.fromtimestamp(start_time_epoch, tz=pytz.UTC)
-        q = q.where(IngestionError.created_at > dt)
+        q = q.where(IngestionError.created_at >= dt)
 
     if end_time_epoch:
         dt = datetime.fromtimestamp(end_time_epoch, tz=pytz.UTC)
-        q = q.where(IngestionError.created_at < dt)
+        q = q.where(IngestionError.created_at <= dt)
 
     if download is True:
         # TODO:
