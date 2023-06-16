@@ -20,7 +20,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_object_session
 from sqlalchemy.orm import Mapped, Query, relationship
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
-
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
                                                              ColumnType, column_types_to_table_columns,
@@ -30,11 +29,11 @@ from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models import IngestionError
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
     from deepchecks_monitoring.schema_models.model_memeber import ModelMember
     from deepchecks_monitoring.schema_models.model_version import ModelVersion
-    from deepchecks_monitoring.schema_models import IngestionError
 
 
 __all__ = ["Model", "ModelNote"]
