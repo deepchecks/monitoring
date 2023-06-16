@@ -12,39 +12,48 @@ import { NoDataToShow } from 'components/DiagramLine/NoData/NoDataToShow';
 import { GraphData } from 'helpers/types';
 import { constants } from '../../dashboard.constants';
 
-interface MonitorDrawerGraphViewGraphProps {
+interface MonitorDialogGraphViewGraphProps {
   graphData: ChartData<'line', GraphData> | null;
   isLoading: boolean;
   timeFreq?: number;
   monitor?: MonitorSchema | null;
   setReset?: React.Dispatch<React.SetStateAction<boolean>>;
+  isCreateAlert?: boolean;
 }
 
 const { reset, title } = constants.monitorDrawer.graph;
 
-export const MonitorDrawerGraph = ({
+export const MonitorDialogGraph = ({
   graphData,
   isLoading,
   timeFreq,
   monitor,
-  setReset
-}: MonitorDrawerGraphViewGraphProps) =>
+  setReset,
+  isCreateAlert
+}: MonitorDialogGraphViewGraphProps) =>
   isLoading ? (
     <Loader />
   ) : graphData?.datasets.length ? (
-    <DiagramLine data={graphData} height={{ lg: 350, xl: 350 }} timeFreq={timeFreq} />
+    <DiagramLine
+      data={graphData}
+      height={{ lg: 246, xl: 246 }}
+      timeFreq={timeFreq}
+      {...(isCreateAlert && { alert_rules: monitor?.alert_rules })}
+    />
   ) : (
-    <Box sx={{ transform: 'translateX(25px)' }}>
-      <NoDataToShow title={title} />
+    <Box>
+      <NoDataToShow title={title} height={246} />
       {monitor && setReset && <StyledReset onClick={() => setReset(true)}>{reset}</StyledReset>}
     </Box>
   );
 
 const StyledReset = styled(Typography)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  cursor: 'pointer',
+  fontSize: '18px',
+  fontWeight: 600,
   textAlign: 'center',
+  color: theme.palette.primary.main,
   transition: 'opacity ease 0.3s',
-  transform: 'translateY(-45px)',
+  cursor: 'pointer',
+
   '&:hover': { opacity: 0.5 }
 }));

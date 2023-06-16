@@ -6,12 +6,12 @@ import { StyledMenuItem, StyledRootMenu } from '../GraphicsSection.style';
 
 import { Bell, Edit, Trash } from 'assets/icon/icon';
 
-import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { DialogNames } from 'components/Dashboard/Dashboard.types';
 
 import { theme } from 'components/lib/theme';
 
 interface RootMenuProps extends MenuProps {
-  handleOpenMonitor: (drawerName: DrawerNames) => void;
+  handleOpenMonitor: (drawerName: DialogNames) => void;
   handleOpenDeleteMonitor: () => void;
 }
 
@@ -30,11 +30,11 @@ export const RootMenu = ({ handleOpenMonitor, handleOpenDeleteMonitor, ...props 
     }}
     {...props}
   >
-    <StyledRootMenuItem onClick={() => handleOpenMonitor(DrawerNames.CreateAlert)}>
+    <StyledRootMenuItem onClick={() => handleOpenMonitor(DialogNames.CreateAlert)}>
       <Bell />
       <StyledTypography>Create alert</StyledTypography>
     </StyledRootMenuItem>
-    <StyledRootMenuItem onClick={() => handleOpenMonitor(DrawerNames.EditMonitor)}>
+    <StyledRootMenuItem onClick={() => handleOpenMonitor(DialogNames.EditMonitor)}>
       <Edit />
       <StyledTypography>Edit monitor</StyledTypography>
     </StyledRootMenuItem>

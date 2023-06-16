@@ -6,7 +6,7 @@ import useUser from 'helpers/hooks/useUser';
 import { Box } from '@mui/material';
 
 import { StyledDialog, StyledText } from 'components/lib';
-import { MembersActionDialogInput } from './MembersActionDialogInput';
+import { BaseInput } from 'components/base/InputDropdown/InputDropdown';
 
 import { constants } from '../members.constants';
 
@@ -48,7 +48,7 @@ export const DeleteWorkspaceDialog = ({ open, closeDialog }: DeleteWorkspaceDial
       <Box textAlign="center">
         <StyledText text={dialogMessage1} type="h3" />
         <StyledText text={dialogMessage2} type="h3" marginBottom="15px" />
-        <MembersActionDialogInput value={inputValue} onChange={handleInputValueChange} placeholder={inputPlaceholder} />
+        <BaseInput value={inputValue} onChange={handleInputValueChange} placeholder={inputPlaceholder} />
       </Box>
     </StyledDialog>
   );

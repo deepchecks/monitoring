@@ -15,7 +15,7 @@ import { theme } from 'components/lib/theme';
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
   const [mobileBarOpen, setMobileBarOpen] = useState(false);
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   if (!isUserDetailsComplete) return null;
 

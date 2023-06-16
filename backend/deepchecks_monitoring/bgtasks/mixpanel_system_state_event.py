@@ -23,7 +23,7 @@ __all__ = ["MixpanelSystemStateEvent"]
 
 
 QUEUE_NAME = "mixpanel system state event"
-DELAY = 3600  # 1 hour
+DELAY = 0
 
 
 class MixpanelSystemStateEvent(BackgroundWorker):
@@ -39,6 +39,11 @@ class MixpanelSystemStateEvent(BackgroundWorker):
         """Return delay in seconds."""
         return DELAY
 
+    @classmethod
+    def retry_seconds(cls) -> int:
+        """The retry in seconds between the task executions."""
+        return 3600
+
     async def run(
         self,
         task: "Task",
@@ -48,6 +53,8 @@ class MixpanelSystemStateEvent(BackgroundWorker):
     ):
         """Run task."""
         if not resources_provider.is_analytics_enabled:
+            return
+        if not resources_provider.settings.is_on_prem or resources_provider.settings.is_cloud:
             return
 
         organizations = (await session.scalars(

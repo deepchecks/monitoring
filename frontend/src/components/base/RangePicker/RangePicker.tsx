@@ -12,6 +12,7 @@ interface RangePickerProps extends SliderProps {
   numericValue: number[];
   setNumericValue: React.Dispatch<React.SetStateAction<number[] | undefined>>;
   step?: number;
+  disableInputs?: boolean;
 }
 
 const DEFAULT_STEP = 0.01;
@@ -22,6 +23,7 @@ export const RangePicker = ({
   numericValue,
   setNumericValue,
   step = DEFAULT_STEP,
+  disableInputs,
   sx,
   ...props
 }: RangePickerProps) => {
@@ -85,30 +87,32 @@ export const RangePicker = ({
           valueLabelDisplay="auto"
           {...props}
         />
-        <StyledInputsWrapper>
-          <StyledTextField
-            name="min"
-            value={inputValues[0]}
-            error={minInputError}
-            onChange={handleInputChange(0)}
-            placeholder={min.toString()}
-            type="number"
-            InputLabelProps={{
-              shrink: true
-            }}
-          />
-          <StyledTextField
-            name="max"
-            value={inputValues[1]}
-            error={maxInputError}
-            onChange={handleInputChange(1)}
-            placeholder={max.toString()}
-            type="number"
-            InputLabelProps={{
-              shrink: true
-            }}
-          />
-        </StyledInputsWrapper>
+        {!disableInputs && (
+          <StyledInputsWrapper>
+            <StyledTextField
+              name="min"
+              value={inputValues[0]}
+              error={minInputError}
+              onChange={handleInputChange(0)}
+              placeholder={min.toString()}
+              type="number"
+              InputLabelProps={{
+                shrink: true
+              }}
+            />
+            <StyledTextField
+              name="max"
+              value={inputValues[1]}
+              error={maxInputError}
+              onChange={handleInputChange(1)}
+              placeholder={max.toString()}
+              type="number"
+              InputLabelProps={{
+                shrink: true
+              }}
+            />
+          </StyledInputsWrapper>
+        )}
       </Stack>
     </Box>
   );
