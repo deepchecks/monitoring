@@ -1,28 +1,50 @@
-import React, { FC, useState } from 'react';
-import { Button } from '@mui/material';
+import React, { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react';
 
-import { StyledDescription, StyledForm, StyledTextField, StyledUploadArea } from './ReportModal.style';
+import { Button, Stack } from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 
 import { StyledDialog } from 'components/lib';
 
-import { FileUploadIcon } from '../../../../../../../assets/icon/icon';
+import {
+  StyledDescription,
+  StyledTextField,
+  StyledUploadArea,
+  StyledIconButton,
+  StyledPreviewContainer
+} from './ReportModal.style';
 
 interface ReportModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-export const ReportModal: FC<ReportModalProps> = ({ open, onClose }) => {
+export const ReportModal = ({ open, onClose }: ReportModalProps) => {
   const [inputDescription, setInputDescription] = useState('');
-  const [selectedFile, setSelectedFile] = useState<any>(undefined);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => setInputDescription(e.target.value);
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => setSelectedFile(e.target?.files?.[0]);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setSelectedFile(e.target.files[0]);
+  };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputDescription !== '' && selectedFile !== undefined) {
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setPreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile]);
+
+  const handleFormSubmit = () => {
+    if (inputDescription && selectedFile) {
       const reader = new FileReader();
 
       reader.onloadend = function () {
@@ -47,17 +69,27 @@ export const ReportModal: FC<ReportModalProps> = ({ open, onClose }) => {
     }
   };
 
+  const handleCloseDialog = () => {
+    onClose();
+    setTimeout(() => {
+      setInputDescription('');
+      setSelectedFile(null);
+      setPreview(null);
+    }, 150);
+  };
+
   return (
     <StyledDialog
       open={open}
-      onClose={onClose}
-      closeDialog={onClose}
+      onClose={handleCloseDialog}
+      closeDialog={handleCloseDialog}
       title="Report a bug"
       submitButtonLabel="Sent Report"
-      submitButtonAction={handleFormSubmit as () => void}
+      submitButtonAction={handleFormSubmit}
+      submitButtonDisabled={!inputDescription}
     >
-      <StyledDescription paragraph={true}>Please tell us what went wrong with the product</StyledDescription>
-      <StyledForm onSubmit={handleFormSubmit} component="form">
+      <StyledDescription paragraph>Please tell us what went wrong with the product</StyledDescription>
+      <Stack>
         <StyledTextField
           value={inputDescription}
           onChange={handleInputChange}
@@ -72,7 +104,15 @@ export const ReportModal: FC<ReportModalProps> = ({ open, onClose }) => {
             <input onChange={handleFileChange} type="file" hidden accept="image/*" />
           </Button>
         </StyledUploadArea>
-      </StyledForm>
+        {selectedFile && preview && (
+          <StyledPreviewContainer>
+            <img src={preview} width="20%" />
+            <StyledIconButton onClick={() => setSelectedFile(null)}>
+              <ClearIcon />
+            </StyledIconButton>
+          </StyledPreviewContainer>
+        )}
+      </Stack>
     </StyledDialog>
   );
 };
