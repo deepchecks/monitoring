@@ -27,6 +27,18 @@ export type RetrieveModelNotesApiV1ModelsModelIdNotesGetParams = { identifier_ki
 
 export type SetScheduleTimeApiV1ModelsModelIdMonitorsSetScheduleTimePostParams = { identifier_kind?: IdentifierKind };
 
+export type RetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGetParams = {
+  sort_key?: IngestionErrorsSortKey;
+  msg_contains?: string;
+  model_version_id?: number;
+  sort_order?: SortOrder;
+  download?: boolean;
+  limit?: number;
+  offset?: number;
+  start_time_epoch?: number;
+  end_time_epoch?: number;
+};
+
 export type RetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetParams =
   { sort_key?: IngestionErrorsSortKey; sort_order?: SortOrder; download?: boolean; limit?: number; offset?: number };
 
@@ -808,6 +820,7 @@ export interface IngestionErrorSchema {
   error?: string;
   sample?: string;
   created_at: string;
+  model_version_id?: number;
 }
 
 /**
@@ -5114,6 +5127,74 @@ export const useRetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModels
 
     return query;
   };
+
+/**
+ * Retrieve connected model ingestion errors.
+ * @summary Retrieve Connected Model Ingestion Errors
+ */
+export const retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet = (
+  modelId: number,
+  params?: RetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<IngestionErrorSchema[]>({
+    url: `/api/v1/connected-models/${modelId}/ingestion-errors`,
+    method: 'get',
+    params,
+    signal
+  });
+};
+
+export const getRetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGetQueryKey = (
+  modelId: number,
+  params?: RetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGetParams
+) => [`/api/v1/connected-models/${modelId}/ingestion-errors`, ...(params ? [params] : [])];
+
+export type RetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet>>
+>;
+export type RetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGetQueryError =
+  ErrorType<HTTPValidationError>;
+
+export const useRetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet = <
+  TData = Awaited<
+    ReturnType<typeof retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet>
+  >,
+  TError = ErrorType<HTTPValidationError>
+>(
+  modelId: number,
+  params?: RetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGetParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getRetrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGetQueryKey(modelId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet>>
+  > = ({ signal }) =>
+    retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet(modelId, params, signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, { enabled: !!modelId, ...queryOptions }) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
 
 /**
  * Set schedule time.
