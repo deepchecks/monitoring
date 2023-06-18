@@ -85,7 +85,7 @@ class User(Base):
         cascade="save-update, merge, delete",
         passive_deletes=True,
         passive_updates=True,
-        order_by="Role.role.desc()",
+        order_by="Role.role",
     )
 
     @classmethod
