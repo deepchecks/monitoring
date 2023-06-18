@@ -21,7 +21,7 @@ interface ModelsTabTableProps {
 }
 
 export const ModelsTabTable = ({ models, refetchModels }: ModelsTabTableProps) => {
-  const { organizationMembersList, setOrganizationMembersList, sortedOrganizationMembers } = useOrganizationMembers();
+  const { organizationMembersList, setOrganizationMembersList } = useOrganizationMembers();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentModel, setCurrentModel] = useState<ModelManagmentSchema | null>(null);
@@ -50,7 +50,7 @@ export const ModelsTabTable = ({ models, refetchModels }: ModelsTabTableProps) =
       </StyledTableContainer>
       <AssignMembersToModelDialog
         currentModel={currentModel}
-        initialMembersList={sortedOrganizationMembers}
+        initialMembersList={organizationMembersList}
         membersList={organizationMembersList}
         setMembersList={setOrganizationMembersList}
         open={isDialogOpen}
