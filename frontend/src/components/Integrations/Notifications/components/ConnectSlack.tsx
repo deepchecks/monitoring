@@ -10,7 +10,7 @@ import {
 import { Box, Stack } from '@mui/material';
 
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
-import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../../lib';
+import { StyledButton, StyledImage, StyledText } from '../../../lib';
 
 import slack from '../../../../assets/integrations/slack.svg';
 
@@ -60,14 +60,6 @@ const ConnectSlack = ({ isSlackConnected, disabled }: { isSlackConnected: boolea
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ width: '100%' }}>
-        <StyledLoader />
-      </Box>
-    );
-  }
-
   return (
     <Box
       sx={{
@@ -86,7 +78,12 @@ const ConnectSlack = ({ isSlackConnected, disabled }: { isSlackConnected: boolea
           <StyledText text={constants.connect.slack.title} type="h1" color="white" />
           <StyledText text={constants.connect.slack.description} type="h3" color="white" />
         </Stack>
-        <StyledButton onClick={handleSlack} label={constants.connect.slack.buttonLabel(isSlackConnected)} />
+        <StyledButton
+          onClick={handleSlack}
+          label={constants.connect.slack.buttonLabel(isSlackConnected)}
+          loading={isLoading}
+          width="130px"
+        />
       </Box>
       <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="auto" />
     </Box>
