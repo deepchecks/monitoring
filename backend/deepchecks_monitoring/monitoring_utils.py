@@ -83,7 +83,7 @@ class OperatorsEnum(str, enum.Enum):
     def stringify(self) -> str:
         """Return a string representing the operator instance."""
         cls = type(self)
-        match cls:
+        match self:
             case cls.EQ:
                 return "=="
             case cls.NOT_EQ:
