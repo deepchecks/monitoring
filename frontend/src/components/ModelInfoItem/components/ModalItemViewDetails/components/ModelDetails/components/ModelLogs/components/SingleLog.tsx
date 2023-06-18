@@ -2,10 +2,11 @@ import React from 'react';
 
 import dayjs from 'dayjs';
 
-import { styled, Tooltip, Typography } from '@mui/material';
+import { styled, Typography } from '@mui/material';
 
 import { IngestionErrorSchema } from 'api/generated';
 
+import { StyledToolTip } from 'components/lib';
 import { StyledTableCell, StyledTableRow } from '../../../ModelDetails.style';
 import { theme } from 'components/lib/theme';
 
@@ -24,21 +25,21 @@ export const SingleLog = ({ log }: SingleErrorProps) => (
       <StyledCellText>{log.created_at ? `${dayjs(log.created_at).format('L LT')}` : '- '}</StyledCellText>
     </StyledTableCell>
     <StyledTableCell width="20%">
-      <Tooltip title={`${log.error}`}>
+      <StyledToolTip text={`${log.error}`}>
         <StyledCellText width="265px" noWrap={true}>
           {log.error}
         </StyledCellText>
-      </Tooltip>
+      </StyledToolTip>
     </StyledTableCell>
     <StyledTableCell width="20%">
       <StyledCellText>{log.sample_id}</StyledCellText>
     </StyledTableCell>
     <StyledTableCell width="20%">
-      <Tooltip title={`${log.sample}`}>
+      <StyledToolTip text={`${log.sample}`}>
         <StyledCellText width="325px" noWrap={true}>
           {log.sample}
         </StyledCellText>
-      </Tooltip>
+      </StyledToolTip>
     </StyledTableCell>
   </StyledTableRow>
 );
