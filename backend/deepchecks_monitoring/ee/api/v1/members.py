@@ -73,7 +73,10 @@ async def update_user_role(roles_schema: RoleUpdateSchema,
 
     if user_id == current_user.id and roles_schema.replace and RoleEnum.OWNER not in roles_schema.roles:
         owner = await session.scalar(
-            sa.select(Role).where(sa.and_(Role.role == RoleEnum.OWNER, Role.user_id != current_user.id))
+            sa.select(Role).where(sa.and_(Role.role == RoleEnum.OWNER, 
+                                          Role.user_id != current_user.id, 
+                                          User.organization_id == current_user.organization_id))
+            .join(User, Role.user_id == User.id)
         )
         if not owner:
             raise BadRequest("Owner cannot remove their owner role if there are no other owners in the organization.")
