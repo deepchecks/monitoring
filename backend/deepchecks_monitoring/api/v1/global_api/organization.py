@@ -277,6 +277,9 @@ async def retrieve_organization_members(
     members_schems = [MemberSchema(id=user.id, email=user.email, full_name=user.full_name, disabled=user.disabled,
                                    picture_url=user.picture_url, last_login=user.last_login, created_at=user.created_at,
                                    roles=[role.role for role in user.roles]) for user in members]
+    ahh = await session.execute(sa.text("""SELECT e.enumlabel FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname = 'roleenum' ORDER BY e.enumsortorder;"""))
+    print(ahh.all())
+    print(99999)
     members_schems = \
         sorted(members_schems, key=lambda member: member.roles[0].role_index if member.roles else -1, reverse=True)
     members_schems = \
