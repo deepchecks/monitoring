@@ -9,7 +9,7 @@ import { ConnectedModelSchema } from 'api/generated';
 
 import { ModelLogs } from './components/ModelLogs/ModelLogs';
 import { ModelNotes } from './components/ModelNotes';
-import { StyledModalTitle, StyledModalTitleText } from '../../ModalItemViewDetails.style';
+import { StyledModalTitle, StyledModalTitleText } from '../ModalItemViewDetails.style';
 import { theme } from 'components/lib/theme';
 
 interface ModelDetailsProps {
@@ -17,7 +17,7 @@ interface ModelDetailsProps {
 }
 
 const constants = {
-  title: (modelName: string) => `${modelName} details`,
+  title: (modelName: string) => `${modelName} Details`,
   versionTabLabel: 'All Versions Logs',
   notesTabLabel: 'My Notes'
 };
