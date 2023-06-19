@@ -16,6 +16,12 @@ interface ModelDetailsProps {
   model: ConnectedModelSchema;
 }
 
+const constants = {
+  title: (modelName: string) => `${modelName} details`,
+  versionTabLabel: 'All Versions Logs',
+  notesTabLabel: 'My Notes'
+};
+
 export const ModelDetails = ({ model }: ModelDetailsProps) => {
   const [value, setValue] = useState('1');
 
@@ -24,7 +30,7 @@ export const ModelDetails = ({ model }: ModelDetailsProps) => {
   return (
     <>
       <StyledModalTitle>
-        <StyledModalTitleText>{model.name}</StyledModalTitleText>
+        <StyledModalTitleText>{constants.title(model.name)}</StyledModalTitleText>
       </StyledModalTitle>
       <TabContext value={value}>
         <TabList
@@ -32,8 +38,8 @@ export const ModelDetails = ({ model }: ModelDetailsProps) => {
           onChange={handleTabChange}
           sx={{ borderBottom: `solid 1px ${theme.palette.grey.light}` }}
         >
-          <Tab label="All Versions Logs" value="1" color={theme.palette.text.disabled} />
-          <Tab label="My notes" value="2" color={theme.palette.text.disabled} />
+          <Tab label={constants.versionTabLabel} value="1" />
+          <Tab label={constants.notesTabLabel} value="2" />
         </TabList>
         <TabPanel value="1" sx={{ padding: '0' }}>
           <ModelLogs />

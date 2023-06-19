@@ -2,12 +2,10 @@ import React from 'react';
 
 import dayjs from 'dayjs';
 
-import { styled, Typography } from '@mui/material';
-
 import { IngestionErrorSchema } from 'api/generated';
 
 import { StyledToolTip } from 'components/lib';
-import { StyledTableCell, StyledTableRow } from '../../../ModelDetails.style';
+import { StyledCellText, StyledTableCell, StyledTableRow } from '../../../ModelDetails.style';
 import { theme } from 'components/lib/theme';
 
 interface SingleErrorProps {
@@ -42,13 +40,4 @@ export const SingleLog = ({ log }: SingleErrorProps) => (
       </StyledToolTip>
     </StyledTableCell>
   </StyledTableRow>
-);
-
-const StyledCellText = styled(Typography)(
-  ({ width, color, weight }: { width?: string; color?: string; weight?: number }) => ({
-    fontWeight: weight ? weight : 400,
-    fontSize: 'inherit',
-    width: width ? width : '100%',
-    color: color ? color : 'inherit'
-  })
 );

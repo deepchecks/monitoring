@@ -1,4 +1,4 @@
-import { IconButton, styled, TableCell, TableRow, Box } from '@mui/material';
+import { IconButton, styled, TableCell, TableRow, Box, Typography } from '@mui/material';
 import { StyledContainer } from 'components/lib';
 
 import { theme } from 'components/lib/theme';
@@ -55,3 +55,12 @@ export const StyledLogsFiltersContainer = styled(StyledContainer)({
   alignItems: 'center',
   margin: '16px 0 0'
 });
+
+export const StyledCellText = styled(Typography)(
+  ({ width, color, weight }: { width?: string; color?: string; weight?: number }) => ({
+    fontWeight: weight ? weight : 400,
+    fontSize: 'inherit',
+    width: width ? width : '100%',
+    color: color ? color : 'inherit'
+  })
+);
