@@ -14,20 +14,22 @@ const constants = {
 interface GenerateTokenProps {
   regenerateApiToken: () => void;
   isLocal: boolean;
+  apiToken: string;
 }
 
-const GenerateToken = ({ regenerateApiToken, isLocal }: GenerateTokenProps) => {
+const GenerateToken = ({ regenerateApiToken, isLocal, apiToken }: GenerateTokenProps) => {
   const theme = useTheme();
   const [copiedApiToken, setCopiedApiToken] = useState(false);
 
   const buttonLabel = copiedApiToken ? constants.buttonCopiedLabel : constants.buttonLabel;
+  const hideTokenGeneration = apiToken !== 'API_TOKEN' && isLocal;
 
   const handleButtonClick = () => {
     regenerateApiToken();
     setCopiedApiToken(true);
   };
 
-  if (isLocal) {
+  if (hideTokenGeneration) {
     return <div />;
   }
 
