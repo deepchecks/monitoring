@@ -38,14 +38,16 @@ const MenuProps: Partial<IMenuProps> = {
 };
 
 export function getNameFromData(name: string | undefined, data: MonitorValueConf[] | undefined) {
-  if (name != undefined) {
+  if (name) {
     const indexFromData = data
       ?.map(val => val.name.replaceAll('_', ' ').toLowerCase())
       .lastIndexOf(name.replaceAll('_', ' ').toLowerCase());
-    if (indexFromData != undefined && indexFromData != -1) {
+
+    if (indexFromData && indexFromData !== -1) {
       return data?.at(indexFromData)?.name;
     }
   }
+
   return undefined;
 }
 
@@ -62,24 +64,21 @@ const MultiSelect = ({
 }: AnalysisItemSelectProps) => {
   const defaultSelectedValues = useMemo(() => {
     const paramValues: string[] = Object.values(checkParams[TypeMap[type]] || []);
-    return paramValues.map(name => getNameFromData(name, data)).filter(val => typeof val == 'string');
+    return (
+      (paramValues.map(name => getNameFromData(name, data)).filter(val => typeof val == 'string') as string[]) || []
+    );
   }, [checkParams, data, type]);
 
   const [filteredData, setFilteredData] = useState(data);
   const [open, setOpen] = useState(false);
-  const [multiValue, setMultiValue] = useState<MultiSelectValuesType>((defaultSelectedValues as string[]) || []);
-  const [savedMultiValue, setSavedMultiValue] = useState<MultiSelectValuesType>([]);
+  const [savedMultiValue, setSavedMultiValue] = useState<MultiSelectValuesType>(defaultSelectedValues);
+  const [multiValue, setMultiValue] = useState<MultiSelectValuesType>(defaultSelectedValues);
   const [searchFieldValue, setSearchFieldValue] = useState('');
 
   const handleClose = (isApplyClicked?: boolean) => {
     setOpen(false);
 
-    if (
-      !isApplyClicked ||
-      !filteredData?.length ||
-      multiValue == savedMultiValue ||
-      multiValue.length + savedMultiValue.length == 0
-    ) {
+    if (!isApplyClicked || !filteredData?.length || multiValue.length + savedMultiValue.length === 0) {
       setTimeout(() => {
         setMultiValue(savedMultiValue);
         clearSearchField();
@@ -87,6 +86,7 @@ const MultiSelect = ({
 
       return;
     }
+
     setSavedMultiValue(multiValue);
     setIsMostWorstActive(false);
 
