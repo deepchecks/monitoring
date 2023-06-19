@@ -15,12 +15,13 @@ import { constants } from '../integrations.constants';
 
 const { ossErrMsg, adminErrMsg, tableNameColumn, s3, connect, tableStatusColumn } = constants.data;
 
+const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
+
 const Data = () => {
   const [openS3Dialog, setOpenS3Dialog] = useState(false);
   const { data, refetch } = useGetDataSourcesApiV1DataSourcesGet();
   const { isAdmin } = useUser();
 
-  const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
   const isS3Connected = data && data.length > 0;
   const toolTipText = !isCloud ? ossErrMsg : !isAdmin && !isS3Connected ? adminErrMsg : connect;
 
