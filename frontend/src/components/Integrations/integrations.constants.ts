@@ -35,6 +35,8 @@ export const constants = {
       name: 'AWS S3',
       status: (isConnected: boolean) => (isConnected ? 'Connected' : 'Connect')
     },
-    adminErrMsg: 'Admin only operation'
+    adminErrMsg: 'Admin only operation',
+    ossErrMsg: 'Available on our sass platform',
+    connect: 'connect S3'
   }
 };
