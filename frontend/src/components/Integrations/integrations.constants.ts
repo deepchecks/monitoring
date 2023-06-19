@@ -12,8 +12,7 @@ export const constants = {
         isNotAdminOrOwner
           ? 'This is open only to users with a paid subscription. \n Contact your admin.'
           : 'This is open only to users with a paid subscription.',
-      link: { text: 'You can subscribe here', href: '/workspace-settings' },
-      emailConfig: 'Email is not configured. Learn how to configure it on our docs.' // TODO - Update to a link once we have it on docs
+      emailConfig: 'Email is not configured. Learn how to configure it on our docs.'
     }
   },
   connect: {
@@ -36,7 +35,7 @@ export const constants = {
       status: (isConnected: boolean) => (isConnected ? 'Connected' : 'Connect')
     },
     adminErrMsg: 'Admin only operation',
-    ossErrMsg: 'Available on our sass platform',
-    connect: 'connect S3'
+    ossErrMsg: 'Available on the SAAS platform',
+    connect: 'Connect S3'
   }
 };

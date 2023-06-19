@@ -86,14 +86,12 @@ export function AlertNotifications({
   data,
   deniedReason,
   isNotAdminOrOwner,
-  isNotPaid,
-  deniedLink
+  isNotPaid
 }: {
   data: NotificationsResponse;
   deniedReason: string;
   isNotAdminOrOwner: boolean;
   isNotPaid: boolean;
-  deniedLink: string;
 }) {
   const updateNotifications = useUpdateOrganizationApiV1OrganizationPut();
   const isEmailEnabled = usePermissionControl({ feature: featuresList.email_enabled });
@@ -213,9 +211,6 @@ export function AlertNotifications({
         ))}
       </Box>
       <StyledText text={errMessage} color="red" margin="16px 0 8px" />
-      <a href="/workspace-settings" style={{ textDecoration: 'none' }}>
-        <StyledText text={deniedLink} color="red" fontWeight={800} />
-      </a>
     </Box>
   );
 }
