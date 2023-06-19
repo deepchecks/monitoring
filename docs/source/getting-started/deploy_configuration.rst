@@ -102,6 +102,9 @@ details the list of environment details Deepchecks is using.
    * - email_smtp_password
      - SMTP password for email
      -
+   * - enable_analytics
+     - Enable / disable analytics tracking 
+     - True
 
 
 
