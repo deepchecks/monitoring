@@ -1,10 +1,12 @@
 import React, { useState, useRef, RefObject } from 'react';
+
+import { TableChart, Delete } from '@mui/icons-material';
+import { Stack, Typography, Tooltip } from '@mui/material';
+
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { ConnectedModelSchema } from 'api/generated';
-
-import { Stack, Typography, Tooltip } from '@mui/material';
 
 import { ModalItemViewDetails } from './components/ModalItemViewDetails';
 import { ModelInfoBadge } from './components/ModelInfoBadge';
@@ -20,8 +22,6 @@ import {
   StyledModelInfoItemFooter,
   StyledModelInfoBadgesContainer
 } from './ModelInfoItem.style';
-
-import { DeleteIcon, ViewDetails } from 'assets/icon/icon';
 
 dayjs.extend(localizedFormat);
 
@@ -91,13 +91,13 @@ export const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
           <StyledHoverButtonContainer>
             <StyledDeleteModelButton onClick={handleOpen}>
               <Stack sx={{ alignItems: 'center' }}>
-                <ViewDetails />
+                <TableChart color="primary" fontSize="large" sx={{ marginBottom: '6px' }} />
                 <StyledDeleteModelButtonText>View Details</StyledDeleteModelButtonText>
               </Stack>
             </StyledDeleteModelButton>
-            <StyledDeleteModelButton sx={{ marginLeft: '30px', paddingTop: '7px' }} onClick={onDelete}>
+            <StyledDeleteModelButton sx={{ marginLeft: '30px' }} onClick={onDelete}>
               <Stack>
-                <DeleteIcon />
+                <Delete color="primary" fontSize="large" />
                 <StyledDeleteModelButtonText marginTop="6px">Delete</StyledDeleteModelButtonText>
               </Stack>
             </StyledDeleteModelButton>

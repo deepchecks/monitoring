@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+
 import { Box, Divider, IconButton, styled, Tooltip, Typography } from '@mui/material';
+import { Delete } from '@mui/icons-material';
+
 import dayjs from 'dayjs';
+
 import { ModelNoteSchema } from 'api/generated';
-import { DeleteIcon } from 'assets/icon/icon';
 
 import { theme } from 'components/lib/theme';
 
@@ -27,7 +30,7 @@ export const SingleNote = ({ note, onDeleteNote }: SingleNoteProps) => {
       <Divider light />
       {isHovered && (
         <StyledIconButton onClick={() => onDeleteNote(note.id)}>
-          <DeleteIcon />
+          <Delete color="primary" />
         </StyledIconButton>
       )}
     </StyledItem>
