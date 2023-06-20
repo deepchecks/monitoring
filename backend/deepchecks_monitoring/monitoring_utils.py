@@ -423,7 +423,7 @@ def field_length(column) -> int:
 def configure_logger(
     name: str,
     log_level: str = "INFO",
-    message_format: str = "[%(process)d][%(asctime)s][%(levelname)s][%(name)s]%(message)s",
+    message_format: str = "[%(process)d][%(asctime)s][%(levelname)s][%(name)s] %(message)s",
     logs_storage: str | None = None,
     logfile_name: str | None = None,
     logfile_backup_count: int = 3,
@@ -431,6 +431,7 @@ def configure_logger(
 ):
     """Configure logger instance."""
     logger = logging.getLogger(name)
+    logger.propagate = False
     logger.setLevel(log_level)
     formatter = logging.Formatter(fmt=message_format)
 

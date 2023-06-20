@@ -85,7 +85,7 @@ class AlertNotificator:
         self.alert_rule = alert_rule
         self.session = session
         self.resources_provider = resources_provider
-        self.logger = logger or logging.getLogger("deepchecks.alert-notificator")
+        self.logger = logger or logging.getLogger("deepchecks-monitoring.alert-notificator")
 
     async def send_emails(self) -> bool:
         """Send notification emails."""

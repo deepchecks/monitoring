@@ -82,7 +82,7 @@ class SecurityAuditMiddleware:
             log_stream_name=log_stream_name,
         )
         h.setLevel(logging.INFO)
-        self.logger = logging.getLogger("deepchecks.access-audit")
+        self.logger = logging.getLogger("deepchecks-monitoring.access-audit")
         self.logger.addHandler(h)
         self.app = app
 

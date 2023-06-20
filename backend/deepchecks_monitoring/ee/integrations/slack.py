@@ -84,7 +84,7 @@ class SlackInstallationUtils:
     ):
         self.settings = settings
         self.client = SlackClient()
-        self.logger = logger or logging.getLogger("deepchecks.slack.installation")
+        self.logger = logger or logging.getLogger("deepchecks-monitoring.slack.installation")
         self.state_utils = OAuthStateUtils()
 
     def generate_authorization_url(self, state, redirect_path) -> str:

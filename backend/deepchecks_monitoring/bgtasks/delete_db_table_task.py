@@ -23,9 +23,7 @@ QUEUE_NAME = 'delete table'
 
 
 class DeleteDbTableTask(BackgroundWorker):
-    """Worker to delete any database tables.
-
-    """
+    """Worker to delete any database tables."""
 
     @classmethod
     def queue_name(cls) -> str:
@@ -38,6 +36,7 @@ class DeleteDbTableTask(BackgroundWorker):
     async def run(self, task: 'Task', session: AsyncSession, resources_provider, lock):
         for table in task.params['full_table_paths']:
             await session.execute(text(f'DROP TABLE IF EXISTS {table}'))
+            resources_provider.logger.info('Drop table %s', table)
         # Deleting the task
         await session.execute(delete(Task).where(Task.id == task.id))
 

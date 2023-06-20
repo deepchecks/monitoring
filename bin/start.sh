@@ -6,6 +6,7 @@ if [[ -v INIT_LOCAL_RAY_INSTANCE ]]; then
   RAY_memory_monitor_refresh_ms=0 ray start --port=6399 --head
 fi
 
+LOGS_STORAGE="/"
 STARTAPP="python -m deepchecks_monitoring.cli run"
 
 if [[ -v DD_ENV ]]; then

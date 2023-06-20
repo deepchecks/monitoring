@@ -318,7 +318,7 @@ def run_deepchecks(
             if not (msg := getattr(e, 'message', None))
             else msg
         )
-        logging.getLogger('monitor_run_logger').exception(
+        logging.getLogger('deepchecks-monitoring.monitor-executor').exception(
             'For model(id=%s) version(id=%s) check(%s) '
             'got exception: %s',
             model.id,
@@ -373,7 +373,7 @@ async def get_results_for_model_versions_for_reference(
         except errors.DeepchecksBaseError as e:
             message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
                 f'got exception: {e.message}'
-            logging.getLogger('monitor_run_logger').error(message)
+            logging.getLogger('deepchecks-monitoring.monitor-executor').error(message)
             curr_result = None
 
         reduced_outs.append({'result': curr_result})

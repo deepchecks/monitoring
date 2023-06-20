@@ -40,7 +40,6 @@ class AlertsTask(BackgroundWorker):
 
     def __init__(self):
         super().__init__()
-        self._logger = logging.getLogger(__name__)
 
     @classmethod
     def queue_name(cls) -> str:
@@ -70,7 +69,7 @@ class AlertsTask(BackgroundWorker):
                 resources_provider=resources_provider,
                 monitor_id=monitor_id,
                 timestamp=timestamp,
-                logger=self._logger,
+                logger=resources_provider.logger.getChild('monitor-executor'),
                 organization_id=organization_id,
             )
         else:
@@ -87,7 +86,7 @@ class AlertsTask(BackgroundWorker):
                 organization_id=organization_id,
                 session=session,
                 resources_provider=resources_provider,
-                logger=self._logger.getChild("alert-notificator")
+                logger=resources_provider.logger.getChild("alert-notificator")
             )
             await resources_provider.report_mixpanel_event(
                 AlertTriggeredEvent.create_event,
@@ -106,7 +105,7 @@ async def execute_monitor(
         logger: t.Optional[logging.Logger] = None,
 ) -> t.List[Alert]:
     """Execute monitor alert rules."""
-    logger = logger or logging.getLogger("monitor-executor")
+    logger = logger or logging.getLogger("deepchecks-monitoring.monitor-executor")
     logger.info(
         "[Organization:%s][Monitor:%s] Execution of a monitor, timestamp %s",
         organization_id,

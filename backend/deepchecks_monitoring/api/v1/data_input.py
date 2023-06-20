@@ -211,7 +211,7 @@ async def log_labels(
         )
 
     resources_provider.logger.info(
-        '[Organization:%s] received %s new labels'
+        '[Organization:%s] received %s new labels',
         user.organization_id,
         len(truncated_data)
     )
@@ -318,7 +318,7 @@ async def save_reference(
     await session.execute(ref_table.insert(), items)
 
     resources_provider.logger.info(
-        '[Organization:%s] reference dataset uploaded'
+        '[Organization:%s] reference dataset uploaded',
         user.organization_id,
     )
 

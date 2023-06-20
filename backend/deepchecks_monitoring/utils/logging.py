@@ -42,15 +42,15 @@ def uvicorn_loggers_config(logs_storage: str | None = None):
             "formatter": "access",
             "class": "logging.handlers.RotatingFileHandler",
             "mode": "a",
-            "filename": str((pathlib.Path(logs_storage) / "deepchecks-http-access.log").absolute()),
+            "filename": str((pathlib.Path(logs_storage) / "deepchecks-monitoring-http-access.log").absolute()),
             "maxBytes": 10000000,
             "backupCount": 3
         }
         config["handlers"]["errors"] = {
-            "formatter": "access",
+            "formatter": "default",
             "class": "logging.handlers.RotatingFileHandler",
             "mode": "a",
-            "filename": str((pathlib.Path(logs_storage) / "deepchecks-errors.log").absolute()),
+            "filename": str((pathlib.Path(logs_storage) / "deepchecks-monitoring-asgi-errors.log").absolute()),
             "maxBytes": 10000000,
             "backupCount": 3,
             "level": "ERROR"

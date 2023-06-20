@@ -62,7 +62,7 @@ class AlertsScheduler:
         self.engine = engine
         self.async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
         self.sleep_seconds = sleep_seconds
-        self.logger = logger or logging.getLogger('deepchecks.alerts-scheduler')
+        self.logger = logger or logging.getLogger('deepchecks-monitoring.alerts-scheduler')
 
     async def run(self):
         """Start alert scheduler."""
@@ -185,7 +185,7 @@ class AlertsScheduler:
                             monitor.latest_schedule = schedules[-1]
                             await session.commit()
                             self.logger.info(
-                                '[Organization:%s][Monitor:%s] Scheduled %s monitor exeuction tasks',
+                                '[Organization:%s][Monitor:%s] Scheduled %s monitor execution tasks',
                                 organization.id,
                                 monitor.id
                             )
@@ -445,7 +445,7 @@ class BaseSchedulerSettings(config.DatabaseSettings):
 
     logs_storage: str | None = None
     scheduler_sleep_seconds: int = 30
-    scheduler_logfile_name: t.Optional[str] = 'scheduler.log'
+    scheduler_logfile_name: t.Optional[str] = 'monitors-scheduler.log'
     scheduler_loglevel: str = 'INFO'
     scheduler_logfile_maxsize: int = 10000000  # 10MB
     scheduler_logfile_backup_count: int = 3
