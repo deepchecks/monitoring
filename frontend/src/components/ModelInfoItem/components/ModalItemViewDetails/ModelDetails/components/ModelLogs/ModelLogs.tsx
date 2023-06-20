@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Table, TableBody, TableContainer, TableHead, TableRow, TextField } from '@mui/material';
+import { Table, TableBody, TableContainer, TableHead, TableRow } from '@mui/material';
 
-import { StyledDivider, StyledLogsFiltersContainer, StyledTableHeadCell } from '../../ModelDetails.style';
+import { StyledTableHeadCell } from '../../ModelDetails.style';
 import { SingleLog } from './components/SingleLog';
-import { StyledInput, StyledLoader } from 'components/lib';
-import { DatePicker } from 'components/base/DatePicker/DatePicker';
-import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimary';
+import { StyledLoader } from 'components/lib';
 import { NoDataToShow } from 'components/DiagramLine/NoData/NoDataToShow';
+import { ModelLogsFilters } from './components/ModelLogsFilters';
 
 import {
   IngestionErrorSchema,
@@ -46,18 +45,6 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
     }
   };
 
-  const handleStartDateChange = (currentStartDate: Date) => {
-    if (currentStartDate && endDate && currentStartDate < endDate) {
-      setStartDate(currentStartDate);
-    }
-  };
-
-  const handleEndDateChange = (currentEndDate: Date) => {
-    if (currentEndDate && startDate && currentEndDate > startDate) {
-      setEndDate(currentEndDate);
-    }
-  };
-
   useEffect(() => {
     setIsLoading(true);
     const getFilteredLogs = setTimeout(() => getLogs(), 500);
@@ -67,47 +54,17 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
   return (
     <div>
       <TableContainer sx={{ maxHeight: '540px' }}>
-        <StyledLogsFiltersContainer>
-          <SelectPrimary
-            label="Version"
-            onChange={e => setVersion(e.target.value as number)}
-            value={version}
-            size="small"
-          >
-            {modelVersions &&
-              modelVersions.map(({ name, id }) => (
-                <SelectPrimaryItem value={id} key={id}>
-                  {name}
-                </SelectPrimaryItem>
-              ))}
-          </SelectPrimary>
-          <StyledDivider />
-          <DatePicker
-            inputFormat="L"
-            onChange={handleStartDateChange}
-            value={startDate}
-            label="Start Date"
-            disableMaskedInput
-            renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
-          />
-          -
-          <DatePicker
-            inputFormat="L"
-            onChange={handleEndDateChange}
-            value={endDate}
-            label="End Date"
-            disableMaskedInput
-            renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
-          />
-          <StyledDivider />
-          <StyledInput
-            value={reason}
-            onChange={e => setReason(e.target.value)}
-            onCloseIconClick={() => setReason('')}
-            sx={{ width: '500px', height: '36px' }}
-            placeholder="Search reason..."
-          />
-        </StyledLogsFiltersContainer>
+        <ModelLogsFilters
+          modelVersions={modelVersions}
+          version={version}
+          reason={reason}
+          startDate={startDate}
+          endDate={endDate}
+          setVersion={setVersion}
+          setReason={setReason}
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
+        />
         {isLoading ? (
           <StyledLoader sx={{ margin: '150px auto' }} />
         ) : logs && logs.length > 0 ? (
