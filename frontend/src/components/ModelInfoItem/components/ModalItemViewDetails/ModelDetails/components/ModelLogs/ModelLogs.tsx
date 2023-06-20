@@ -26,8 +26,6 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
   const { data: modelVersions } = useGetVersionsPerModelApiV1ModelsModelIdVersionsGet(modelId);
 
   const getLogs = async () => {
-    setIsLoading(true);
-
     const response = await retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet(modelId, {
       end_time_epoch: endDate && endDate.getTime(),
       start_time_epoch: startDate && startDate.getTime(),
@@ -39,6 +37,7 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
       setLogs(response);
       setIsLoading(false);
     } else {
+      setLogs([]);
       setIsLoading(false);
     }
   };
@@ -56,8 +55,8 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
   };
 
   useEffect(() => {
+    setIsLoading(true);
     const getFilteredLogs = setTimeout(() => getLogs(), 500);
-
     return () => clearTimeout(getFilteredLogs);
   }, [reason, startDate, endDate, version]);
 
