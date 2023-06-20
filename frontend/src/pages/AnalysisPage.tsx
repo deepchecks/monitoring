@@ -14,13 +14,13 @@ import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 import { Loader } from 'components/base/Loader/Loader';
 import { AnalysisFilters } from 'components/Analysis/AnalysisFilters/AnalysisFilters';
 import { AnalysisHeader } from 'components/Analysis/AnalysisHeader/AnalysisHeader';
-import { AnalysisGroupBy } from 'components/Analysis/AnalysisGroupBy';
+import { AnalysisDrillDown } from 'components/AnalysisDrillDown';
 import AnalysisItem from 'components/Analysis/AnalysisItem/AnalysisItem';
 import NoResults from 'components/NoResults';
 
 import { getParams } from 'helpers/utils/getParams';
 import { CheckType } from 'helpers/types/check';
-import { onDrawerOpen } from 'helpers/base/onDrawerOpen';
+import { onDrawerOpen } from 'components/AnalysisDrillDown/AnalysisDrillDown.helpers';
 import useOnboarding from 'helpers/hooks/useOnboarding';
 
 const constants = { noModelsAvailable: 'No models available' };
@@ -33,7 +33,7 @@ const AnalysisPage = () => {
     useContext(AnalysisContext);
 
   const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
-  const [isGroupByOpen, setIsGroupByOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentCheck, setCurrentCheck] = useState<CheckSchema | null>(null);
   const [currentDatasetName, setCurrentDatasetName] = useState<string | null>(null);
   const [currentAdditionalKwargs, setCurrentAdditionalKwargs] = useState<MonitorCheckConfSchema | null>(null);
@@ -65,7 +65,7 @@ const AnalysisPage = () => {
         additionalKwargs,
         checkInfo,
         check,
-        setIsGroupByOpen,
+        setIsDrawerOpen,
         setCurrentType,
         setCurrentAdditionalKwargs,
         setCurrentDatasetName,
@@ -78,7 +78,7 @@ const AnalysisPage = () => {
   );
 
   const handleDrawerClose = useCallback(() => {
-    setIsGroupByOpen(false);
+    setIsDrawerOpen(false);
     setCurrentCheck(null);
     setCurrentDatasetName(null);
     setCurrentAdditionalKwargs(null);
@@ -135,12 +135,12 @@ const AnalysisPage = () => {
           )}
         </Stack>
       </Box>
-      <AnalysisGroupBy
+      <AnalysisDrillDown
         modelName={currentModel.name}
         datasetName={currentDatasetName}
         check={currentCheck}
         modelVersionId={currentModelVersionId}
-        open={isGroupByOpen}
+        open={isDrawerOpen}
         onClose={handleDrawerClose}
         onCloseIconClick={handleDrawerClose}
         timeLabel={currentTimeLabel}

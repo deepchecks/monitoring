@@ -7,7 +7,7 @@ export interface ClassOrFeature {
   value: string;
 }
 
-export interface AnalysisGroupByProps extends DrawerProps {
+export interface AnalysisDrillDownProps extends DrawerProps {
   modelName: string;
   datasetName: string | null;
   check: CheckSchema | null;

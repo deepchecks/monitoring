@@ -4,13 +4,13 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { styled, Stack, StackProps } from '@mui/material';
 
-import { AnalysisGroupByInfoItem } from './AnalysisGroupByInfoItem';
+import { AnalysisDrillDownInfoItem } from './AnalysisDrillDownInfoItem';
 
-import { ClassOrFeature } from '../AnalysisGroupBy.types';
+import { ClassOrFeature } from '../AnalysisDrillDown.types';
 
 import { theme } from 'components/lib/theme';
 
-interface AnalysisGroupByInfoProps extends StackProps {
+interface AnalysisDrillDownInfoProps extends StackProps {
   startTime: string;
   endTime: string;
   checkName: string;
@@ -22,19 +22,19 @@ dayjs.extend(localizedFormat);
 
 const showDate = (date: string) => dayjs(date).format('L LT');
 
-export const AnalysisGroupByInfo = ({
+export const AnalysisDrillDownInfo = ({
   startTime,
   endTime,
   checkName,
   modelName,
   classOrFeature,
   ...props
-}: AnalysisGroupByInfoProps) => (
+}: AnalysisDrillDownInfoProps) => (
   <StyledContainer {...props}>
-    <AnalysisGroupByInfoItem title="Date range" value={`${showDate(startTime)} - ${showDate(endTime)}`} />
-    <AnalysisGroupByInfoItem title="Check" value={checkName} />
-    <AnalysisGroupByInfoItem title="Model" value={modelName} />
-    {classOrFeature && <AnalysisGroupByInfoItem title={classOrFeature.type} value={classOrFeature.value} />}
+    <AnalysisDrillDownInfoItem title="Date range" value={`${showDate(startTime)} - ${showDate(endTime)}`} />
+    <AnalysisDrillDownInfoItem title="Check" value={checkName} />
+    <AnalysisDrillDownInfoItem title="Model" value={modelName} />
+    {classOrFeature && <AnalysisDrillDownInfoItem title={classOrFeature.type} value={classOrFeature.value} />}
   </StyledContainer>
 );
 

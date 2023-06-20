@@ -2,12 +2,12 @@ import React from 'react';
 
 import { styled, Typography, Box, BoxProps } from '@mui/material';
 
-interface AnalysisGroupByInfoItemProps extends BoxProps {
+interface AnalysisDrillDownInfoItemProps extends BoxProps {
   title: string;
   value: string;
 }
 
-export const AnalysisGroupByInfoItem = ({ title, value, ...props }: AnalysisGroupByInfoItemProps) => (
+export const AnalysisDrillDownInfoItem = ({ title, value, ...props }: AnalysisDrillDownInfoItemProps) => (
   <Box {...props}>
     <StyledItemName>{title}</StyledItemName>
     <StyledItemValue>{value}</StyledItemValue>
