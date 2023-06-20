@@ -67,7 +67,7 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
         />
         {isLoading ? (
           <StyledLoader sx={{ margin: '150px auto' }} />
-        ) : logs && logs.length > 0 ? (
+        ) : logs?.length > 0 ? (
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -79,8 +79,8 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {logs.map(log => (
-                <SingleLog key={`${log.id}-${log.sample_id}`} log={log} />
+              {logs.map((log, i) => (
+                <SingleLog key={i} log={log} />
               ))}
             </TableBody>
           </Table>
