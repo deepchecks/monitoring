@@ -34,6 +34,7 @@ from deepchecks_monitoring.schema_models import SlackInstallation
 from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.alerts import AlertSeverity
+from deepchecks_monitoring.utils.mixpanel import InvitationEvent
 
 from .global_router import router
 
@@ -58,7 +59,8 @@ async def create_invite(
         admin: User = Depends(auth.AdminUser()),
         email_sender: EmailSender = Depends(get_email_sender_resource),
         session: AsyncSession = AsyncSessionDep,
-        settings: Settings = SettingsDep
+        settings: Settings = SettingsDep,
+        resources_provicer: ResourcesProvider = ResourcesProviderDep
 ):
     """Create invite between organization and a user."""
     body.emails = body.emails if isinstance(body.emails, list) else [body.emails]
@@ -113,6 +115,12 @@ async def create_invite(
             'organization_name': t.cast(Organization, admin.organization).name,
             'host': str(settings.deployment_url)
         }
+    )
+
+    await resources_provicer.report_mixpanel_event(
+        InvitationEvent.create_event,
+        user=admin,
+        invitees=[str(it) for it in body.emails]
     )
 
     return Response(status_code=status.HTTP_200_OK)

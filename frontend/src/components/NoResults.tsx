@@ -5,7 +5,8 @@ import { Typography, styled, Stack, StackProps } from '@mui/material';
 import { NoResultsImage } from 'assets/bg/backgrounds';
 
 interface NoResultsProps extends StackProps {
-  handleReset: () => void;
+  custom?: string;
+  handleReset?: () => void;
   simple?: boolean;
   isTwoWeeksOlder?: boolean;
 }
@@ -19,10 +20,12 @@ const constants = {
   noResults2Weeks: 'No results found\n Note that alerts are running on the most recent 2 weeks'
 };
 
-const NoResults = ({ handleReset, isTwoWeeksOlder, simple, ...props }: NoResultsProps) => (
-  <Stack justifyContent="center" alignItems="center" {...props}>
+const NoResults = ({ custom, handleReset, isTwoWeeksOlder, simple, ...props }: NoResultsProps) => (
+  <Stack justifyContent="center" alignItems="center" height={1} {...props}>
     <NoResultsImage width={444} />
-    {simple ? (
+    {custom ? (
+      <StyledTypography>{custom}</StyledTypography>
+    ) : simple ? (
       <StyledTypography>{constants.noResults.simple}</StyledTypography>
     ) : !isTwoWeeksOlder ? (
       <StyledTypography>{constants.noResults2Weeks}</StyledTypography>

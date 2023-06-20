@@ -30,10 +30,12 @@ from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
+from deepchecks_monitoring.utils.mixpanel import LabelsUploadEvent, ProductionDataUploadEvent
 from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
 from .router import router
@@ -49,7 +51,7 @@ async def log_data_batch(
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
     user: User = Depends(CurrentActiveUser()),
-    resources_provider=ResourcesProviderDep
+    resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Insert batch data samples."""
     model_version: ModelVersion = await fetch_or_404(
@@ -58,7 +60,8 @@ async def log_data_batch(
         id=model_version_id,
         options=joinedload(ModelVersion.model)
     )
-    await ModelVersion.fetch_or_403(session, model_version_id, user)
+    if resources_provider.get_features_control(user).model_assignment:
+        await ModelVersion.assert_user_assigend_to_model(session, model_version_id, user)
 
     if len(data) == 0:
         return ORJSONResponse(
@@ -75,6 +78,13 @@ async def log_data_batch(
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
+        await resources_provider.report_mixpanel_event(
+            ProductionDataUploadEvent.create_event,
+            model_version=model_version,
+            user=user,
+            n_of_received_samples=len(data),
+            n_of_accepted_samples=0
+        )
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
@@ -83,7 +93,16 @@ async def log_data_batch(
             }
         )
 
-    await data_ingest.log_samples(model_version, data[:remains], session, user.organization_id, time)
+    truncated_data = data[:remains]
+    await data_ingest.log_samples(model_version, truncated_data, session, user.organization_id, time)
+
+    await resources_provider.report_mixpanel_event(
+        ProductionDataUploadEvent.create_event,
+        model_version=model_version,
+        user=user,
+        n_of_received_samples=len(data),
+        n_of_accepted_samples=len(truncated_data)
+    )
 
     if remains < len(data):
         return ORJSONResponse(
@@ -121,28 +140,43 @@ async def log_labels(
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
 
     # Atomically getting the count and increasing in order to avoid race conditions
-    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
+    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data), is_label=True)
     remains = minute_rate - curr_count
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
+        await resources_provider.report_mixpanel_event(
+            LabelsUploadEvent.create_event,
+            model=model,
+            user=user,
+            n_of_received_labels=len(data),
+            n_of_accepted_labels=0
+        )
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
-                "error_message": f"Rate limit exceeded, you can send {minute_rate} rows per minute",
+                "error_message": f"Rate limit exceeded, you can send {minute_rate} labels per minute",
                 "additional_information": {"num_saved": 0}
             }
         )
 
-    await data_ingest.log_labels(model, data[:remains], session, user.organization_id)
+    truncated_data = data[:remains]
+    await data_ingest.log_labels(model, truncated_data, session, user.organization_id)
 
+    await resources_provider.report_mixpanel_event(
+        LabelsUploadEvent.create_event,
+        model=model,
+        user=user,
+        n_of_received_labels=len(data),
+        n_of_accepted_labels=len(truncated_data)
+    )
     if remains < len(data):
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
                 "error_message": (
-                    f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
-                    f"{remains} first rows were received"
+                    f"Rate limit exceeded, you can send {minute_rate} labels per minute. "
+                    f"{remains} first labels were received"
                 ),
                 "additional_information": {"num_saved": remains}
             }

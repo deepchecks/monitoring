@@ -25,6 +25,7 @@ from sqlalchemy.cimmutabledict import immutabledict
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
+from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
@@ -53,8 +54,7 @@ class TasksQueuer:
             redis_client,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
-            run_interval,
-            retries_interval: int = 600
+            run_interval: int,
     ):
         self.resource_provider = resource_provider
         self.logger = logger
@@ -62,14 +62,30 @@ class TasksQueuer:
         self.redis = redis_client
 
         # Build the query once to be used later
-        intervals_by_type = case([
-            (Task.bg_worker_task == bg_worker.queue_name(), datetime.timedelta(seconds=bg_worker.delay_seconds()))
-            for bg_worker in workers
-        ], else_=datetime.timedelta(seconds=0))
-        retry_interval = Task.num_pushed * datetime.timedelta(seconds=retries_interval)
-        condition = Task.creation_time + intervals_by_type + retry_interval
-        self.query = update(Task).where(condition <= func.statement_timestamp())\
-            .values({Task.num_pushed: Task.num_pushed + 1}).returning(Task.id)
+        delay_by_type = case(
+            [(
+                Task.bg_worker_task == bg_worker.queue_name(),
+                datetime.timedelta(seconds=bg_worker.delay_seconds())
+            ) for bg_worker in workers],
+            else_=datetime.timedelta(seconds=0)
+        )
+        retry_by_type = case(
+            [(
+                Task.bg_worker_task == bg_worker.queue_name(),
+                datetime.timedelta(seconds=bg_worker.retry_seconds())
+            ) for bg_worker in workers],
+            else_=datetime.timedelta(seconds=600)
+        )
+
+        retry_expression = Task.num_pushed * retry_by_type
+        next_execution_time = Task.creation_time + delay_by_type + retry_expression
+
+        self.query = (
+            update(Task)
+            .where(next_execution_time <= func.statement_timestamp())
+            .values({Task.num_pushed: Task.num_pushed + 1})
+            .returning(Task.id)
+        )
 
     async def run(self):
         """Run the main loop."""
@@ -175,8 +191,15 @@ def execute_worker():
                 )
                 ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
-        workers = [ModelVersionTopicDeletionWorker, ModelVersionOffsetUpdate, ModelVersionCacheInvalidation,
-                   ModelDataIngestionAlerter, DeleteDbTableTask, AlertsTask]
+        workers = [
+            ModelVersionTopicDeletionWorker,
+            ModelVersionOffsetUpdate,
+            ModelVersionCacheInvalidation,
+            ModelDataIngestionAlerter,
+            DeleteDbTableTask,
+            AlertsTask,
+            MixpanelSystemStateEvent
+        ]
 
         # Add ee workers
         if with_ee:

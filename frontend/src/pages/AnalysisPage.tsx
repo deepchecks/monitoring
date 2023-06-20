@@ -16,14 +16,19 @@ import { AnalysisFilters } from 'components/Analysis/AnalysisFilters/AnalysisFil
 import { AnalysisHeader } from 'components/Analysis/AnalysisHeader/AnalysisHeader';
 import { AnalysisGroupBy } from 'components/Analysis/AnalysisGroupBy';
 import AnalysisItem from 'components/Analysis/AnalysisItem/AnalysisItem';
+import NoResults from 'components/NoResults';
 
 import { getParams } from 'helpers/utils/getParams';
 import { CheckType } from 'helpers/types/check';
 import { onDrawerOpen } from 'helpers/base/onDrawerOpen';
+import useOnboarding from 'helpers/hooks/useOnboarding';
+
+const constants = { noModelsAvailable: 'No models available' };
 
 const AnalysisPage = () => {
-  const location = useLocation();
   const { models, getCurrentModel } = useModels();
+
+  const location = useLocation();
   const { period, frequency, compareWithPreviousPeriod, compareByReference, activeFilters, resetAllFilters } =
     useContext(AnalysisContext);
 
@@ -83,9 +88,7 @@ const AnalysisPage = () => {
   }, []);
 
   useEffect(() => {
-    if (models) {
-      setModelId(+getParams()?.modelId || models[0]?.id);
-    }
+    setModelId(+getParams()?.modelId || models[0]?.id);
   }, [models, location.search]);
 
   useEffect(() => {
@@ -94,7 +97,11 @@ const AnalysisPage = () => {
     }
   }, [modelId, refetch]);
 
-  return (
+  useOnboarding();
+
+  return models.length === 0 ? (
+    <NoResults custom={constants.noModelsAvailable} />
+  ) : (
     <>
       <Box>
         <Stack sx={{ marginBottom: '20px' }}>

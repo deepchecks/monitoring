@@ -79,7 +79,7 @@ export const Sidebar = () => {
                 padding: '26px'
               }}
             >
-              <StyledLogo withLabel />
+              <StyledLogo withLabel margin="8px 0 8px -8px" />
             </Box>
             <Box sx={{ mt: '40px', pl: '14px' }}>
               {pathsInfo.map((info: PathInfo) =>

@@ -95,7 +95,7 @@ class User(Base):
         session: AsyncSession,
         auth_jwt_secret: str,
         eula: bool = True,
-        organization_id: int = None
+        organization_id: int | None = None
     ) -> Self:
         """Create or get user instance from ouath info."""
         token_data = auth.UserAccessToken(email=info.email, is_admin=True)

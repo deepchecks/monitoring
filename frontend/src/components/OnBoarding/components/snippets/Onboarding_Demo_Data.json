@@ -1,0 +1,186 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# **Welcome To Deepchecks !**\n",
+        "Here is how you can quickly create your first model in Deepchecks.\n",
+        "\n",
+        "All You need is to follow the instructions, Good luck!"
+      ],
+      "metadata": {
+        "id": "6ozMJDZcXunN"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import sys \n",
+        "!{sys.executable} -m pip install -U deepchecks-client"
+      ],
+      "metadata": {
+        "id": "NvC7hrUCX8Qi"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# **Connect Deepchecks with your environment**\n",
+        "To create a model version in Deepchecks, we first need to specify the feature schema and provide reference data for the version.\n",
+        "The reference data is optional but necessary for certain checks.\n",
+        "The schema file describes the data associated with the model version and should be reviewed before creating the version.\n",
+        "To create the model version, we need to create an organization in the Deepchecks app and then use the API token to upload the reference data and, for classification tasks, predicted probabilities."
+      ],
+      "metadata": {
+        "id": "3mzmr6gfYBbK"
+      }
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Creating a Dataset Object**\n",
+        "For more information about the deepchecks dataset - https://docs.deepchecks.com/stable/tabular/usage_guides/dataset_object.html"
+      ],
+      "metadata": {
+        "id": "9YAl7u84uUld"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions, load_pre_calculated_feature_importance \n",
+        "\n",
+        "ref_dataset, ref_predictions = load_data_and_predictions(data_format='Dataset')\n",
+        "feature_importance = load_pre_calculated_feature_importance() # Optional \n",
+        "feature_importance "
+      ],
+      "metadata": {
+        "id": "cGARXoQvY_93"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Defining Data Schema**"
+      ],
+      "metadata": {
+        "id": "ckfyIlmXtrG-"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from deepchecks_client import DeepchecksClient, create_schema, read_schema \n",
+        "\n",
+        "schema_file_path = \"schema_file.yaml\"\n",
+        "create_schema(dataset=ref_dataset, schema_output_file=schema_file_path) \n",
+        "read_schema(schema_file_path) "
+      ],
+      "metadata": {
+        "id": "w90v4-Hatmrc"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Creating a Model Version**\n",
+        "****Please notice that you need to modify API_KEY and DEPLOYMENT_URL**"
+      ],
+      "metadata": {
+        "id": "sZc0Rw6ct-5g"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import os \n",
+        "\n",
+        "dc_client = DeepchecksClient(host=\"YOUR_DEPLOYMENT_URL\", token=\"YOUR_API_TOKEN\") \n",
+        "\n",
+        "model_name = \"Airbnb\"\n",
+        "model_version = dc_client.create_tabular_model_version(model_name=model_name, version_name=\"ver_1\",\n",
+        "schema=schema_file_path,\n",
+        "feature_importance=feature_importance,\n",
+        "reference_dataset=ref_dataset,\n",
+        "reference_predictions=ref_predictions,\n",
+        "task_type=\"regression\")"
+      ],
+      "metadata": {
+        "id": "KLz_QEr5tf7o"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# **Uploading Production Data**\n",
+        "To start monitoring with Deepchecks, you need to upload the production data you want to monitor.\n",
+        "In this example, we will upload the data and predictions stored for the month of August 2022 as a batch and update the labels for some samples.\n",
+        "Similar to the reference data, predicted probabilities can also be sent for classification tasks to compute probability-based metrics like AUC, log_loss, brier score, etc."
+      ],
+      "metadata": {
+        "id": "0Of1ZPTSZTY_"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "timestamp, label_col = \"timestamp\", \"price\"\n",
+        "prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False, data_size=100_000)\n",
+        "timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 \n",
+        "model_version.log_batch(sample_ids=prod_data.index,\n",
+        "data=prod_data.drop([timestamp, label_col], axis=1), \n",
+        "timestamps=timestamp_col, predictions=prod_predictions)\n"
+      ],
+      "metadata": {
+        "id": "dTe3T2USZeEx"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# **Updating the Labels (Optional)**\n",
+        "In some real-world scenarios, data labels are only available later.\n",
+        "We can update them retrospectively using global sample IDs, which are not specific to a version but apply globally to the model. To upload the labels, we need the model client."
+      ],
+      "metadata": {
+        "id": "3-bUaXvXZgKY"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model_client = dc_client.get_or_create_model(model_name)\n",
+        "model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label_col])"
+      ],
+      "metadata": {
+        "id": "YzqDhw5KZnMr"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}

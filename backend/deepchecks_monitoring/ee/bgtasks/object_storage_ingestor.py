@@ -56,7 +56,8 @@ class ObjectStorageIngestor(BackgroundWorker):
         model_id = task.params['model_id']
 
         organization_schema = (await session.scalar(
-            select(Organization.schema_name).where(Organization.id == organization_id)
+            select(Organization.schema_name)
+            .where(Organization.id == organization_id)
         ))
 
         if organization_schema is None:
@@ -77,7 +78,7 @@ class ObjectStorageIngestor(BackgroundWorker):
         # Get s3 authentication info
         s3_data_source = (await session.scalar(select(DataSource).where(DataSource.type == 's3')))
         if s3_data_source is None:
-            self.logger.error({'message': 'No data source of type s3 found'})
+            self.logger.warning({'message': 'No data source of type s3 found'})
             await session.commit()
             return
 

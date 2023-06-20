@@ -8,7 +8,7 @@ import { Box, Typography, styled, Stack, Grid } from '@mui/material';
 import { Monitor } from './Monitor';
 
 import { SetStateType } from 'helpers/types';
-import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { DialogNames } from 'components/Dashboard/Dashboard.types';
 import { theme } from 'components/lib/theme';
 import { StyledContainer } from 'components/lib';
 
@@ -16,7 +16,7 @@ interface MonitorsGroupProps {
   model: ModelManagmentSchema;
   monitors: MonitorSchema[];
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
-  handleOpenMonitorDrawer: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
+  handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
   setIsDeleteMonitorDialogOpen: SetStateType<boolean>;
@@ -26,7 +26,7 @@ export const MonitorsGroup = ({
   model,
   monitors,
   setCurrentMonitor,
-  handleOpenMonitorDrawer,
+  handleOpenMonitorDialog,
   monitorToRefreshId,
   setMonitorToRefreshId,
   setIsDeleteMonitorDialogOpen
@@ -53,7 +53,7 @@ export const MonitorsGroup = ({
             initialMonitor={mon}
             setCurrentMonitor={setCurrentMonitor}
             setIsDeleteMonitorDialogOpen={setIsDeleteMonitorDialogOpen}
-            handleOpenMonitorDrawer={handleOpenMonitorDrawer}
+            handleOpenMonitorDialog={handleOpenMonitorDialog}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
           />

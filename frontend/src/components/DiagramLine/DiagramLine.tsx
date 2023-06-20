@@ -96,7 +96,7 @@ function DiagramLine({
 
     return {
       ...data,
-      labels: data?.labels?.map(l => (l as number) - 1) || [], // millisecond correction
+      labels: data?.labels?.map(l => l as number) || [],
       datasets: data.datasets.map(el => {
         el.data.forEach(item => {
           if (typeof item === 'number') {
@@ -149,7 +149,7 @@ function DiagramLine({
 
           const dataset = chartData.datasets[datasetIndex];
           const [datasetName, versionName] = dataset.label?.split('|') || [null, null];
-          const timeLabel = (chartData.labels?.[index] as number) + 1; // millisecond correction
+          const timeLabel = chartData.labels?.[index] as number;
 
           if (datasetName && versionName && timeLabel) {
             onPointCLick(datasetName, versionName, timeLabel);

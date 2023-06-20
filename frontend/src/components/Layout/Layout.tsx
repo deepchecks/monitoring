@@ -15,7 +15,7 @@ import { theme } from 'components/lib/theme';
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
   const [mobileBarOpen, setMobileBarOpen] = useState(false);
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   if (!isUserDetailsComplete) return null;
 
@@ -43,7 +43,7 @@ const Layout = () => {
               justifyContent="space-between"
             >
               <Menu onClick={handleMobileMenuClick} sx={{ margin: '2px' }} />
-              <StyledLogo />
+              <StyledLogo margin="-6px 0 0 0" />
               <Drawer open={mobileBarOpen} onClose={handleMobileMenuClick} onClick={handleMobileMenuClick}>
                 <Sidebar />
               </Drawer>

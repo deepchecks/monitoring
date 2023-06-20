@@ -86,7 +86,7 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
       getAvailableFeatures();
       setIsAdmin(!!user?.roles.includes(RoleEnum.admin));
       setIsOwner(!!user?.roles.includes(RoleEnum.owner));
-      user?.id && mixpanel.identify(user?.id.toString());
+      user?.email && mixpanel.identify(user?.email);
     }
   }, [user]);
 

@@ -7,26 +7,21 @@ const FirstOnBoardingTitle = styled(Typography)(({ theme }) => ({
   fontSize: 32,
   fontWeight: 600,
   color: theme.palette.primary.main,
-  margin: '40px 0'
+  margin: '40px 0',
+  lineHeight: '30px'
 }));
 
-const FirstOnBoardingBoxLabel = styled(Typography)(({ theme }) => ({
-  fontSize: 20,
-  fontWeight: 800,
-  color: theme.palette.primary.main,
-  margin: '0 auto 20px'
-}));
-
-const FirstOnBoardingOutlinedBox = styled(StyledContainer)(({ theme }) => ({
-  border: `2px solid ${theme.palette.primary.main}`,
-  borderRadius: '16px',
+const FirstOnBoardingOutlinedBox = styled(StyledContainer)(() => ({
+  padding: 0,
+  margin: 0,
   cursor: 'pointer'
 }));
 
 const FirstOnBoardingSelectContainer = styled(StyledContainer)(() => ({
   display: 'grid',
   gridTemplateColumns: 'auto 270px',
-  alignItems: 'center'
+  alignItems: 'center',
+  padding: 0
 }));
 
 const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
@@ -40,8 +35,8 @@ const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
 
 const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
   margin: '8px auto 0 0',
-  display: 'flex',
-  flexDirection: 'row',
+  display: 'grid',
+  gridTemplateColumns: '200px 240px',
   gap: '24px',
 
   '& .MuiStepContent-root, .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
@@ -52,6 +47,18 @@ const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
     width: '32px',
     height: '32px',
     marginRight: 4
+  },
+
+  '@media (min-width: 750px)': {
+    gridTemplateColumns: '400px 240px'
+  },
+
+  '@media (min-width: 950px)': {
+    gridTemplateColumns: '600px 240px'
+  },
+
+  '@media (min-width: 1400px)': {
+    gridTemplateColumns: 'auto 240px'
   }
 }));
 
@@ -61,7 +68,6 @@ const OnBoardingAdditionalContainer = styled(StyledContainer)({
 
 export {
   FirstOnBoardingTitle,
-  FirstOnBoardingBoxLabel,
   FirstOnBoardingOutlinedBox,
   FirstOnBoardingSelectContainer,
   OnBoardingDocsLink,

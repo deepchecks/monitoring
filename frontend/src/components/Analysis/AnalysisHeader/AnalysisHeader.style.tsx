@@ -13,7 +13,9 @@ export const StyledAnalysisHeader = styled(Box)({
   alignItems: 'center',
   flexDirection: 'row',
   borderBottom: `1px solid ${theme.palette.grey.light}`,
-  marginBottom: '20px'
+  marginBottom: '20px',
+  flexWrap: 'wrap',
+  justifyContent: 'flex-start'
 });
 
 export const StyledAnalysisHeaderSearchField = styled(SearchField)(({ theme }) => ({
