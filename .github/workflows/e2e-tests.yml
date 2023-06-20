@@ -53,8 +53,8 @@ jobs:
           name: commImage
           path: /tmp/commImage.tar
   docker-push:
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest-4-cores
+    # if: github.event_name != 'pull_request'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -86,8 +86,10 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64/v8
-          push: true
+          push: false
           tags: |
             ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
             ${{ secrets.MON_IMAGE_NAME }}:latest
