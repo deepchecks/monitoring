@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
     if: "!github.event.pull_request.draft"
     steps:
       - name: Checkout
@@ -42,6 +42,8 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
@@ -53,7 +55,7 @@ jobs:
           name: commImage
           path: /tmp/commImage.tar
   docker-push:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
     # if: github.event_name != 'pull_request'
     steps:
       - name: Checkout
