@@ -28,8 +28,8 @@ from deepchecks_monitoring.monitoring_utils import fetch_unused_monitoring_table
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import auth
-from deepchecks_monitoring.utils.other import generate_random_user, generate_test_user
 from deepchecks_monitoring.utils.logging import uvicorn_loggers_config
+from deepchecks_monitoring.utils.other import generate_random_user, generate_test_user
 
 
 @click.group()

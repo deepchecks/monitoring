@@ -14,9 +14,9 @@ import enum
 import logging
 import logging.handlers
 import operator
+import pathlib
 import sys
 import typing as t
-import pathlib
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
