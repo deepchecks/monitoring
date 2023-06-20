@@ -128,7 +128,7 @@ async def log_data_batch(
         )
 
     resources_provider.logger.info(
-        '[Organization:%s] received %s new samples'
+        '[Organization:%s] received %s new samples',
         user.organization_id,
         len(truncated_data)
     )
