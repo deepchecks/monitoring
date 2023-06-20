@@ -13,7 +13,6 @@ import asyncio
 import datetime
 import logging.handlers
 import typing as t
-from time import perf_counter
 
 import anyio
 import pendulum as pdl

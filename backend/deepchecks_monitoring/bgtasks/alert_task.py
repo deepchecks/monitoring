@@ -38,9 +38,6 @@ __all__ = ["AlertsTask"]
 class AlertsTask(BackgroundWorker):
     """Worker to calculate alerts"""
 
-    def __init__(self):
-        super().__init__()
-
     @classmethod
     def queue_name(cls) -> str:
         return "alerts"
@@ -69,7 +66,7 @@ class AlertsTask(BackgroundWorker):
                 resources_provider=resources_provider,
                 monitor_id=monitor_id,
                 timestamp=timestamp,
-                logger=resources_provider.logger.getChild('monitor-executor'),
+                logger=resources_provider.logger.getChild("monitor-executor"),
                 organization_id=organization_id,
             )
         else:
@@ -218,7 +215,7 @@ async def execute_monitor(
             AlertCreationSchema.validate(alert)
             session.add(alert)
             logger.info(
-                "[Organization:%s][Monitor:%s] Alert(id:%s) instance created for monitor(id:%s)",
+                "[Organization:%s][Monitor:%s] Alert raised (id=%s)",
                 organization_id,
                 monitor.id,
                 alert.id,

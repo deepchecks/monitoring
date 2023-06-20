@@ -8,13 +8,13 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
+# pylint: disable=unused-argument
 """Contains alert scheduling logic."""
 import logging.handlers
 import typing as t
 
 import aiokafka
 import anyio
-import pendulum as pdl
 import uvloop
 from redis.asyncio import Redis, RedisCluster
 from redis.exceptions import LockNotOwnedError, RedisClusterException
@@ -126,7 +126,7 @@ class TaskRunner:
                 task_id
             )
 
-    async def _run_task(self, task: Task, session, queued_timestamp, lock):
+    async def _run_task(self, task: Task, session, queued_timestamp, lock):  # pylint: disable=unused-argument
         """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
         to log the task parameters and queued time."""
         try:

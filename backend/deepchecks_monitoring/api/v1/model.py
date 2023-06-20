@@ -209,7 +209,7 @@ async def get_create_model(
         await session.commit()
 
         resources_provider.logger.info(
-            '[Organization:%s] Model created. (id:%s, name:%s, task-type:%s)',
+            "[Organization:%s] Model created. (id:%s, name:%s, task-type:%s)",
             user.organization_id,
             model.id,
             model.name,

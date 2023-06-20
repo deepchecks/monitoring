@@ -206,9 +206,9 @@ def create_application(
     try:
         from deepchecks_monitoring import ee
     except ImportError:
-        logger.info('Stratup: Licensed features are not available')
+        logger.info("Stratup: Licensed features are not available")
     else:
-        logger.info('Stratup: Licensed features are available')
+        logger.info("Stratup: Licensed features are available")
         app.include_router(ee.api.v1.ee_router, dependencies=[Depends(LicenseCheckDependency())])
 
         if settings.is_cloud:

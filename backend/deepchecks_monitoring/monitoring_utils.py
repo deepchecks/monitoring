@@ -24,7 +24,6 @@ import orjson
 import sqlalchemy as sa
 from fastapi import Depends, Path, Query
 from pydantic import BaseModel, conlist, constr
-from pythonjsonlogger.jsonlogger import JsonFormatter
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session

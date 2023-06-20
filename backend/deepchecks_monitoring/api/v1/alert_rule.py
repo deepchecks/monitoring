@@ -99,8 +99,8 @@ async def create_alert_rule(
     await session.commit()
 
     resources_provider.logger.info(
-        '[Organization:%s] Alert rule created. '
-        '(id:%s, severity:%s, monitor-id:%s, condition:%s)',
+        "[Organization:%s] Alert rule created. "
+        "(id:%s, severity:%s, monitor-id:%s, condition:%s)",
         user.organization_id,
         rule_id,
         alert_rule.alert_severity.value,

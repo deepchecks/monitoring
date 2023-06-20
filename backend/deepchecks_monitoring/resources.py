@@ -80,7 +80,7 @@ class ResourcesProvider(BaseResourcesProvider):
         settings: config.BaseSettings,
         logger: logging.Logger | None = None
     ):
-        self.logger = logger or logging.getLogger('deepchecks-monitoring.resources-provider')
+        self.logger = logger or logging.getLogger("deepchecks-monitoring.resources-provider")
         self._settings = settings
         self._database_engine: t.Optional[Engine] = None
         self._session_factory: t.Optional[sessionmaker] = None

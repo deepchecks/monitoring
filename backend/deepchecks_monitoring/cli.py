@@ -122,7 +122,7 @@ def run(is_dev):
             port=8000,
             workers=4,
             log_level="info",
-            log_config=uvicorn_loggers_config(os.environ.get('LOGS_STORAGE', ".")),
+            log_config=uvicorn_loggers_config(os.environ.get("LOGS_STORAGE", None) or "."),
             proxy_headers=True,
             forwarded_allow_ips="*",
         )

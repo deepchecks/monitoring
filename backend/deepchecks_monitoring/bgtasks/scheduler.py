@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-# pylint: disable=ungrouped-imports,bare-except
+# pylint: disable=ungrouped-imports,bare-except,broad-except
 # noqa: E722
 """Contains alert scheduling logic."""
 import asyncio
@@ -16,7 +16,6 @@ import logging
 import logging.handlers
 import typing as t
 from collections import defaultdict
-from time import perf_counter
 
 import anyio
 import pendulum as pdl

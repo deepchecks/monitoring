@@ -14,8 +14,3 @@ __all__ = ['router']
 
 
 router = APIRouter(prefix='/api/v1')
-
-
-@router.get('/raise')
-async def hello_world() -> str:
-    raise Exception("Bla")

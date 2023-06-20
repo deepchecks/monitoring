@@ -79,8 +79,8 @@ async def log_data_batch(
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
         resources_provider.logger.info(
-            '[Organization:%s] data upload rate limit exceeded, '
-            'none of the provided samples were accepted',
+            "[Organization:%s] data upload rate limit exceeded, "
+            "none of the provided samples were accepted",
             user.organization_id
         )
         await resources_provider.report_mixpanel_event(
@@ -111,8 +111,8 @@ async def log_data_batch(
 
     if remains < len(data):
         resources_provider.logger.info(
-            '[Organization:%s] data upload rate limit exceeded, '
-            'only %s samples were accepted',
+            "[Organization:%s] data upload rate limit exceeded, "
+            "only %s samples were accepted",
             user.organization_id,
             len(truncated_data)
         )
@@ -128,7 +128,7 @@ async def log_data_batch(
         )
 
     resources_provider.logger.info(
-        '[Organization:%s] received %s new samples',
+        "[Organization:%s] received %s new samples",
         user.organization_id,
         len(truncated_data)
     )
@@ -163,8 +163,8 @@ async def log_labels(
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
         resources_provider.logger.info(
-            '[Organization:%s] labels upload rate limit exceeded, '
-            'none of the provided labels were accepted',
+            "[Organization:%s] labels upload rate limit exceeded, "
+            "none of the provided labels were accepted",
             user.organization_id
         )
         await resources_provider.report_mixpanel_event(
@@ -194,8 +194,8 @@ async def log_labels(
     )
     if remains < len(data):
         resources_provider.logger.info(
-            '[Organization:%s] labels upload rate limit exceeded, '
-            'only %s labelsl were accepted',
+            "[Organization:%s] labels upload rate limit exceeded, "
+            "only %s labelsl were accepted",
             user.organization_id,
             len(truncated_data)
         )
@@ -211,7 +211,7 @@ async def log_labels(
         )
 
     resources_provider.logger.info(
-        '[Organization:%s] received %s new labels',
+        "[Organization:%s] received %s new labels",
         user.organization_id,
         len(truncated_data)
     )
@@ -318,7 +318,7 @@ async def save_reference(
     await session.execute(ref_table.insert(), items)
 
     resources_provider.logger.info(
-        '[Organization:%s] reference dataset uploaded',
+        "[Organization:%s] reference dataset uploaded",
         user.organization_id,
     )
 
