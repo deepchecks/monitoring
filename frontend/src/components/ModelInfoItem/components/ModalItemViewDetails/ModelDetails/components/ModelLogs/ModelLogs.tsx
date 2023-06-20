@@ -6,6 +6,7 @@ import { SingleLog } from './components/SingleLog';
 import { StyledInput, StyledLoader } from 'components/lib';
 import { DatePicker } from 'components/base/DatePicker/DatePicker';
 import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimary';
+import { NoDataToShow } from 'components/DiagramLine/NoData/NoDataToShow';
 
 import {
   IngestionErrorSchema,
@@ -13,7 +14,10 @@ import {
   useGetVersionsPerModelApiV1ModelsModelIdVersionsGet
 } from 'api/generated';
 
-const tableHeaders = ['Version', 'Date', 'Reason', 'Sample ID', 'Sample'];
+const constants = {
+  tableHeaders: ['Version', 'Date', 'Reason', 'Sample ID', 'Sample'],
+  notFoundMsg: 'No Log Data Found'
+};
 
 export const ModelLogs = ({ modelId }: { modelId: number }) => {
   const [logs, setLogs] = useState<IngestionErrorSchema[]>([]);
@@ -106,19 +110,25 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
         </StyledLogsFiltersContainer>
         {isLoading ? (
           <StyledLoader sx={{ margin: '150px auto' }} />
-        ) : (
+        ) : logs && logs.length > 0 ? (
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                {tableHeaders.map((header: string) => (
+                {constants.tableHeaders.map((header: string) => (
                   <StyledTableHeadCell key={header} width="20%">
                     {header}
                   </StyledTableHeadCell>
                 ))}
               </TableRow>
             </TableHead>
-            <TableBody>{logs && logs.map(log => <SingleLog key={`${log.id}-${log.sample_id}`} log={log} />)}</TableBody>
+            <TableBody>
+              {logs.map(log => (
+                <SingleLog key={`${log.id}-${log.sample_id}`} log={log} />
+              ))}
+            </TableBody>
           </Table>
+        ) : (
+          <NoDataToShow title={constants.notFoundMsg} height={250} margin="44px auto" />
         )}
       </TableContainer>
     </div>
