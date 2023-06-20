@@ -107,7 +107,12 @@ async def execute_monitor(
 ) -> t.List[Alert]:
     """Execute monitor alert rules."""
     logger = logger or logging.getLogger("monitor-executor")
-    logger.info("Execution of Monitor(id:%s) for timestamp %s", monitor_id, timestamp)
+    logger.info(
+        "[Organization:%s][Monitor:%s] Execution of a monitor, timestamp %s",
+        organization_id,
+        monitor_id,
+        timestamp
+    )
 
     monitor = t.cast(Monitor, await session.scalar(
         sa.select(Monitor)
@@ -125,7 +130,11 @@ async def execute_monitor(
     alert_rules = monitor.alert_rules
 
     if len(alert_rules) == 0:
-        logger.info("Monitor(id:%s) does not have alert rules", monitor_id)
+        logger.info(
+            "[Organization:%s][Monitor:%s] monitor does not have alert rules",
+            organization_id,
+            monitor_id
+        )
         return []
 
     monitor_frequency = t.cast(Frequency, monitor.frequency).to_pendulum_duration()
@@ -141,7 +150,11 @@ async def execute_monitor(
     )).all())
 
     if not model_versions:
-        logger.info("Model(id:%s) is empty (does not have versions)", check.model_id)
+        logger.info(
+            "[Organization:%s][Model:%s] model is empty (does not have versions)",
+            organization_id,
+            check.model_id
+        )
         return []
 
     # First looking for results in cache if already calculated
@@ -189,23 +202,44 @@ async def execute_monitor(
     for alert_rule in alert_rules:
         if alert_rule.start_time is None:
             # The first time we run the alert rule we want to set the start time as the end time of the current window
-            await session.execute(update(AlertRule).where(AlertRule.id == alert_rule.id)
-                                  .values({AlertRule.start_time: func.least(AlertRule.start_time, end_time)}))
+            await session.execute(
+                update(AlertRule)
+                .where(AlertRule.id == alert_rule.id)
+                .values({AlertRule.start_time: func.least(AlertRule.start_time, end_time)})
+            )
         if not alert_rule.is_active:
-            logger.info("AlertRule(id:%s) is not active, skipping it", alert_rule.id)
+            logger.info(
+                "[Organization:%s][AlertRule:%s] alert rule is not active, skipping it",
+                organization_id,
+                alert_rule.id
+            )
         elif alert := assert_check_results(alert_rule, check_results):
             alert.start_time = start_time
             alert.end_time = end_time
             AlertCreationSchema.validate(alert)
             session.add(alert)
-            logger.info("Alert(id:%s) instance created for monitor(id:%s)", alert.id, monitor.id)
+            logger.info(
+                "[Organization:%s][Monitor:%s] Alert(id:%s) instance created for monitor(id:%s)",
+                organization_id,
+                monitor.id,
+                alert.id,
+            )
             alerts.append(alert)
 
     if (n_of_alerts := len(alerts)) > 0:
-        logger.info("%s alerts raised for Monitor(id:%s)", n_of_alerts, monitor.id)
+        logger.info(
+            "[Organization:%s][Monitor:%s] %s alerts raised ",
+            organization_id,
+            monitor.id,
+            n_of_alerts,
+        )
         return alerts
 
-    logger.info("No alerts were raised for Monitor(id:%s)", monitor.id)
+    logger.info(
+        "[Organization:%s][Monitor:%s] No alerts were raised",
+        organization_id,
+        monitor.id
+    )
     return []
 
 

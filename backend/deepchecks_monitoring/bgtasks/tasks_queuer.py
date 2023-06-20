@@ -92,10 +92,8 @@ class TasksQueuer:
         try:
             while True:
                 async with self.resource_provider.create_async_database_session() as session:
-                    start = perf_counter()
                     total = await self.move_tasks_to_queue(session)
-                    duration = perf_counter() - start
-                    self.logger.info({'num_pushed': total, 'duration': duration})
+                    self.logger.info('Number of enqueued tasks - %s', total)
                 await asyncio.sleep(self.run_interval)
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Worker coroutine canceled')
@@ -130,7 +128,8 @@ class TasksQueuer:
 class BaseWorkerSettings(DatabaseSettings, RedisSettings):
     """Worker settings."""
 
-    logfile: t.Optional[str] = None
+    logs_storage: str | None = None
+    logfile_name: t.Optional[str] = 'tasks-queuer.log'
     loglevel: str = 'INFO'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
@@ -173,7 +172,8 @@ def execute_worker():
         logger = configure_logger(
             name=service_name,
             log_level=settings.loglevel,
-            logfile=settings.logfile,
+            logs_storage=settings.logs_storage,
+            logfile_name=settings.logfile_name,
             logfile_backup_count=settings.logfile_backup_count,
         )
 
@@ -205,7 +205,7 @@ def execute_worker():
         if with_ee:
             workers.append(ee.bgtasks.ObjectStorageIngestor)
 
-        async with ResourcesProvider(settings) as rp:
+        async with ResourcesProvider(settings, logger=logger) as rp:
             async with anyio.create_task_group() as g:
                 async_redis = await init_async_redis(rp.redis_settings.redis_uri)
                 worker = tasks_queuer.TasksQueuer(rp, async_redis, workers, logger, settings.queuer_run_interval)

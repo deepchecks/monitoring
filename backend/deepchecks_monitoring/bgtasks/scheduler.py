@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 # pylint: disable=ungrouped-imports,bare-except
+# noqa: E722
 """Contains alert scheduling logic."""
 import asyncio
 import logging
@@ -61,17 +62,14 @@ class AlertsScheduler:
         self.engine = engine
         self.async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
         self.sleep_seconds = sleep_seconds
-        self.logger = logger or logging.getLogger('alerts-scheduler')
+        self.logger = logger or logging.getLogger('deepchecks.alerts-scheduler')
 
     async def run(self):
         """Start alert scheduler."""
         s = self.sleep_seconds
         try:
             while True:
-                start = perf_counter()
                 await self.run_all_organizations()
-                duration = perf_counter() - start
-                self.logger.info({'duration': duration, 'task': 'run_all_organizations'})
                 await asyncio.sleep(s)
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Scheduler coroutine canceled')
@@ -91,34 +89,33 @@ class AlertsScheduler:
             )).scalars()
 
         if not organizations:
-            self.logger.info('No organizations')
+            self.logger.info('No organization records were found, nothing to schedule')
             return
 
         for org in organizations:
             try:
-                start = perf_counter()
                 await self.run_organization(org)
-                duration = perf_counter() - start
-                self.logger.info({'duration': duration, 'task': 'run_organization', 'org_id': org.id})
-            except:  # noqa: E722
-                self.logger.exception({'task': 'run_organization', 'org_id': org.id})
+            except Exception:
+                self.logger.exception(
+                    '[Organization:%s] Failed to schedule monitor tasks',
+                    org.id
+                )
             try:
-                start = perf_counter()
                 await self.run_organization_data_ingestion_alert(org)
-                duration = perf_counter() - start
-                self.logger.info({'duration': duration, 'task': 'run_organization_data_ingestion_alert',
-                                  'org_id': org.id})
-            except:  # noqa: E722
-                self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
+            except Exception:
+                self.logger.exception(
+                    '[Organization:%s] Failed to schedule data ingestion tasks',
+                    org.id
+                )
             if with_ee:
                 try:
-                    start = perf_counter()
                     await self.run_object_storage_ingestion(org)
-                    duration = perf_counter() - start
-                    self.logger.info({'duration': duration, 'task': 'run_object_storage_ingestion',
-                                      'org_id': org.id})
-                except:  # noqa: E722
-                    self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
+                except Exception:
+                    self.logger.exception(
+                        '[Organization:%s] Failed to schedule task for '
+                        'data ingeston from objects storage',
+                        org.id
+                    )
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -179,16 +176,30 @@ class AlertsScheduler:
 
                     if schedules:
                         try:
-                            await enqueue_tasks(monitor, schedules, organization, session)
+                            await enqueue_tasks(
+                                monitor,
+                                schedules,
+                                organization,
+                                session,
+                            )
                             monitor.latest_schedule = schedules[-1]
                             await session.commit()
-                        # NOTE:
-                        # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
-                        # error is possible. In that case we just skip the monitor and try again next time.
+                            self.logger.info(
+                                '[Organization:%s][Monitor:%s] Scheduled %s monitor exeuction tasks',
+                                organization.id,
+                                monitor.id
+                            )
                         except (SerializationError, DBAPIError) as error:
+                            # NOTE:
+                            # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
+                            # error is possible. In that case we just skip the monitor and try again next time.
                             await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                                self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
+                                self.logger.exception(
+                                    '[Organization:%s][Monitor:%s] Failed to enqueue monitor tasks',
+                                    organization.id,
+                                    monitor.id
+                                )
                                 raise
 
     async def run_organization_data_ingestion_alert(self, organization):
@@ -216,12 +227,21 @@ class AlertsScheduler:
                             await enqueue_ingestion_tasks(alert_rule, schedules, frequency, organization, session)
                             alert_rule.latest_schedule = schedules[-1]
                             await session.commit()
-                        # NOTE:
-                        # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
-                        # error is possible. In that case we just skip the monitor and try again next time.
+                            self.logger.info(
+                                '[Organization:%s][Model:%s] Scheduled %s data ingestion alerts tasks',
+                                organization.id,
+                                model.id
+                            )
                         except (SerializationError, DBAPIError) as error:
+                            # NOTE:
+                            # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
+                            # error is possible. In that case we just skip the monitor and try again next time.
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                                self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
+                                self.logger.exception(
+                                    '[Organization:%s][Model:%s] Failed to enqueue data ingestion alerts tasks',
+                                    organization.id,
+                                    model.id
+                                )
                                 raise
 
     async def run_object_storage_ingestion(self, organization):
@@ -241,14 +261,21 @@ class AlertsScheduler:
             time = pdl.now()
             tasks = []
             for model in models:
-                if (model.obj_store_last_scan_time is None
-                        or pdl.instance(model.obj_store_last_scan_time).add(hours=2) < time):
-                    tasks.append(dict(name=f'{organization.id}:{model.id}',
-                                      bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
-                                      params=dict(model_id=model.id, organization_id=organization.id)))
+                if (
+                    model.obj_store_last_scan_time is None
+                    or pdl.instance(model.obj_store_last_scan_time).add(hours=2) < time
+                ):
+                    tasks.append(dict(
+                        name=f'{organization.id}:{model.id}',
+                        bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
+                        params=dict(model_id=model.id, organization_id=organization.id)
+                    ))
 
-            await session.execute(insert(Task).values(tasks)
-                                  .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+            await session.execute(
+                insert(Task)
+                .values(tasks)
+                .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT)
+            )
             await session.commit()
 
 
@@ -325,8 +352,11 @@ def rules_pass(
             if window := windows.get(hour):
                 total_preds_count += window['count_predictions']
                 total_label_count += window['count_labels']
-                max_timestamp = max(max_timestamp, window['max_logged_timestamp']) if max_timestamp else \
-                    window['max_logged_timestamp']
+                max_timestamp = (
+                    max(max_timestamp, window['max_logged_timestamp'])
+                    if max_timestamp
+                    else window['max_logged_timestamp']
+                )
 
         # Only test rules if found anything (if count is 0 then there is no data for this version for those windows)
         if total_preds_count > 0:
@@ -341,38 +371,63 @@ def rules_pass(
     return True
 
 
-async def enqueue_tasks(monitor, schedules, organization, session):
+async def enqueue_tasks(
+    monitor,
+    schedules,
+    organization,
+    session,
+):
     tasks = []
     for schedule in schedules:
-        params = {'monitor_id': monitor.id, 'timestamp': schedule.to_iso8601_string(),
-                  'organization_id': organization.id}
-        tasks.append(dict(name=f'{organization.id}:{monitor.id}:{schedule.int_timestamp}',
-                          bg_worker_task=AlertsTask.queue_name(),
-                          params=params))
+        params = {
+            'monitor_id': monitor.id,
+            'timestamp': schedule.to_iso8601_string(),
+            'organization_id': organization.id
+        }
+        tasks.append(dict(
+            name=f'{organization.id}:{monitor.id}:{schedule.int_timestamp}',
+            bg_worker_task=AlertsTask.queue_name(),
+            params=params
+        ))
 
-    # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
+    # NOTE:
+    # In order to avoid "the number of query arguments cannot exceed 32767"
+    # we split the insert to chunks
     for i in range(0, len(tasks), 100):
-        await session.execute(insert(Task).values(tasks[i:i + 100])
-                              .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+        await session.execute(
+            insert(Task)
+            .values(tasks[i:i + 100])
+            .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT)
+        )
 
 
-async def enqueue_ingestion_tasks(alert_rule, schedules, duration, organization, session):
+async def enqueue_ingestion_tasks(
+    alert_rule,
+    schedules,
+    duration,
+    organization,
+    session
+):
     tasks = []
     for schedule in schedules:
         tasks.append(dict(
             name=f'Org:{organization.id}:AlertRule:{alert_rule.id}:ts:{schedule.int_timestamp}',
             bg_worker_task=ModelDataIngestionAlerter.queue_name(),
-            params={'alert_rule_id': alert_rule.id,
-                    'end_time': schedule.to_iso8601_string(),
-                    'start_time': (schedule - duration).to_iso8601_string(),
-                    'organization_id': organization.id
-                    },
+            params={
+                'alert_rule_id': alert_rule.id,
+                'end_time': schedule.to_iso8601_string(),
+                'start_time': (schedule - duration).to_iso8601_string(),
+                'organization_id': organization.id
+            },
         ))
 
     # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
     for i in range(0, len(tasks), 100):
-        await session.execute(insert(Task).values(tasks[i:i + 100]).
-                              on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+        await session.execute(
+            insert(Task)
+            .values(tasks[i:i + 100])
+            .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT)
+        )
 
 
 def is_serialization_error(error: DBAPIError):
@@ -388,8 +443,9 @@ def is_serialization_error(error: DBAPIError):
 class BaseSchedulerSettings(config.DatabaseSettings):
     """Scheduler settings."""
 
+    logs_storage: str | None = None
     scheduler_sleep_seconds: int = 30
-    scheduler_logfile: t.Optional[str] = None
+    scheduler_logfile_name: t.Optional[str] = 'scheduler.log'
     scheduler_loglevel: str = 'INFO'
     scheduler_logfile_maxsize: int = 10000000  # 10MB
     scheduler_logfile_backup_count: int = 3
@@ -430,7 +486,8 @@ def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
         logger = configure_logger(
             name=service_name,
             log_level=settings.scheduler_loglevel,
-            logfile=settings.scheduler_logfile,
+            logs_storage=settings.logs_storage,
+            logfile_name=settings.scheduler_logfile_name,
             logfile_backup_count=settings.scheduler_logfile_backup_count,
         )
 

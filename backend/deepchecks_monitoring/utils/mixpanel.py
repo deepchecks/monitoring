@@ -655,7 +655,7 @@ class MixpanelEventReporter:
     ):
         self.mixpanel = mixpanel
         self.supress_errors = supress_errors
-        self.logger = logger or logging.getLogger(type(self).__name__)
+        self.logger = logger or logging.getLogger("deepchecks.mixpanel-event-reporter")
 
     def report(
         self,

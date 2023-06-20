@@ -139,7 +139,7 @@ class SchemaBuilder:
         self.name = name
         self.metadata = metadata
         self.migrations_location = migrations_location
-        self.logger = logger or logging.getLogger("schema-builder")
+        self.logger = logger or logging.getLogger("deepchecks.schema-builder")
 
     async def create(self, engine: AsyncEngine):
         """Create schema."""

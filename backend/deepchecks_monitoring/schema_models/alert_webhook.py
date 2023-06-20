@@ -157,7 +157,7 @@ class AlertWebhook(Base, MetadataMixin):
             True - if webhook executes succesfully
             False - if webhook execution fails or request returns not successful response status
         """
-        logger = logger or logging.getLogger(f"webhook-{self.name}")
+        logger = logger or logging.getLogger("deepchecks.webhooks")
 
         if alert.alert_rule.alert_severity not in self.notification_levels:
             logger.info(

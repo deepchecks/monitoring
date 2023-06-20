@@ -75,7 +75,12 @@ class ResourcesProvider(BaseResourcesProvider):
 
     ALERT_NOTIFICATOR_TYPE = AlertNotificator
 
-    def __init__(self, settings: config.BaseSettings):
+    def __init__(
+        self,
+        settings: config.BaseSettings,
+        logger: logging.Logger | None = None
+    ):
+        self.logger = logger or logging.getLogger('deepchecks.resources-provider')
         self._settings = settings
         self._database_engine: t.Optional[Engine] = None
         self._session_factory: t.Optional[sessionmaker] = None
@@ -357,13 +362,17 @@ class ResourcesProvider(BaseResourcesProvider):
             import ray  # noqa
             from ray.util.actor_pool import ActorPool  # noqa
         except ImportError:
-            logging.getLogger("server").info({"message": "Ray is not installed"})
+            self.logger.info(
+                "Ray is not installed, parallel checks "
+                "execution logic cannot be used"
+            )
             return
 
         if not ray.is_initialized():
-            logging.getLogger("server").info({
-                "message": "Ray is not initialized"
-            })
+            self.logger.info(
+                "Ray is not initialized, parallel checks "
+                "execution logic cannot be used"
+            )
             return
 
         if pool := getattr(self, "_parallel_check_executors", None):
@@ -468,14 +477,14 @@ class ResourcesProvider(BaseResourcesProvider):
         if mixpanel is not None:
             return mixpanel
         if self.settings.enable_analytics is False:
-            logging.getLogger("server").warning({"message": "Analytics gathering is disabled"})
+            self.logger.info("Mixpanel analytics gathering is disabled")
             return
         if token := self.settings.mixpanel_id:
             mixpanel = MixpanelEventReporter.from_token(token)
             self._mixpanel_event_reporter = mixpanel
             return mixpanel
 
-        logging.getLogger("server").warning({"message": "Mixpanel token is not provided"})
+        self.logger.warning("Mixpanel token is not provided")
 
     def get_features_control(self, user: User) -> FeaturesControl:  # pylint: disable=unused-argument
         """Return features control."""

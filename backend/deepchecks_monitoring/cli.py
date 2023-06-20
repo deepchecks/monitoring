@@ -17,6 +17,7 @@ import anyio
 import click
 import sqlalchemy as sa
 import uvicorn
+import uvicorn.config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -28,6 +29,7 @@ from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.other import generate_random_user, generate_test_user
+from deepchecks_monitoring.utils.logging import uvicorn_loggers_config
 
 
 @click.group()
@@ -109,9 +111,30 @@ def upgrade_organizations_schemas(orgid: str):
 
 
 @cli.command()
-def run():
+@click.option("--is-dev", default=False, is_flag=True)
+def run(is_dev):
     """Run web server."""
-    uvicorn.run("app:create_application", port=8000, log_level="critical")
+    if not is_dev:
+        uvicorn.run(
+            "deepchecks_monitoring.app:create_application",
+            factory=True,
+            host="0.0.0.0",
+            port=8000,
+            workers=4,
+            log_level="info",
+            log_config=uvicorn_loggers_config(os.environ.get('LOGS_STORAGE', None)),
+            proxy_headers=True,
+            forwarded_allow_ips="*",
+        )
+    else:
+        uvicorn.run(
+            "deepchecks_monitoring.app:create_application",
+            factory=True,
+            port=8000,
+            log_level="info",
+            log_config=uvicorn_loggers_config(),
+            reload=True
+        )
 
 
 @cli.command()

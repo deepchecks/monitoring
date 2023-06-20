@@ -78,6 +78,11 @@ async def log_data_batch(
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
+        resources_provider.logger.info(
+            '[Organization:%s] data upload rate limit exceeded, '
+            'none of the provided samples were accepted',
+            user.organization_id
+        )
         await resources_provider.report_mixpanel_event(
             ProductionDataUploadEvent.create_event,
             model_version=model_version,
@@ -105,6 +110,12 @@ async def log_data_batch(
     )
 
     if remains < len(data):
+        resources_provider.logger.info(
+            '[Organization:%s] data upload rate limit exceeded, '
+            'only %s samples were accepted',
+            user.organization_id,
+            len(truncated_data)
+        )
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
@@ -115,6 +126,12 @@ async def log_data_batch(
                 "additional_information": {"num_saved": remains}
             }
         )
+
+    resources_provider.logger.info(
+        '[Organization:%s] received %s new samples'
+        user.organization_id,
+        len(truncated_data)
+    )
 
     return Response(status_code=status.HTTP_200_OK)
 
@@ -145,6 +162,11 @@ async def log_labels(
 
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
+        resources_provider.logger.info(
+            '[Organization:%s] labels upload rate limit exceeded, '
+            'none of the provided labels were accepted',
+            user.organization_id
+        )
         await resources_provider.report_mixpanel_event(
             LabelsUploadEvent.create_event,
             model=model,
@@ -171,6 +193,12 @@ async def log_labels(
         n_of_accepted_labels=len(truncated_data)
     )
     if remains < len(data):
+        resources_provider.logger.info(
+            '[Organization:%s] labels upload rate limit exceeded, '
+            'only %s labelsl were accepted',
+            user.organization_id,
+            len(truncated_data)
+        )
         return ORJSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content={
@@ -182,6 +210,11 @@ async def log_labels(
             }
         )
 
+    resources_provider.logger.info(
+        '[Organization:%s] received %s new labels'
+        user.organization_id,
+        len(truncated_data)
+    )
     return Response(status_code=status.HTTP_200_OK)
 
 
@@ -198,6 +231,8 @@ async def save_reference(
     batch: UploadFile,
     model_version: ModelVersion = Depends(ModelVersion.get_object_from_http_request),
     session: AsyncSession = AsyncSessionDep,
+    user: User = Depends(CurrentActiveUser()),
+    resources_provider=ResourcesProviderDep
 ):
     """Upload reference data for a given model version.
 
@@ -281,4 +316,10 @@ async def save_reference(
         await model_version.update_statistics(updated_statistics, session)
 
     await session.execute(ref_table.insert(), items)
+
+    resources_provider.logger.info(
+        '[Organization:%s] reference dataset uploaded'
+        user.organization_id,
+    )
+
     return Response(status_code=status.HTTP_200_OK)

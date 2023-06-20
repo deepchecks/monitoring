@@ -98,6 +98,15 @@ async def create_alert_rule(
     rule_id = (await session.execute(stm)).scalar_one()
     await session.commit()
 
+    resources_provider.logger.info(
+        '[Organization:%s] Alert rule created. '
+        '(id:%s, severity:%s, monitor-id:%s, condition:%s)',
+        user.organization_id,
+        rule_id,
+        alert_rule.alert_severity.value,
+        monitor_id,
+        str(alert_rule.condition)
+    )
     await resources_provider.report_mixpanel_event(
         AlertRuleCreatedEvent.create_event,
         alert_rule=await session.get(AlertRule, rule_id),

@@ -85,7 +85,7 @@ class AlertNotificator:
         self.alert_rule = alert_rule
         self.session = session
         self.resources_provider = resources_provider
-        self.logger = logger or logging.getLogger("alert-notificator")
+        self.logger = logger or logging.getLogger("deepchecks.alert-notificator")
 
     async def send_emails(self) -> bool:
         """Send notification emails."""
@@ -104,11 +104,11 @@ class AlertNotificator:
         if alert_rule.alert_severity not in org.email_notification_levels:
             notification_levels = ",".join(t.cast(t.List[t.Any], org.email_notification_levels))
             self.logger.info(
-                "AlertRule(id:%s) severity (%s) is not included in "
-                "Organization(id:%s) email notification levels config (%s)",
+                "[Organization:%s][AlertRule:%s] severity (%s) is not included in "
+                "email notification levels config (%s)",
+                org.id,
                 alert_rule.id,
                 alert_rule.alert_severity,
-                org.id,
                 notification_levels
             )
             return False
@@ -122,8 +122,11 @@ class AlertNotificator:
         )).all()
 
         if not members_emails:
-            self.logger.error("Organization(id:%s) does not have members with premmisions to this model(id:%s)",
-                              org.id, model.id)
+            self.logger.error(
+                "[Organization:%s] does not have members with premmisions to this model(id:%s)",
+                org.id,
+                model.id
+            )
             return False
 
         deepchecks_host = self.resources_provider.settings.deployment_url
@@ -155,9 +158,9 @@ class AlertNotificator:
         )
 
         self.logger.info(
-            "Alert(id:%s) email notification was sent to Organization(id:%s) members %s",
-            alert.id,
+            "[Organization:%s][Alert:%s] email notification was sent to organization members %s",
             org.id,
+            alert.id,
             ", ".join(members_emails)
         )
 

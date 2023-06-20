@@ -31,7 +31,7 @@ from deepchecks_monitoring.config import tags_metadata
 from deepchecks_monitoring.ee.middlewares import LicenseCheckDependency
 from deepchecks_monitoring.exceptions import BaseHTTPException, error_to_dict
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.middlewares import LoggingMiddleware
+# from deepchecks_monitoring.middlewares import LoggingMiddleware
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.utils import auth
 
@@ -93,6 +93,15 @@ def create_application(
     app.state.resources_provider = resources_provider or ResourcesProvider(settings)
     app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider)
 
+    logger = app.state.logger = configure_logger(
+        "deepchecks",
+        log_level=log_level,
+        logs_storage=settings.logs_storage,
+        logfile_name="deepchecks-app.log"
+    )
+    # AIOKafka is spamming our logs, disable it for errors and warnings
+    logging.getLogger("aiokafka.cluster").setLevel(logging.CRITICAL)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "https://localhost:3000"],
@@ -102,8 +111,6 @@ def create_application(
         expose_headers=["x-substatus"],
     )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
-    logger = configure_logger("server", log_level=log_level)
-    app.add_middleware(LoggingMiddleware, logger=logger)
 
     app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())])
     app.include_router(v1_global_router)
@@ -112,15 +119,18 @@ def create_application(
         try:
             import ray
             ray.init(address="auto")
-        except ConnectionError:
-            # NOTE/TODO:
-            # we use jsonformatter therefore messages must be passed as dictionaries
-            # otherwise they will not appear the the log
-            logger.info({"message": "Local ray instance is not instantiated"})
         except ImportError:
-            logger.info({"message": "Ray is not installed"})
+            logger.info(
+                "Ray library is not installed, parallel "
+                "checks execution feature will not be used"
+            )
+        except ConnectionError:
+            logger.info(
+                "Failed to connect to the ray instance, "
+                "parallel checks execution feature will not be used"
+            )
         else:
-            logger.info({"message": "Connected to local ray instance"})
+            logger.info("Connected to local ray instance")
             # init actors
             app.state.resources_provider.parallel_check_executors_pool  # pylint: disable=pointless-statement
 
@@ -196,8 +206,9 @@ def create_application(
     try:
         from deepchecks_monitoring import ee
     except ImportError:
-        pass
+        logger.info('Licensed features are not available')
     else:
+        logger.info('Licensed features are available')
         app.include_router(ee.api.v1.ee_router, dependencies=[Depends(LicenseCheckDependency())])
 
         if settings.is_cloud:
@@ -205,6 +216,7 @@ def create_application(
 
         # Configure telemetry
         if settings.sentry_dsn:
+            logger.info("'sentry_dsn' provided, sentry telemetry collection activated")
             import sentry_sdk
 
             sentry_sdk.init(
@@ -222,9 +234,11 @@ def create_application(
             stripe.api_key = settings.stripe_secret_api_key
 
         if settings.debug_mode:
+            logger.info("'debug_mode' flag is set to true, profiling middleware added")
             app.add_middleware(ee.middlewares.ProfilingMiddleware)
 
         if settings.access_audit:
+            logger.info("'access_audit' flag is set to true, security audit middleware added")
             app.add_middleware(ee.middlewares.SecurityAuditMiddleware)
 
         app.add_middleware(SessionMiddleware, secret_key=settings.auth_jwt_secret, same_site="none", https_only=True)
@@ -232,8 +246,5 @@ def create_application(
 
     # IMPORTANT: This must be the last router to be included
     app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
-
-    # AIOKafka is spamming our logs, disable it for errors and warnings
-    logging.getLogger("aiokafka.cluster").setLevel(logging.CRITICAL)
 
     return app

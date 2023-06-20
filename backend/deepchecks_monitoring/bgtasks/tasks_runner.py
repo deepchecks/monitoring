@@ -68,6 +68,10 @@ class TaskRunner:
                     task_id, queued_timestamp = task
                     async with self.resource_provider.create_async_database_session() as session:
                         await self.run_single_task(task_id, session, queued_timestamp)
+                        self.logger.info(
+                            'Execution of a task with an id %s finished successfully',
+                            task_id
+                        )
 
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Worker coroutine canceled')
@@ -100,8 +104,9 @@ class TaskRunner:
         # extend the lock if we are doing slow operation and want more time
         lock = self.redis.lock(lock_name, blocking=False, timeout=60 * 5)
         lock_acquired = await lock.acquire()
+
         if not lock_acquired:
-            self.logger.debug(f'Failed to acquire lock for task id: {task_id}')
+            self.logger.debug('Failed to acquire lock for task id: %s', task_id)
             return
 
         task = await session.scalar(select(Task).where(Task.id == task_id))
@@ -109,13 +114,17 @@ class TaskRunner:
         if task is not None:
             await self._run_task(task, session, queued_timestamp, lock)
         else:
-            self.logger.debug(f'Got already removed task id: {task_id}')
+            self.logger.debug('Got already removed task id: %s', task_id)
 
         try:
             await lock.release()
         except LockNotOwnedError:
-            self.logger.error(f'Failed to release lock for task id: {task_id}. probably task run for longer than '
-                              f'maximum time for the lock')
+            self.logger.error(
+                'Failed to release lock for task id: %s. '
+                'Probably task run for longer than '
+                'maximum time for the lock',
+                task_id
+            )
 
     async def _run_task(self, task: Task, session, queued_timestamp, lock):
         """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
@@ -123,22 +132,19 @@ class TaskRunner:
         try:
             worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
             if worker:
-                start = pdl.now()
                 await worker.run(task, session, self.resource_provider, lock)
-                duration = (pdl.now() - start).total_seconds()
-                delay = start.int_timestamp - queued_timestamp
-                self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})
             else:
-                self.logger.error({'message': f'Unknown task type: {task.bg_worker_task}'})
+                self.logger.error('Unknown task type: %s', task.bg_worker_task)
         except Exception:  # pylint: disable=broad-except
             await session.rollback()
-            self.logger.exception({'message': 'Exception running task'})
+            self.logger.exception('Exception running task')
 
 
 class BaseWorkerSettings():
     """Worker settings."""
 
-    logfile: t.Optional[str] = None
+    logs_storage: str | None = None
+    logfile_name: t.Optional[str] = 'tasks-runner.log'
     loglevel: str = 'INFO'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
@@ -181,7 +187,8 @@ def execute_worker():
         logger = configure_logger(
             name=service_name,
             log_level=settings.loglevel,
-            logfile=settings.logfile,
+            logs_storage=settings.logs_storage,
+            logfile_name=settings.logfile_name,
             logfile_backup_count=settings.logfile_backup_count,
         )
 
@@ -201,7 +208,7 @@ def execute_worker():
             # Ignoring this logger since it can spam sentry with errors
             sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
 
-        async with ResourcesProvider(settings) as rp:
+        async with ResourcesProvider(settings, logger=logger) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
 
             workers = [

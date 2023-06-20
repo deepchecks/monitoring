@@ -16,6 +16,7 @@ import logging.handlers
 import operator
 import sys
 import typing as t
+import pathlib
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
@@ -420,29 +421,38 @@ def field_length(column) -> int:
 def configure_logger(
     name: str,
     log_level: str = "INFO",
-    message_format: str = "%(asctime)s %(process)s %(levelname)s %(name)s %(module)s %(funcName)s %(lineno)s",
-    logfile: t.Optional[str] = None,
+    message_format: str = "[%(process)d][%(asctime)s][%(levelname)s][%(name)s]%(message)s",
+    logs_storage: str | None = None,
+    logfile_name: str | None = None,
     logfile_backup_count: int = 3,
+    logfile_max_bytes: int = 10_000_000,
 ):
     """Configure logger instance."""
     logger = logging.getLogger(name)
-    logger.propagate = True
     logger.setLevel(log_level)
-    formatter = JsonFormatter(message_format)
+    formatter = logging.Formatter(fmt=message_format)
 
     h = logging.StreamHandler(sys.stdout)
     h.setLevel(log_level)
     h.setFormatter(formatter)
     logger.addHandler(h)
 
-    if logfile:
-        h = logging.handlers.RotatingFileHandler(
-            filename=logfile,
-            maxBytes=logfile_backup_count,
-        )
-        h.setLevel(log_level)
-        h.setFormatter(formatter)
-        logger.addHandler(h)
+    if logs_storage:
+        logs_storage_path = pathlib.Path(logs_storage)
+        if (
+            logs_storage_path.exists()
+            and logs_storage_path.is_dir()
+        ):
+            logfile_name = logfile_name or f"{name}.log"
+            logfile_path = logs_storage_path / pathlib.Path(logfile_name)
+            h = logging.handlers.RotatingFileHandler(
+                filename=logfile_path,
+                maxBytes=logfile_max_bytes,
+                backupCount=logfile_backup_count,
+            )
+            h.setLevel(log_level)
+            h.setFormatter(formatter)
+            logger.addHandler(h)
 
     return logger
 
