@@ -28,7 +28,7 @@ from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_TS_COL, SAMPLE_ID_COL
 from deepchecks_monitoring.schema_models.data_sources import DataSource
 from deepchecks_monitoring.utils import database
 
@@ -84,7 +84,7 @@ class ObjectStorageIngestor(BackgroundWorker):
         # Get s3 authentication info
         s3_data_source = (await session.scalar(select(DataSource).where(DataSource.type == 's3')))
         if s3_data_source is None:
-            self._handle_error(errors, 'No data source of type s3 found', model_id)
+            self._handle_error(errors, 'No data source of type s3 found', model_id, set_warning_in_logs=True)
             await self._finalize_before_exit(session, errors)
             return
 
@@ -213,6 +213,7 @@ class ObjectStorageIngestor(BackgroundWorker):
             value = io.BytesIO(file_response.get('Body').read())
             if file['extension'] == 'csv':
                 df = pd.read_csv(value)
+                df[SAMPLE_ID_COL] = df[SAMPLE_ID_COL].astype(str)
             elif file['extension'] == 'parquet':
                 df = pd.read_parquet(value)
             else:
@@ -230,10 +231,15 @@ class ObjectStorageIngestor(BackgroundWorker):
             df = df.sort_values(by=[SAMPLE_TS_COL])
             yield df, file['time']
 
-    def _handle_error(self, errors, error_message, model_id=None, model_version_id=None):
+    def _handle_error(self, errors, error_message, model_id=None, model_version_id=None, set_warning_in_logs=False):
 
         error_message = f'S3 integration - {error_message}'
-        self.logger.error({'message': f'{error_message}, model_id: {model_id}, version_id: {model_version_id}'})
+
+        log_message = {'message': f'{error_message}, model_id: {model_id}, version_id: {model_version_id}'}
+        if set_warning_in_logs:
+            self.logger.error(log_message)
+        else:
+            self.logger.warning(log_message)
 
         errors.append(dict(sample=None,
                            sample_id=None,
