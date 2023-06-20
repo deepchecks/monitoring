@@ -53,18 +53,18 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
 
   return (
     <div>
+      <ModelLogsFilters
+        modelVersions={modelVersions}
+        version={version}
+        reason={reason}
+        startDate={startDate}
+        endDate={endDate}
+        setVersion={setVersion}
+        setReason={setReason}
+        setStartDate={setStartDate}
+        setEndDate={setEndDate}
+      />
       <TableContainer sx={{ maxHeight: '540px' }}>
-        <ModelLogsFilters
-          modelVersions={modelVersions}
-          version={version}
-          reason={reason}
-          startDate={startDate}
-          endDate={endDate}
-          setVersion={setVersion}
-          setReason={setReason}
-          setStartDate={setStartDate}
-          setEndDate={setEndDate}
-        />
         {isLoading ? (
           <StyledLoader sx={{ margin: '150px auto' }} />
         ) : logs?.length > 0 ? (
