@@ -98,7 +98,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
         <DownloadScript dataType={dataType} token={apiToken} reportOnboardingStep={reportOnboardingStep} />
         <DownloadNotebook dataType={dataType} token={apiToken} reportOnboardingStep={reportOnboardingStep} />
         <ColabLink dataType={dataType} reportOnboardingStep={reportOnboardingStep} isLocal={isLocal} />
-        <GenerateToken regenerateApiToken={regenerateApiToken} isLocal={isLocal} />
+        <GenerateToken regenerateApiToken={regenerateApiToken} isLocal={isLocal} apiToken={apiToken} />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );
