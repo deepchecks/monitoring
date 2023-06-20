@@ -16,12 +16,12 @@ import {
 const tableHeaders = ['Version', 'Date', 'Reason', 'Sample ID', 'Sample'];
 
 export const ModelLogs = ({ modelId }: { modelId: number }) => {
-  const [isLoading, setIsLoading] = useState(true);
   const [logs, setLogs] = useState<IngestionErrorSchema[]>([]);
-  const [reason, setReason] = useState('');
-  const [startDate, setStartDate] = useState<Date | null>();
-  const [endDate, setEndDate] = useState<Date | null>();
+  const [isLoading, setIsLoading] = useState(true);
   const [version, setVersion] = useState<number>();
+  const [reason, setReason] = useState('');
+  const [endDate, setEndDate] = useState<Date>();
+  const [startDate, setStartDate] = useState<Date>();
 
   const { data: modelVersions } = useGetVersionsPerModelApiV1ModelsModelIdVersionsGet(modelId);
 
@@ -29,8 +29,8 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
     setIsLoading(true);
 
     const response = await retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet(modelId, {
-      end_time_epoch: endDate ? endDate.getTime() : undefined,
-      start_time_epoch: startDate ? startDate.getTime() : undefined,
+      end_time_epoch: endDate && endDate.getTime(),
+      start_time_epoch: startDate && startDate.getTime(),
       msg_contains: reason,
       model_version_id: version
     });
@@ -43,13 +43,13 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
     }
   };
 
-  const handleStartDateChange = (currentStartDate: Date | null) => {
+  const handleStartDateChange = (currentStartDate: Date) => {
     if (currentStartDate && endDate && currentStartDate < endDate) {
       setStartDate(currentStartDate);
     }
   };
 
-  const handleEndDateChange = (currentEndDate: Date | null) => {
+  const handleEndDateChange = (currentEndDate: Date) => {
     if (currentEndDate && startDate && currentEndDate > startDate) {
       setEndDate(currentEndDate);
     }
