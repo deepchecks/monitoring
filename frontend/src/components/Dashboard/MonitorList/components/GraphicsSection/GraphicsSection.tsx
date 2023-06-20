@@ -67,11 +67,11 @@ export function GraphicsSection({
 
   return (
     <>
-      <StyledContainer onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} {...props} sx={{ background: 'white' }}>
+      <StyledContainer onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} {...props}>
         {isLoading ? (
           <Loader />
         ) : (
-          <Stack direction="column" height="100%">
+          <Stack direction="column">
             <MonitorInfoWidget
               monitor={monitor}
               hover={hover}
