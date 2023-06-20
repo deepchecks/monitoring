@@ -52,7 +52,7 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
   }, [reason, startDate, endDate, version]);
 
   return (
-    <div>
+    <>
       <ModelLogsFilters
         modelVersions={modelVersions}
         version={version}
@@ -88,6 +88,6 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
           <NoDataToShow title={constants.notFoundMsg} height={250} margin="44px auto" />
         )}
       </TableContainer>
-    </div>
+    </>
   );
 };

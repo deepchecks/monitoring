@@ -25,8 +25,6 @@ const constants = {
 export const ModelDetails = ({ model }: ModelDetailsProps) => {
   const [value, setValue] = useState('1');
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => setValue(newValue);
-
   return (
     <>
       <StyledModalTitle>
@@ -35,7 +33,7 @@ export const ModelDetails = ({ model }: ModelDetailsProps) => {
       <TabContext value={value}>
         <TabList
           value={value}
-          onChange={handleTabChange}
+          onChange={(_event: React.SyntheticEvent, newValue: string) => setValue(newValue)}
           sx={{ borderBottom: `solid 1px ${theme.palette.grey.light}` }}
         >
           <Tab label={constants.versionTabLabel} value="1" />
