@@ -42,7 +42,7 @@ export const ModelDetails = ({ model }: ModelDetailsProps) => {
           <Tab label={constants.notesTabLabel} value="2" />
         </TabList>
         <TabPanel value="1" sx={{ padding: '0' }}>
-          <ModelLogs />
+          <ModelLogs modelId={model.id} />
         </TabPanel>
         <TabPanel value="2" sx={{ padding: '0' }}>
           <ModelNotes model={model} />

@@ -1,19 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableContainer, TableHead, TableRow, TextField } from '@mui/material';
 
 import { StyledDivider, StyledLogsFiltersContainer, StyledTableHeadCell } from '../../ModelDetails.style';
 import { SingleLog } from './components/SingleLog';
-import { StyledInput } from 'components/lib';
+import { StyledInput, StyledLoader } from 'components/lib';
 import { DatePicker } from 'components/base/DatePicker/DatePicker';
 import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimary';
 
+import {
+  IngestionErrorSchema,
+  retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet,
+  useGetVersionsPerModelApiV1ModelsModelIdVersionsGet
+} from 'api/generated';
+
 const tableHeaders = ['Version', 'Date', 'Reason', 'Sample ID', 'Sample'];
 
-export const ModelLogs = () => {
+export const ModelLogs = ({ modelId }: { modelId: number }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [logs, setLogs] = useState<IngestionErrorSchema[]>([]);
   const [reason, setReason] = useState('');
   const [startDate, setStartDate] = useState<Date | null>();
   const [endDate, setEndDate] = useState<Date | null>();
-  const [version, setVersion] = useState('');
+  const [version, setVersion] = useState<number>();
+
+  const { data: modelVersions } = useGetVersionsPerModelApiV1ModelsModelIdVersionsGet(modelId);
+
+  const getLogs = async () => {
+    setIsLoading(true);
+
+    const response = await retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet(modelId, {
+      end_time_epoch: endDate ? endDate.getTime() : undefined,
+      start_time_epoch: startDate ? startDate.getTime() : undefined,
+      msg_contains: reason,
+      model_version_id: version
+    });
+
+    if (response[0]) {
+      setLogs(response);
+      setIsLoading(false);
+    } else {
+      setIsLoading(false);
+    }
+  };
 
   const handleStartDateChange = (currentStartDate: Date | null) => {
     if (currentStartDate && endDate && currentStartDate < endDate) {
@@ -27,50 +55,59 @@ export const ModelLogs = () => {
     }
   };
 
+  useEffect(() => {
+    const getFilteredLogs = setTimeout(() => getLogs(), 500);
+
+    return () => clearTimeout(getFilteredLogs);
+  }, [reason, startDate, endDate, version]);
+
   return (
     <div>
-      {logs && (
-        <TableContainer sx={{ maxHeight: '540px' }}>
-          <StyledLogsFiltersContainer>
-            <SelectPrimary
-              label="Version"
-              onChange={e => setVersion(e.target.value as string)}
-              value={version}
-              size="small"
-            >
-              {['version1', 'version2'].map(value => (
-                <SelectPrimaryItem value={value} key={value}>
-                  {value}
+      <TableContainer sx={{ maxHeight: '540px' }}>
+        <StyledLogsFiltersContainer>
+          <SelectPrimary
+            label="Version"
+            onChange={e => setVersion(e.target.value as number)}
+            value={version}
+            size="small"
+          >
+            {modelVersions &&
+              modelVersions.map(({ name, id }) => (
+                <SelectPrimaryItem value={id} key={id}>
+                  {name}
                 </SelectPrimaryItem>
               ))}
-            </SelectPrimary>
-            <StyledDivider />
-            <DatePicker
-              inputFormat="L"
-              onChange={handleStartDateChange}
-              value={startDate}
-              label="Start Date"
-              disableMaskedInput
-              renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
-            />
-            -
-            <DatePicker
-              inputFormat="L"
-              onChange={handleEndDateChange}
-              value={endDate}
-              label="End Date"
-              disableMaskedInput
-              renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
-            />
-            <StyledDivider />
-            <StyledInput
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              onCloseIconClick={() => setReason('')}
-              sx={{ width: '500px', height: '36px' }}
-              placeholder="Search reason..."
-            />
-          </StyledLogsFiltersContainer>
+          </SelectPrimary>
+          <StyledDivider />
+          <DatePicker
+            inputFormat="L"
+            onChange={handleStartDateChange}
+            value={startDate}
+            label="Start Date"
+            disableMaskedInput
+            renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
+          />
+          -
+          <DatePicker
+            inputFormat="L"
+            onChange={handleEndDateChange}
+            value={endDate}
+            label="End Date"
+            disableMaskedInput
+            renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
+          />
+          <StyledDivider />
+          <StyledInput
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            onCloseIconClick={() => setReason('')}
+            sx={{ width: '500px', height: '36px' }}
+            placeholder="Search reason..."
+          />
+        </StyledLogsFiltersContainer>
+        {isLoading ? (
+          <StyledLoader sx={{ margin: '150px auto' }} />
+        ) : (
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -81,116 +118,10 @@ export const ModelLogs = () => {
                 ))}
               </TableRow>
             </TableHead>
-            <TableBody>
-              {logs.map(log => (
-                <SingleLog key={`${log.id}-${log.sample_id}`} log={log} />
-              ))}
-            </TableBody>
+            <TableBody>{logs && logs.map(log => <SingleLog key={`${log.id}-${log.sample_id}`} log={log} />)}</TableBody>
           </Table>
-        </TableContainer>
-      )}
+        )}
+      </TableContainer>
     </div>
   );
 };
-
-export const logs = [
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  },
-  {
-    id: 19996,
-    sample_id: '417428',
-    error: 'Duplicate index on log',
-    sample:
-      "{'_dc_sample_id': '417428', 'neighbourhood_group': 'Manhattan', 'neighbourhood': 'Upper East Side', 'room_type': 'Entire home/apt', 'minimum_nights': 30, 'number_of_reviews': 5, 'reviews_per_month': 0.34, 'calculated_host_listings_count': 3, 'availability_365': 283, 'has_availability': 'yes', '_dc_time': DateTime(2023, 5, 29, 12, 53, 5, tzinfo=Timezone('UTC')), '_dc_prediction': 114.0, '_dc_logged_time': DateTime(2023, 6, 8, 16, 38, 56, 179037, tzinfo=Timezone('+03:00'))}",
-    created_at: '2023-06-08T13:39:03.068176+00:00',
-    model_version_id: 1
-  }
-];
