@@ -8,7 +8,6 @@ import { Checkbox as StyledCheckbox } from './components/Button/Checkbox/Checkbo
 import { Toggle as StyledToggle } from './components/Button/Toggle/Toggle';
 import { Radio as StyledRadio } from './components/Button/Radio/Radio';
 import { Text as StyledText } from './components/Text/Text';
-import { HighlightedText as StyledHighlightedText } from './components/Text/HighlightedText/HighlightedText';
 import { Image as StyledImage } from './components/Image/Image';
 import { Dialog as StyledDialog } from './components/Dialog/Dialog';
 import { DeletionDialog as StyledDeletionDialog } from './components/Dialog/DeletionDialog/DeletionDialog';
@@ -21,6 +20,8 @@ import { Input as StyledInput } from './components/Input/Input';
 import { Dropdown as StyledDropdown } from './components/Dropdown/Dropdown';
 import { NavLink as StyledNavLink } from './components/NavLink/NavLink';
 import { CodeSnippet as StyledCodeSnippet } from './components/Container/CodeSnippet/CodeSnippet';
+import { ToolTip as StyledToolTip } from './components/Container/ToolTip/ToolTip';
+import { HighlightedText as StyledHighlightedText } from './components/Text/HighlightedText/HighlightedText';
 
 export {
   StyledThemeProvider,
@@ -33,7 +34,6 @@ export {
   StyledToggle,
   StyledRadio,
   StyledText,
-  StyledHighlightedText,
   StyledImage,
   StyledDialog,
   StyledDeletionDialog,
@@ -45,5 +45,7 @@ export {
   StyledInput,
   StyledDropdown,
   StyledNavLink,
-  StyledCodeSnippet
+  StyledCodeSnippet,
+  StyledToolTip,
+  StyledHighlightedText
 };
