@@ -1,16 +1,22 @@
 import React from 'react';
 import dayjs from 'dayjs';
 
-import { ModelManagmentSchema, MonitorSchema } from 'api/generated';
+import {
+  ModelManagmentSchema,
+  MonitorSchema,
+  CheckSchema,
+  MonitorCheckConf,
+  MonitorCheckConfSchema
+} from 'api/generated';
 
 import { Box, Typography, styled, Stack, Grid } from '@mui/material';
 
 import { Monitor } from './Monitor';
+import { StyledContainer } from 'components/lib';
 
 import { SetStateType } from 'helpers/types';
 import { DialogNames } from 'components/Dashboard/Dashboard.types';
 import { theme } from 'components/lib/theme';
-import { StyledContainer } from 'components/lib';
 
 interface MonitorsGroupProps {
   model: ModelManagmentSchema;
@@ -20,6 +26,16 @@ interface MonitorsGroupProps {
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
   setIsDeleteMonitorDialogOpen: SetStateType<boolean>;
+  setCurrentModel: React.Dispatch<React.SetStateAction<ModelManagmentSchema>>;
+  onPointClick: (
+    datasetName: string,
+    versionName: string,
+    timeLabel: number,
+    additionalKwargs: MonitorCheckConfSchema | undefined,
+    checkInfo: MonitorCheckConf | undefined,
+    check: CheckSchema,
+    currentModel: ModelManagmentSchema
+  ) => void;
 }
 
 export const MonitorsGroup = ({
@@ -29,9 +45,23 @@ export const MonitorsGroup = ({
   handleOpenMonitorDialog,
   monitorToRefreshId,
   setMonitorToRefreshId,
-  setIsDeleteMonitorDialogOpen
+  setIsDeleteMonitorDialogOpen,
+  onPointClick,
+  setCurrentModel
 }: MonitorsGroupProps) => {
   if (!monitors.length) return <></>;
+
+  const handlePointClick = (
+    datasetName: string,
+    versionName: string,
+    timeLabel: number,
+    additional_kwargs: MonitorCheckConfSchema | undefined,
+    checkInfo: MonitorCheckConf | undefined,
+    check: CheckSchema
+  ) => {
+    setCurrentModel(model);
+    onPointClick(datasetName, versionName, timeLabel, additional_kwargs, checkInfo, check, model);
+  };
 
   return (
     <StyledGroupContainer>
@@ -56,6 +86,7 @@ export const MonitorsGroup = ({
             handleOpenMonitorDialog={handleOpenMonitorDialog}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
+            onPointClick={handlePointClick}
           />
         ))}
       </Grid>

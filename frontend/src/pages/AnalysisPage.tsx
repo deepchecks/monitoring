@@ -77,7 +77,7 @@ const AnalysisPage = () => {
     [currentModel.versions]
   );
 
-  const handleDrawerClose = useCallback(() => {
+  const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setCurrentCheck(null);
     setCurrentDatasetName(null);
@@ -85,16 +85,14 @@ const AnalysisPage = () => {
     setCurrentModelVersionId(null);
     setCurrentTimeLabel(null);
     setCurrentType(null);
-  }, []);
+  };
 
   useEffect(() => {
     setModelId(+getParams()?.modelId || models[0]?.id);
   }, [models, location.search]);
 
   useEffect(() => {
-    if (modelId) {
-      refetch();
-    }
+    if (modelId) refetch();
   }, [modelId, refetch]);
 
   useOnboarding();
