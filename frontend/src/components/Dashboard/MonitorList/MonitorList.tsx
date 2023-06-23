@@ -79,8 +79,7 @@ export const MonitorList = ({
 
     await DeleteMonitorById({ monitorId: currentMonitor.id });
 
-    const filtered = monitors.filter(mon => mon.id !== currentMonitor.id);
-    setMonitors(filtered);
+    setMonitors(monitors.filter(mon => mon.id !== currentMonitor.id));
     setCurrentMonitor(null);
   };
 
