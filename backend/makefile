@@ -166,7 +166,7 @@ docstring: dev-requirements
 
 
 test: requirements dev-requirements
-	$(PYTEST) $(args) $(TESTDIR)
+	$(PYTEST) $(args) -n auto $(TESTDIR)
 
 
 test-win:

@@ -170,7 +170,7 @@ docstring:
 
 
 test:
-	$(PYTEST) $(args) $(TESTDIR)
+	$(PYTEST) $(args) -n auto $(TESTDIR)
 
 
 test-win:
