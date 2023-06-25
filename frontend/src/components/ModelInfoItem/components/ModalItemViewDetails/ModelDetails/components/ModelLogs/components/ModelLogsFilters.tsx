@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TextField } from '@mui/material';
 
-import { StyledLogsFiltersContainer, StyledDivider } from '../../../ModelDetails.style';
+import { StyledLogsFiltersContainer, StyledDivider, StyledSearchBtn } from '../../../ModelDetails.style';
 import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimary';
 import { DatePicker } from 'components/base/DatePicker/DatePicker';
 import { StyledInput } from 'components/lib';
@@ -9,7 +9,6 @@ import { StyledInput } from 'components/lib';
 interface LogsFiltersProps {
   modelVersions?: { name: string; id: number }[];
   version?: number;
-  reason: string;
   startDate: Date | undefined;
   endDate: Date | undefined;
   setVersion: (version: number) => void;
@@ -19,7 +18,9 @@ interface LogsFiltersProps {
 }
 
 export const ModelLogsFilters = (props: LogsFiltersProps) => {
-  const { modelVersions, version, reason, startDate, endDate, setVersion, setReason, setStartDate, setEndDate } = props;
+  const { modelVersions, version, startDate, endDate, setVersion, setReason, setStartDate, setEndDate } = props;
+
+  const [searchInput, setSearchInput] = useState('');
 
   const handleStartDateChange = (currentStartDate: Date) => {
     if (currentStartDate && endDate && currentStartDate < endDate) {
@@ -32,6 +33,8 @@ export const ModelLogsFilters = (props: LogsFiltersProps) => {
       setEndDate(currentEndDate);
     }
   };
+
+  const handleIconClick = () => setReason(searchInput);
 
   return (
     <StyledLogsFiltersContainer>
@@ -62,11 +65,12 @@ export const ModelLogsFilters = (props: LogsFiltersProps) => {
         renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
       />
       <StyledDivider />
+      <StyledSearchBtn onClick={handleIconClick} />
       <StyledInput
-        value={reason}
-        onChange={e => setReason(e.target.value)}
-        onCloseIconClick={() => setReason('')}
-        sx={{ width: '500px', height: '36px' }}
+        value={searchInput}
+        onChange={e => setSearchInput(e.target.value)}
+        onCloseIconClick={() => setSearchInput('')}
+        sx={{ width: '470px', height: '36px' }}
         placeholder="Search reason..."
       />
     </StyledLogsFiltersContainer>

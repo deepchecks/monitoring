@@ -47,7 +47,7 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
 
   useEffect(() => {
     setIsLoading(true);
-    const getFilteredLogs = setTimeout(() => getLogs(), 500);
+    const getFilteredLogs = setTimeout(() => getLogs(), 1000);
     return () => clearTimeout(getFilteredLogs);
   }, [reason, startDate, endDate, version]);
 
@@ -56,7 +56,6 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
       <ModelLogsFilters
         modelVersions={modelVersions}
         version={version}
-        reason={reason}
         startDate={startDate}
         endDate={endDate}
         setVersion={setVersion}

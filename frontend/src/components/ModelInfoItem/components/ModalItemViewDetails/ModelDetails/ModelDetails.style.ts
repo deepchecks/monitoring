@@ -1,3 +1,4 @@
+import { SearchOutlined } from '@mui/icons-material';
 import { IconButton, styled, TableCell, TableRow, Box, Typography } from '@mui/material';
 import { StyledContainer } from 'components/lib';
 
@@ -64,3 +65,21 @@ export const StyledCellText = styled(Typography)(
     color: color ? color : 'inherit'
   })
 );
+
+export const StyledSearchBtn = styled(SearchOutlined)(({ theme }) => ({
+  cursor: 'pointer',
+  border: `1px solid ${theme.palette.grey[300]}`,
+  outline: `1px solid ${theme.palette.common.white}`,
+  borderRadius: '4px',
+  color: theme.palette.grey[400],
+  padding: '4px',
+  fontSize: '34px',
+  transition: '0.5s',
+  marginLeft: '-4px',
+
+  ':hover': {
+    outline: `1px solid ${theme.palette.primary.main}`,
+    borderColor: theme.palette.primary.main,
+    color: theme.palette.primary.main
+  }
+}));
