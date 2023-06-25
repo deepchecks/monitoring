@@ -40,7 +40,7 @@ export const ModelLogsFilters = (props: LogsFiltersProps) => {
       </SelectPrimary>
       <StyledDivider />
       <DatePicker
-        inputFormat="L"
+        inputFormat="l"
         onChange={handleStartDateChange}
         value={startDate}
         label="Start Date"
@@ -49,7 +49,7 @@ export const ModelLogsFilters = (props: LogsFiltersProps) => {
       />
       -
       <DatePicker
-        inputFormat="L"
+        inputFormat="l"
         onChange={handleEndDateChange}
         value={endDate}
         label="End Date"
