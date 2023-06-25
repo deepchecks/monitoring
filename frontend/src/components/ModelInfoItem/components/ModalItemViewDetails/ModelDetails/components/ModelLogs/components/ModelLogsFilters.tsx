@@ -22,17 +22,9 @@ export const ModelLogsFilters = (props: LogsFiltersProps) => {
 
   const [searchInput, setSearchInput] = useState('');
 
-  const handleStartDateChange = (currentStartDate: Date) => {
-    if (endDate && currentStartDate < endDate) {
-      setStartDate(currentStartDate);
-    }
-  };
+  const handleStartDateChange = (currentStartDate: Date) => setStartDate(currentStartDate);
 
-  const handleEndDateChange = (currentEndDate: Date) => {
-    if (startDate && currentEndDate > startDate) {
-      setEndDate(currentEndDate);
-    }
-  };
+  const handleEndDateChange = (currentEndDate: Date) => setEndDate(currentEndDate);
 
   const handleIconClick = () => setReason(searchInput);
 

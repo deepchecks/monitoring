@@ -16,18 +16,16 @@ export const SingleLog = ({ log }: SingleErrorProps) => (
   <StyledTableRow>
     <StyledTableCell width="20%">
       <StyledCellText weight={600} color={theme.palette.primary.main}>
-        {log.id}
+        {log.model_version_id}
       </StyledCellText>
     </StyledTableCell>
     <StyledTableCell width="20%">
       <StyledCellText>{log.created_at ? `${dayjs(log.created_at).format('L LT')}` : '- '}</StyledCellText>
     </StyledTableCell>
     <StyledTableCell width="20%">
-      <StyledToolTip text={`${log.error}`}>
-        <StyledCellText width="265px" noWrap={true}>
-          {log.error}
-        </StyledCellText>
-      </StyledToolTip>
+      <StyledCellText width="265px" noWrap={true}>
+        {log.error}
+      </StyledCellText>
     </StyledTableCell>
     <StyledTableCell width="20%">
       <StyledCellText>{log.sample_id}</StyledCellText>

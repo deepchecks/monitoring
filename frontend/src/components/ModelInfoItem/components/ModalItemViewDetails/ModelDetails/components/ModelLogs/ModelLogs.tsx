@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 import { Table, TableBody, TableContainer, TableHead, TableRow } from '@mui/material';
 
 import { StyledTableHeadCell } from '../../ModelDetails.style';
@@ -14,7 +15,7 @@ import {
 } from 'api/generated';
 
 const constants = {
-  tableHeaders: ['Version', 'Date', 'Reason', 'Sample ID', 'Sample'],
+  tableHeaders: ['Version ID', 'Date', 'Reason', 'Sample ID', 'Sample'],
   notFoundMsg: 'No Log Data Found'
 };
 
@@ -23,15 +24,15 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [version, setVersion] = useState<number>();
   const [reason, setReason] = useState('');
-  const [endDate, setEndDate] = useState<Date>(new Date());
-  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>();
+  const [startDate, setStartDate] = useState<Date>();
 
   const { data: modelVersions } = useGetVersionsPerModelApiV1ModelsModelIdVersionsGet(modelId);
 
   const getLogs = async () => {
     const response = await retrieveConnectedModelIngestionErrorsApiV1ConnectedModelsModelIdIngestionErrorsGet(modelId, {
-      end_time_epoch: endDate && endDate.getTime(),
-      start_time_epoch: startDate && startDate.getTime(),
+      end_time_epoch: endDate && dayjs(endDate).unix(),
+      start_time_epoch: startDate && dayjs(startDate).unix(),
       msg_contains: reason,
       model_version_id: version
     });
@@ -47,8 +48,7 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
 
   useEffect(() => {
     setIsLoading(true);
-    const getFilteredLogs = setTimeout(() => getLogs(), 1000);
-    return () => clearTimeout(getFilteredLogs);
+    getLogs();
   }, [reason, startDate, endDate, version]);
 
   return (
@@ -63,7 +63,7 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
         setStartDate={setStartDate}
         setEndDate={setEndDate}
       />
-      <TableContainer sx={{ maxHeight: '540px' }}>
+      <TableContainer sx={{ maxHeight: '500px' }}>
         {isLoading ? (
           <StyledLoader sx={{ margin: '150px auto' }} />
         ) : logs?.length > 0 ? (
