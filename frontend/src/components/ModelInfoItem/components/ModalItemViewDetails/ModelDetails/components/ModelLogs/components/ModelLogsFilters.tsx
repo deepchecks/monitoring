@@ -23,13 +23,13 @@ export const ModelLogsFilters = (props: LogsFiltersProps) => {
   const [searchInput, setSearchInput] = useState('');
 
   const handleStartDateChange = (currentStartDate: Date) => {
-    if (currentStartDate && endDate && currentStartDate < endDate) {
+    if (endDate && currentStartDate < endDate) {
       setStartDate(currentStartDate);
     }
   };
 
   const handleEndDateChange = (currentEndDate: Date) => {
-    if (currentEndDate && startDate && currentEndDate > startDate) {
+    if (startDate && currentEndDate > startDate) {
       setEndDate(currentEndDate);
     }
   };

@@ -23,8 +23,8 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [version, setVersion] = useState<number>();
   const [reason, setReason] = useState('');
-  const [endDate, setEndDate] = useState<Date>();
-  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState<Date>(new Date());
 
   const { data: modelVersions } = useGetVersionsPerModelApiV1ModelsModelIdVersionsGet(modelId);
 
