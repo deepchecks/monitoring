@@ -29,6 +29,7 @@ from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models import IngestionError
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
     from deepchecks_monitoring.schema_models.model_memeber import ModelMember
@@ -106,6 +107,14 @@ class Model(Base, MetadataMixin, PermissionMixin):
     )
     notes: Mapped[t.List["ModelNote"]] = relationship(
         "ModelNote",
+        back_populates="model",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
+    )
+
+    ingestion_errors: Mapped[t.List["IngestionError"]] = relationship(
+        "IngestionError",
         back_populates="model",
         cascade="save-update, merge, delete",
         passive_deletes=True,
