@@ -70,12 +70,12 @@ export const StyledSearchBtn = styled(SearchOutlined)(({ theme }) => ({
   cursor: 'pointer',
   border: `1px solid ${theme.palette.grey[300]}`,
   outline: `1px solid ${theme.palette.common.white}`,
-  borderRadius: '4px',
+  borderRadius: '4px 0 0 4px',
   color: theme.palette.grey[400],
   padding: '4px',
-  fontSize: '34px',
+  fontSize: '36px',
   transition: '0.5s',
-  marginLeft: '-4px',
+  marginRight: '-8px',
 
   ':hover': {
     outline: `1px solid ${theme.palette.primary.main}`,
