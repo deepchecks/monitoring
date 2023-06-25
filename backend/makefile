@@ -166,7 +166,7 @@ docstring: dev-requirements
 
 
 test: requirements dev-requirements
-	$(PYTEST) $(args) $(TESTDIR)
+	$(PYTEST) $(args) -n auto $(TESTDIR)
 
 
 test-win:
@@ -174,7 +174,7 @@ test-win:
 	@$(WIN_ENV)\Scripts\activate.bat
 	@$(PIP_WIN) install -U pip==22.0.4 setuptools==58.3.0
 	@$(PIP_WIN) install -q -r ./requirements.txt -r ./dev-requirements.txt
-	python -m pytest $(WIN_TESTDIR)
+	python -m pytest -n auto $(WIN_TESTDIR)
 
 
 coverage: requirements dev-requirements
