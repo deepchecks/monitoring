@@ -70,7 +70,7 @@ export const ModelLogsFilters = (props: LogsFiltersProps) => {
         value={searchInput}
         onChange={e => setSearchInput(e.target.value)}
         onCloseIconClick={() => setSearchInput('')}
-        sx={{ width: '470px', height: '36px' }}
+        sx={{ width: '450px', height: '36px' }}
         placeholder="Search reason..."
       />
     </StyledLogsFiltersContainer>
