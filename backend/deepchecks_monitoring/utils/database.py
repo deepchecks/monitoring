@@ -48,7 +48,7 @@ class SessionParameter(DDLElement):
 
         if isinstance(value, (str, int, float)):
             self.value = value
-        elif isinstance(value, t.Sequence):
+        elif isinstance(value, t.Sequence):  # pylint: disable=isinstance-second-argument-not-valid-type
             self.value = ", ".join(f'"{it}"' for it in value)
         else:
             raise ValueError(f"Unsupported type of 'value' parameter - {type(value)}")
