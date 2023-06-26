@@ -84,7 +84,7 @@ class ObjectStorageIngestor(BackgroundWorker):
         # Get s3 authentication info
         s3_data_source = (await session.scalar(select(DataSource).where(DataSource.type == 's3')))
         if s3_data_source is None:
-            self._handle_error(errors, 'No data source of type s3 found', model_id, set_warning_in_logs=True)
+            self._handle_error(errors, 'No data source of type s3 found', model_id)
             await self._finalize_before_exit(session, errors)
             return
 
@@ -231,15 +231,15 @@ class ObjectStorageIngestor(BackgroundWorker):
             df = df.sort_values(by=[SAMPLE_TS_COL])
             yield df, file['time']
 
-    def _handle_error(self, errors, error_message, model_id=None, model_version_id=None, set_warning_in_logs=False):
+    def _handle_error(self, errors, error_message, model_id=None, model_version_id=None, set_warning_in_logs=True):
 
         error_message = f'S3 integration - {error_message}'
 
         log_message = {'message': f'{error_message}, model_id: {model_id}, version_id: {model_version_id}'}
         if set_warning_in_logs:
-            self.logger.error(log_message)
-        else:
             self.logger.warning(log_message)
+        else:
+            self.logger.error(log_message)
 
         errors.append(dict(sample=None,
                            sample_id=None,
