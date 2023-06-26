@@ -1,21 +1,20 @@
 import { SearchOutlined } from '@mui/icons-material';
 import { IconButton, styled, TableCell, TableRow, Box, Typography } from '@mui/material';
-import { StyledContainer } from 'components/lib';
 
-import { theme } from 'components/lib/theme';
+import { StyledContainer } from 'components/lib';
 
 interface StyledTableCellProps {
   width: number | string;
 }
 
-export const StyledTableRow = styled(TableRow)({
+export const StyledTableRow = styled(TableRow)(({ theme }) => ({
   backgroundColor: theme.palette.grey.light,
   '&:nth-of-type(even)': {
     backgroundColor: theme.palette.common.white
   }
-});
+}));
 
-export const StyledTableCell = styled(TableCell)<StyledTableCellProps>(({ width }) => ({
+export const StyledTableCell = styled(TableCell)<StyledTableCellProps>(({ width, theme }) => ({
   padding: '16px 20px',
   border: 0,
   width,
@@ -23,11 +22,11 @@ export const StyledTableCell = styled(TableCell)<StyledTableCellProps>(({ width 
   fontWeight: 600
 }));
 
-export const StyledTableHeadCell = styled(StyledTableCell)({
+export const StyledTableHeadCell = styled(StyledTableCell)(({ theme }) => ({
   fontSize: '14px',
   color: theme.palette.text.disabled,
   fontWeight: 600
-});
+}));
 
 export const StyledVersionsTableHeadCell = styled(StyledTableHeadCell)({
   paddingTop: '32px'
@@ -44,12 +43,12 @@ export const StyledIconButton = styled(IconButton)({
   background: 'transparent'
 });
 
-export const StyledDivider = styled(Box)({
+export const StyledDivider = styled(Box)(({ theme }) => ({
   width: '1.5px',
   height: '36px',
   margin: '0 12px',
   background: theme.palette.grey[400]
-});
+}));
 
 export const StyledLogsFiltersContainer = styled(StyledContainer)({
   flexDirection: 'row',

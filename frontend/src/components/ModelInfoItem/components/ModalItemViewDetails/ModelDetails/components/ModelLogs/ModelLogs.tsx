@@ -37,13 +37,8 @@ export const ModelLogs = ({ modelId }: { modelId: number }) => {
       model_version_id: version
     });
 
-    if (response[0]) {
-      setLogs(response);
-      setIsLoading(false);
-    } else {
-      setLogs([]);
-      setIsLoading(false);
-    }
+    setLogs(response[0] ? response : []);
+    setIsLoading(false);
   };
 
   useEffect(() => {
