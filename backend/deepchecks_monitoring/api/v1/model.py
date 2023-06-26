@@ -18,6 +18,7 @@ from datetime import datetime
 
 import pandas as pd
 import pendulum as pdl
+import pytz
 import sqlalchemy as sa
 from fastapi import BackgroundTasks, Depends, Path, Query
 from fastapi.responses import StreamingResponse
@@ -896,6 +897,7 @@ class IngestionErrorSchema(BaseModel):
     error: t.Optional[str] = None
     sample: t.Optional[str] = None
     created_at: datetime
+    model_version_id: t.Optional[int] = None
 
     class Config:
         """Config."""
@@ -903,6 +905,7 @@ class IngestionErrorSchema(BaseModel):
         orm_mode = True
 
 
+# TODO: delete this one after the changes in the UI
 @router.get(
     "/connected-models/{model_id}/versions/{version_id}/ingestion-errors",
     tags=[Tags.MODELS, "connected-models"],
@@ -942,6 +945,99 @@ async def retrieve_connected_model_version_ingestion_errors(
         .limit(limit)
         .offset(offset)
     )
+
+    if download is True:
+        # TODO:
+        # - add comments
+        # - reconsider
+        # - consider using more compact formats like avro/parquet
+        async def response_stream():
+            nonlocal session, q
+            n_of_rows = 1000
+            chunk_size = 10000000  # 10Mb
+            result = await session.stream(q)
+            async for records in result.partitions(n_of_rows):
+                buffer = io.BytesIO()
+                pd.DataFrame.from_records(records).to_csv(buffer, encoding="utf-8")
+                buffer.seek(0)
+                while True:
+                    batch = buffer.read(chunk_size)
+                    if not batch:
+                        break
+                    yield batch
+
+        return StreamingResponse(content=response_stream(), media_type="text/csv")
+
+    max_rows_per_request = 300
+
+    if limit > max_rows_per_request:
+        raise BadRequest(
+            f"Retrieval of more than {max_rows_per_request} rows by one request is not allowed. "
+            f"Use 'download=true' query parameter to download more than {max_rows_per_request} rows "
+            "of ingestion errors in csv format."
+        )
+
+    records = (await session.execute(q)).all()
+    return [IngestionErrorSchema.from_orm(it) for it in records]
+
+
+@router.get(
+    "/connected-models/{model_id}/ingestion-errors",
+    tags=[Tags.MODELS, "connected-models"],
+    description="Retrieve connected model ingestion errors.",
+    dependencies=[Depends(Model.get_object_from_http_request)],
+    response_model=t.List[IngestionErrorSchema]
+)
+async def retrieve_connected_model_ingestion_errors(
+        model_id: int = Path(...),
+        sort_key: IngestionErrorsSortKey = Query(default=IngestionErrorsSortKey.TIMESTAMP),
+        msg_contains: str = Query(default=None),
+        model_version_id: int = Query(default=None),
+        sort_order: SortOrder = Query(default=SortOrder.DESC),
+        download: bool = Query(default=False),
+        limit: int = Query(default=50, le=10_000, ge=1),
+        offset: int = Query(default=0, ge=0),
+        start_time_epoch: int = Query(default=None),
+        end_time_epoch: int = Query(default=None),
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
+):
+    """Retrieve connected model version ingestion errors."""
+    order_by_expression: t.Dict[t.Tuple[IngestionErrorsSortKey, SortOrder], t.Any] = {
+        (IngestionErrorsSortKey.TIMESTAMP, SortOrder.ASC): IngestionError.created_at.asc(),
+        (IngestionErrorsSortKey.TIMESTAMP, SortOrder.DESC): IngestionError.created_at.desc(),
+        (IngestionErrorsSortKey.ERROR, SortOrder.ASC): IngestionError.error.asc(),
+        (IngestionErrorsSortKey.ERROR, SortOrder.DESC): IngestionError.error.desc(),
+    }
+
+    q = (
+        sa.select(
+            IngestionError.id,
+            IngestionError.model_version_id,
+            IngestionError.sample_id,
+            IngestionError.created_at,
+            IngestionError.error,
+            IngestionError.sample,
+        )
+        .where(IngestionError.model_id == model_id)
+        .order_by(order_by_expression[(sort_key, sort_order)])
+        .limit(limit)
+        .offset(offset)
+    )
+
+    if model_version_id:
+        q = q.where(IngestionError.model_version_id == model_version_id)
+
+    if msg_contains:
+        q = q.where(IngestionError.error.ilike(f"%{msg_contains}%"))
+
+    if start_time_epoch:
+        dt = datetime.fromtimestamp(start_time_epoch, tz=pytz.UTC)
+        q = q.where(IngestionError.created_at >= dt)
+
+    if end_time_epoch:
+        dt = datetime.fromtimestamp(end_time_epoch, tz=pytz.UTC)
+        q = q.where(IngestionError.created_at <= dt)
 
     if download is True:
         # TODO:
