@@ -1,5 +1,7 @@
 import React from 'react';
+
 import { Divider, Stack } from '@mui/material';
+
 import {
   ConnectedModelSchema,
   ModelNoteCreationSchema,
@@ -7,6 +9,7 @@ import {
   useDeleteModelNoteApiV1ModelsNotesModelNoteIdDelete,
   useRetrieveModelNotesApiV1ModelsModelIdNotesGet
 } from 'api/generated';
+
 import { Loader } from 'components/base/Loader/Loader';
 import { CreateNote } from './components/CreateNote';
 import { NotesList } from './components/NotesList';
