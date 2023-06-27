@@ -266,12 +266,18 @@ async def get_or_create_version(
     for index in reference_table.indexes:
         await session.execute(CreateIndex(index))
 
+    resources_provider.logger.info(
+        '[Organization:%s] Model version created. (model-id:%s, id:%s, name:%s)',
+        user.organization_id,
+        model_version.id,
+        model_version.model_id,
+        model_version.name,
+    )
     await resources_provider.report_mixpanel_event(
         ModelVersionCreatedEvent.create_event,
         model_version=model_version,
         user=user
     )
-
     return {'id': model_version.id}
 
 

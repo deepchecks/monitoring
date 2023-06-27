@@ -6,7 +6,8 @@ if [[ -v INIT_LOCAL_RAY_INSTANCE ]]; then
   RAY_memory_monitor_refresh_ms=0 ray start --port=6399 --head
 fi
 
-STARTAPP="uvicorn --factory deepchecks_monitoring.app:create_application --host 0.0.0.0 --workers 4 --log-level critical --proxy-headers --forwarded-allow-ips '*'"
+LOGS_STORAGE="/"
+STARTAPP="python -m deepchecks_monitoring.cli run"
 
 if [[ -v DD_ENV ]]; then
   STARTAPP="ddtrace-run ${STARTAPP}"

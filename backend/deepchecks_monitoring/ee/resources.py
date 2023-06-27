@@ -39,8 +39,8 @@ class ResourcesProvider(OpenSourceResourcesProvider):
 
     ALERT_NOTIFICATOR_TYPE = EEAlertNotificator
 
-    def __init__(self, settings: Settings):
-        super().__init__(settings)
+    def __init__(self, settings: Settings, logger: logging.Logger | None = None):
+        super().__init__(settings, logger)
         self._lauchdarkly_client = None
         self._is_telemetry_initialized = False
 
@@ -114,10 +114,10 @@ class ResourcesProvider(OpenSourceResourcesProvider):
                 context=Context.builder("parallelCheckExecutorEnabled").build(),
                 default=True
             )
-
-        logging.getLogger("server").info({
-            "mesage": f"'parallelCheckExecutorEnabled' is set to {parallel_check_executor_flag}"
-        })
+        self.logger.info(
+            "'parallelCheckExecutorEnabled' feature flag is set to %s",
+            parallel_check_executor_flag
+        )
         if parallel_check_executor_flag:
             return super().parallel_check_executors_pool
 

@@ -56,7 +56,7 @@ def collect_telemetry(routine: t.Any):
     from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
     from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 
-    logger = logging.getLogger("instrumentation")
+    logger = logging.getLogger("deepchecks-monitoring.telemetry-instrumentation")
 
     if issubclass(routine, AlertsScheduler):
         SchedulerInstrumentor(scheduler_type=routine).instrument()
