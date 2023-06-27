@@ -47,6 +47,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
       refetchOnWindowFocus: false
     }
   });
+
   const connectedModelsMap = useMemo(() => {
     const map: Record<string, ConnectedModelSchema> = {};
     (Array.isArray(connectedModels) ? connectedModels : []).forEach(model => (map[model.id] = model));

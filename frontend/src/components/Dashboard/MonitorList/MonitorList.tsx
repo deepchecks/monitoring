@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
-import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete, DashboardSchema } from 'api/generated';
-import useModels from 'helpers/hooks/useModels';
+import {
+  MonitorSchema,
+  useDeleteMonitorApiV1MonitorsMonitorIdDelete,
+  DashboardSchema,
+  CheckSchema,
+  MonitorCheckConf,
+  MonitorCheckConfSchema,
+  ModelManagmentSchema
+} from 'api/generated';
 
 import { Loader } from 'components/base/Loader/Loader';
 import { MonitorsGroup } from './components/MonitorsGroup';
 import { DeleteMonitor } from './components/DeleteMonitor';
 
+import useModels from 'helpers/hooks/useModels';
 import { DialogNames } from '../Dashboard.types';
 import { SetStateType } from 'helpers/types';
 
@@ -19,6 +27,16 @@ interface MonitorsListProps {
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
   isLoading?: boolean;
+  setCurrentModel: React.Dispatch<React.SetStateAction<ModelManagmentSchema>>;
+  onPointClick: (
+    datasetName: string,
+    versionName: string,
+    timeLabel: number,
+    additionalKwargs: MonitorCheckConfSchema | undefined,
+    checkInfo: MonitorCheckConf | undefined,
+    check: CheckSchema,
+    currentModel: ModelManagmentSchema
+  ) => void;
 }
 
 export const MonitorList = ({
@@ -29,7 +47,9 @@ export const MonitorList = ({
   handleOpenMonitorDialog,
   monitorToRefreshId,
   setMonitorToRefreshId,
-  isLoading
+  isLoading,
+  onPointClick,
+  setCurrentModel
 }: MonitorsListProps) => {
   const { models, getCurrentModel } = useModels();
   const { mutateAsync: DeleteMonitorById } = useDeleteMonitorApiV1MonitorsMonitorIdDelete();
@@ -59,8 +79,7 @@ export const MonitorList = ({
 
     await DeleteMonitorById({ monitorId: currentMonitor.id });
 
-    const filtered = monitors.filter(mon => mon.id !== currentMonitor.id);
-    setMonitors(filtered);
+    setMonitors(monitors.filter(mon => mon.id !== currentMonitor.id));
     setCurrentMonitor(null);
   };
 
@@ -79,6 +98,8 @@ export const MonitorList = ({
             setMonitorToRefreshId={setMonitorToRefreshId}
             setCurrentMonitor={setCurrentMonitor}
             setIsDeleteMonitorDialogOpen={setIsDeleteMonitorDialogOpen}
+            onPointClick={onPointClick}
+            setCurrentModel={setCurrentModel}
           />
         ))
       )}

@@ -3,14 +3,17 @@ import React, { useMemo, useEffect, useState, memo, useCallback } from 'react';
 import {
   MonitorSchema,
   runMonitorLookbackApiV1MonitorsMonitorIdRunPost,
-  getMonitorApiV1MonitorsMonitorIdGet
+  getMonitorApiV1MonitorsMonitorIdGet,
+  CheckSchema,
+  MonitorCheckConf,
+  MonitorCheckConfSchema
 } from 'api/generated';
-import useModels from 'helpers/hooks/useModels';
-import { useElementOnScreen } from 'helpers/hooks/useElementOnScreen';
 
 import { Grid, GridProps } from '@mui/material';
 import { GraphicsSection } from './GraphicsSection';
 
+import useModels from 'helpers/hooks/useModels';
+import { useElementOnScreen } from 'helpers/hooks/useElementOnScreen';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { SetStateType } from 'helpers/types';
 import { DialogNames } from '../../Dashboard.types';
@@ -23,6 +26,14 @@ interface MonitorProps extends GridProps {
   handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
+  onPointClick: (
+    datasetName: string,
+    versionName: string,
+    timeLabel: number,
+    additional_kwargs: MonitorCheckConfSchema | undefined,
+    checkInfo: MonitorCheckConf | undefined,
+    check: CheckSchema
+  ) => void;
 }
 
 const MonitorComponent = ({
@@ -32,6 +43,7 @@ const MonitorComponent = ({
   handleOpenMonitorDialog,
   monitorToRefreshId,
   setMonitorToRefreshId,
+  onPointClick,
   ...props
 }: MonitorProps) => {
   const { getCurrentModel } = useModels();
@@ -94,6 +106,7 @@ const MonitorComponent = ({
         isLoading={loading}
         onOpenMonitorDrawer={handleOpenMonitorDialog}
         onDeleteMonitor={openDeleteMonitorDialog}
+        onPointClick={onPointClick}
       />
     </Grid>
   );

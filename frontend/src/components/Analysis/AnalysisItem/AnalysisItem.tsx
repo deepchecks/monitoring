@@ -73,9 +73,7 @@ const AnalysisItem = ({
   setTimeout(() => setRunLookBack(true), 500); // Todo - figure out another solution
 
   useEffect(() => {
-    if (check.id && refetch) {
-      refetch();
-    }
+    if (check.id && refetch) refetch();
   }, [check.id, refetch]);
 
   useEffect(() => {

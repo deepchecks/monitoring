@@ -12,7 +12,7 @@ import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 
 import { styled, Box } from '@mui/material';
 
-import { AnalysisGroupByInfo } from './components/AnalysisGroupByInfo';
+import { AnalysisDrillDownInfo } from './AnalysisDrillDownInfo/AnalysisDrillDownInfo';
 import { Loader } from 'components/base/Loader/Loader';
 import { CustomDrawer, CustomDrawerHeader } from 'components/CustomDrawer';
 import {
@@ -23,7 +23,7 @@ import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 import { RunDownloadSuite } from 'components/SuiteView/RunDownloadSuite';
 
 import { CheckTypeOptions } from 'helpers/types/check';
-import { ClassOrFeature, AnalysisGroupByProps } from './AnalysisGroupBy.types';
+import { ClassOrFeature, AnalysisDrillDownProps } from './AnalysisDrillDown.types';
 import { getAvailableFeatures } from 'helpers/utils/featuresUtils';
 import { SwitchButton } from 'components/base/Button/SwitchButton';
 
@@ -48,7 +48,7 @@ function getDayJsManipulateType(frequency: number): ManipulateType {
   }
 }
 
-const AnalysisGroupByComponent = ({
+const AnalysisDrillDownComponent = ({
   datasetName,
   modelName,
   check,
@@ -58,7 +58,7 @@ const AnalysisGroupByComponent = ({
   onCloseIconClick,
   type,
   ...props
-}: AnalysisGroupByProps) => {
+}: AnalysisDrillDownProps) => {
   const { frequency, activeFilters } = useContext(AnalysisContext);
 
   const [globalLoading, setGlobalLoading] = useState(false);
@@ -176,7 +176,7 @@ const AnalysisGroupByComponent = ({
         <>
           <StyledHeaderContainer>
             <CustomDrawerHeader title={getTitle()} onClick={onCloseIconClick} marginBottom="32px" />
-            <AnalysisGroupByInfo
+            <AnalysisDrillDownInfo
               startTime={singleCheckRunOptions.start_time}
               endTime={singleCheckRunOptions.end_time}
               checkName={check.name || ''}
@@ -233,7 +233,7 @@ const AnalysisGroupByComponent = ({
   );
 };
 
-export const AnalysisGroupBy = memo(AnalysisGroupByComponent);
+export const AnalysisDrillDown = memo(AnalysisDrillDownComponent);
 
 const StyledHeaderContainer = styled(Box)({
   padding: '40px 40px 0'

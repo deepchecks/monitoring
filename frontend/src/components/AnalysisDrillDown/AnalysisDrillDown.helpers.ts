@@ -1,6 +1,6 @@
 import { CheckSchema, MonitorCheckConf, MonitorCheckConfSchema, MonitorCheckConfSchemaCheckConf } from 'api/generated';
-import { CheckType, CheckTypeOptions } from '../types/check';
-import { unionCheckConf } from '../utils/checkUtil';
+import { CheckType, CheckTypeOptions } from '../../helpers/types/check';
+import { unionCheckConf } from '../../helpers/utils/checkUtil';
 
 export const onDrawerOpen = (
   datasetName: string,
