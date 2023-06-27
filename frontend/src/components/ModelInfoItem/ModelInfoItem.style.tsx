@@ -105,8 +105,10 @@ export const StyledDeleteModelButton = styled(IconButton)({
   padding: '4px'
 });
 
-export const StyledDeleteModelButtonText = styled(Typography)({
-  fontSize: '10px',
+export const StyledDeleteModelButtonText = styled(Typography)(({ theme }) => ({
+  fontSize: '12px',
+  fontWeight: 900,
+  color: theme.palette.primary.main,
   lineHeight: '12px',
   letterSpacing: '0.4px'
-});
+}));
