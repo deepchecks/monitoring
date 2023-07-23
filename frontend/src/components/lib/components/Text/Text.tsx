@@ -17,6 +17,7 @@ export type TextTypes =
 export interface TextProps extends Omit<TypographyProps, 'variant'> {
   text: ReactNode;
   type?: TextTypes;
+  component?: React.ElementType<any>;
 }
 
 function getTextType(type: TextTypes | undefined): Variant {
@@ -57,7 +58,15 @@ function getTextType(type: TextTypes | undefined): Variant {
 }
 
 export const Text = (props: TextProps) => {
-  const { text, type, whiteSpace = 'pre-line', overflow = 'hidden', textOverflow = 'ellipsis' } = props;
+  const {
+    text,
+    type,
+    whiteSpace = 'pre-line',
+    overflow = 'hidden',
+    textOverflow = 'ellipsis',
+    component = 'p',
+    ...otherProps
+  } = props;
 
   return (
     <Typography
@@ -65,7 +74,8 @@ export const Text = (props: TextProps) => {
       overflow={overflow}
       whiteSpace={whiteSpace}
       textOverflow={textOverflow}
-      {...props}
+      component={component}
+      {...otherProps}
     >
       {text}
     </Typography>

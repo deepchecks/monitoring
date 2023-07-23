@@ -1,20 +1,21 @@
 import React from 'react';
 
-import { Stack, StackProps } from '@mui/material';
+import { TypographyProps, Typography } from '@mui/material';
 
 import { Text, TextTypes } from '../Text';
 
-interface HighlightedTextProps extends StackProps {
+interface HighlightedTextProps extends TypographyProps {
   beforeHighlightedText?: string;
   highlightedText: string;
   afterHighlightedText?: string;
   type?: TextTypes;
   highlightedTextType?: TextTypes;
-  onHighlightedTextClick?: () => void | Promise<void>;
+  highlightedTextBold?: boolean;
+  onHighlightedTextClick?: (e: React.SyntheticEvent) => void | Promise<void>;
 }
 
 const sharedStyles = {
-  whiteSpace: 'pre'
+  whiteSpace: 'pre-wrap'
 };
 
 export const HighlightedText = ({
@@ -24,18 +25,22 @@ export const HighlightedText = ({
   afterHighlightedText = '',
   type,
   highlightedTextType,
+  highlightedTextBold,
+  color,
   ...otherProps
 }: HighlightedTextProps) => {
   const isOnclick = !!onHighlightedTextClick;
 
   return (
-    <Stack direction="row" {...otherProps}>
-      <Text text={beforeHighlightedText} type={type} sx={sharedStyles} />
+    <Typography {...otherProps}>
+      <Text component="span" text={beforeHighlightedText} type={type} sx={sharedStyles} color={color} />
       <Text
+        component="span"
         text={highlightedText}
         type={highlightedTextType || type}
         onClick={onHighlightedTextClick}
         sx={theme => ({
+          fontWeight: highlightedTextBold ? 700 : 500,
           color: theme.palette.primary.main,
           cursor: isOnclick ? 'pointer' : 'text',
           transition: 'opacity 0.3s',
@@ -50,7 +55,7 @@ export const HighlightedText = ({
           }
         })}
       />
-      <Text text={afterHighlightedText} type={type} sx={sharedStyles} />
-    </Stack>
+      <Text component="span" text={afterHighlightedText} type={type} sx={sharedStyles} color={color} />
+    </Typography>
   );
 };

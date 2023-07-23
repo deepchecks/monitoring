@@ -88,8 +88,8 @@ export const Select = (props: SelectProps) => {
                 borderColor: colorsToUse(isSelected).border
               },
 
-              '&:last-child': { borderRadius: connected ? '0 16px 16px 0' : 'auto' },
-              '&:first-child': { borderRadius: connected ? '16px 0 0 16px' : 'auto' }
+              '&:last-of-type': { borderRadius: connected ? '0 16px 16px 0' : 'auto' },
+              '&:first-of-type': { borderRadius: connected ? '16px 0 0 16px' : 'auto' }
             }}
           >
             {selection.label}

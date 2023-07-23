@@ -33,6 +33,7 @@ export const paletteOptions: PaletteOptions = {
     main: '#B2BCC4' // Grey[300]
   },
   grey: {
+    50: '#F6F6F6',
     100: '#EDEDED',
     200: '#D8DDE1',
     300: '#B2BCC4',

@@ -3,8 +3,6 @@ import React from 'react';
 import { Prism } from 'react-syntax-highlighter';
 import { materialDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
-import { isLargeDesktop } from '../../../theme/typography';
-
 export interface CodeSnippetProps {
   code: string;
   maxWidth?: string;
@@ -24,7 +22,7 @@ export const CodeSnippet = ({ code, maxWidth = '770px', width = '100%' }: CodeSn
       padding: '24px',
       margin: '24px 0 18px',
       whiteSpace: 'pre-line',
-      fontSize: isLargeDesktop ? '14px' : '12px'
+      fontSize: '14px'
     }}
   >
     {code}

@@ -11,20 +11,20 @@ import { StyledSelect, menuProps, StyledStickyContainer } from './Dropdown.style
 import { highlightText } from './Dropdown.helpers';
 
 interface DropdownProps extends SelectProps {
-  label: string;
+  label?: string;
   data: {
     name: string;
-    amount: string;
+    amount?: string;
   }[];
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
+  value: any;
+  setValue: React.Dispatch<React.SetStateAction<any>>;
   searchField?: boolean;
 }
 
 const NO_RESULTS_STRING = 'No results, try a different combination';
 
 export const Dropdown = (props: DropdownProps) => {
-  const { label, data, value, setValue, searchField, ...otherProps } = props;
+  const { label = '', data, value, setValue, searchField, ...otherProps } = props;
 
   const [open, setOpen] = useState(false);
   const [state, setState] = useState(data);
@@ -107,7 +107,7 @@ export const Dropdown = (props: DropdownProps) => {
                 type="button"
                 sx={{ marginRight: '20px', color: 'white' }}
               />
-              <Text text={amount} type="tiny" sx={{ marginLeft: 'auto', color: 'white' }} />
+              {amount && <Text text={amount} type="tiny" sx={{ marginLeft: 'auto', color: 'white' }} />}
             </MenuItem>
           ))
         ) : (

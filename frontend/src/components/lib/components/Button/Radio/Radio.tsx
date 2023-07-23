@@ -45,7 +45,7 @@ export const Radio = (props: RadioProps) => {
 
   return (
     <FormControl>
-      {formTitle && <Text type="bodyBold" text={formTitle} color={(paletteOptions.primary as any).main} />}
+      {formTitle && <Text type="bodyBold" text={formTitle} color={paletteOptions.grey?.[500]} />}
       <RadioGroup value={state} defaultValue={defaultValue} row={isRow}>
         {options.map((option, i) => (
           <FormControlLabel
