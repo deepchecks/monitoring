@@ -7,9 +7,9 @@ import { DropdownArrowComponent } from './DropdownArrowComponent';
 import {
   StyledButtonContainer,
   // StyledStaticDateTimePicker,
+  // StyledStaticDatePicker
   StyledTextField,
   StyledButton
-  // StyledStaticDatePicker
 } from './DateTimePicker.styles';
 
 import { convertDate } from './DateTimePicker.utils';
