@@ -2,7 +2,7 @@ boto3==1.26.4
 fastapi>=0.87.0
 sqlalchemy[asyncio]==1.4.39
 dynaconf>=3.1.8
-pydantic[dotenv,email]>=1.9.1
+pydantic[dotenv,email]==1.10.9
 pendulum==2.1.2
 fastjsonschema==2.16.2
 asyncpg==0.27.0
@@ -37,3 +37,4 @@ uvicorn==0.21.1
 ddtrace>=1.0,<2
 python-json-logger>=2.0.7
 mixpanel==4.10.0
+typing_extensions==4.7.1
