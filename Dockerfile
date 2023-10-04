@@ -45,8 +45,6 @@ RUN pip install -U pip setuptools
 RUN pip install ray==2.3.1 grpcio==1.54.2
 RUN pip install -r requirements.txt --compile --no-cache-dir
 
-RUN if [[ -z "$IS_DEEPCHECKS_OSS" ]] ; then pip install -q -r addon-requirements.txt --compile --no-cache-dir ; fi
-
 RUN adduser --system --group deepchecks
 
 RUN chown deepchecks.deepchecks /code
@@ -56,6 +54,8 @@ USER deepchecks
 # Add in Django deps and generate Django's static files
 COPY backend backend/
 COPY --from=frontend /code/frontend/build /code/frontend/dist
+
+RUN if [[ -z "$IS_DEEPCHECKS_OSS" ]] ; then pip install -q -r addon-requirements.txt --compile --no-cache-dir ; fi
 
 # Switch to root and install yarn so we can install runtime deps. Node that we
 # still need yarn to run the plugin-server so we do not remove it.
