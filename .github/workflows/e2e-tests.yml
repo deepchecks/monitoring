@@ -84,7 +84,7 @@ jobs:
           registry-type: public
       # Sadly, buildx does not support loading images from file to reuse the image from the previous step
       # https://github.com/docker/buildx/issues/847
-      - name: Build and push
+      - name: Build and push - private
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -95,10 +95,24 @@ jobs:
           tags: |
             ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
             ${{ secrets.MON_IMAGE_NAME }}:latest
+          build-args: |
+            DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
+            MIXPANEL_ID=${{ secrets.MIXPANEL_ID }}
+      - name: Build and push - public
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64/v8
+          push: true
+          tags: |
+            ${{ secrets.PUBLIC_IMAGE_NAME }}:${{ github.sha }}
             ${{ secrets.PUBLIC_IMAGE_NAME }}:latest
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
             MIXPANEL_ID=${{ secrets.MIXPANEL_ID }}
+            IS_DEEPCHECKS_OSS="true"
       - name: Logout from Amazon ECR
         if: always()
         run: | 
