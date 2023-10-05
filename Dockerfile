@@ -55,7 +55,7 @@ COPY backend backend/
 COPY --from=frontend /code/frontend/build /code/frontend/dist
 
 ARG IS_DEEPCHECKS_OSS
-RUN if [[ -z "$IS_DEEPCHECKS_OSS" ]] ; then pip install -q -r addon-requirements.txt --compile --no-cache-dir ; fi
+RUN if [ -z "$IS_DEEPCHECKS_OSS" ] ; then pip install -q -r addon-requirements.txt --compile --no-cache-dir ; fi
 
 # Switch to root and install yarn so we can install runtime deps. Node that we
 # still need yarn to run the plugin-server so we do not remove it.
