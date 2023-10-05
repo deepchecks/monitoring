@@ -84,7 +84,7 @@ jobs:
           registry-type: public
       # Sadly, buildx does not support loading images from file to reuse the image from the previous step
       # https://github.com/docker/buildx/issues/847
-      - name: Build and push
+      - name: Build and push - private
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -98,7 +98,7 @@ jobs:
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
             MIXPANEL_ID=${{ secrets.MIXPANEL_ID }}
-      - name: Build and push
+      - name: Build and push - public
         uses: docker/build-push-action@v4
         with:
           context: .
