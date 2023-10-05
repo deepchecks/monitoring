@@ -38,7 +38,6 @@ ARG MIXPANEL_ID
 ENV MIXPANEL_ID=$MIXPANEL_ID
 # ---
 ARG DEEPCHECKS_CI_TOKEN
-ARG IS_DEEPCHECKS_OSS
 
 RUN pip install -U pip setuptools
 # For ARM arch, ray>2.3.1 uses grpcio==1.51.3 which doesn't has wheel and takes forever to build from source
@@ -55,6 +54,7 @@ USER deepchecks
 COPY backend backend/
 COPY --from=frontend /code/frontend/build /code/frontend/dist
 
+ARG IS_DEEPCHECKS_OSS
 RUN if [[ -z "$IS_DEEPCHECKS_OSS" ]] ; then pip install -q -r addon-requirements.txt --compile --no-cache-dir ; fi
 
 # Switch to root and install yarn so we can install runtime deps. Node that we
