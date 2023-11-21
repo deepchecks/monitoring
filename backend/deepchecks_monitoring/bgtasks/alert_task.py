@@ -57,7 +57,7 @@ class AlertsTask(BackgroundWorker):
 
         self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
                           'task': task.id, 'monitor_id': monitor_id, 'org_id': organization_id})
-    
+
         organization_schema = (await session.execute(
             select(Organization.schema_name).where(Organization.id == organization_id)
         )).scalar_one_or_none()

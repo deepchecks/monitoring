@@ -20,10 +20,10 @@ from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import database, mixpanel
 
-__all__ = ["MixpanelSystemStateEvent"]
+__all__ = ['MixpanelSystemStateEvent']
 
 
-QUEUE_NAME = "mixpanel system state event"
+QUEUE_NAME = 'mixpanel system state event'
 DELAY = 0
 
 
@@ -51,13 +51,13 @@ class MixpanelSystemStateEvent(BackgroundWorker):
 
     async def run(
         self,
-        task: "Task",
+        task: 'Task',
         session: AsyncSession,
         resources_provider: ResourcesProvider,
         lock: Lock
     ):
         """Run task."""
-        
+
         if not resources_provider.is_analytics_enabled:
             return
         if not resources_provider.settings.is_on_prem or resources_provider.settings.is_cloud:
@@ -70,7 +70,7 @@ class MixpanelSystemStateEvent(BackgroundWorker):
         for org in organizations:
             async with database.attach_schema_switcher(
                 session=session,
-                schema_search_path=[org.schema_name, "public"]
+                schema_search_path=[org.schema_name, 'public']
             ):
                 await resources_provider.report_mixpanel_event(
                     mixpanel.HealthcheckEvent.create_event,
@@ -83,9 +83,9 @@ class MixpanelSystemStateEvent(BackgroundWorker):
     async def enqueue_task(cls, session: AsyncSession):
         """Enqueue task."""
         values = {
-            "name": "system-state",
-            "bg_worker_task": cls.queue_name(),
-            "params": {}
+            'name': 'system-state',
+            'bg_worker_task': cls.queue_name(),
+            'params': {}
         }
         await session.execute(
             pginsert(Task)

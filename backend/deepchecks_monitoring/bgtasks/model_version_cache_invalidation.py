@@ -47,7 +47,7 @@ class ModelVersionCacheInvalidation(BackgroundWorker):
 
         self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
                           'task': task.id, 'model version': model_version_id, 'org_id': org_id})
-    
+
         redis = resources_provider.redis_client
         invalidation_set_key = get_invalidation_set_key(org_id, model_version_id)
 

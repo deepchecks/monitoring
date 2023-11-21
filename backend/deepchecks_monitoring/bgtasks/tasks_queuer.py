@@ -121,10 +121,10 @@ class TasksQueuer:
                 # Push to sorted set. if task id is already in set then do nothing.
                 pushed_count = await self.redis.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
                 for task in tasks:
-                    id = task['id']
+                    task_id = task['id']
                     worker = task['bg_worker_task']
                     num_pushed = task['num_pushed']
-                    self.logger.info(f'pushing task {id} for {worker} that was pushed {num_pushed}')
+                    self.logger.info(f'pushing task {task_id} for {worker} that was pushed {num_pushed}')
                 return  pushed_count
             except redis_exceptions.ConnectionError:
                 # If redis failed, does not commit the update to the db
