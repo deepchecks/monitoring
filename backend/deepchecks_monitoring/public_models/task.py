@@ -18,8 +18,8 @@ from redis.asyncio.lock import Lock
 from sqlalchemy import Integer, func
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.deepchecks_monitoring.monitoring_utils import configure_logger
 
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import Base
 
 __all__ = ['Task', 'UNIQUE_NAME_TASK_CONSTRAINT', 'BackgroundWorker']
