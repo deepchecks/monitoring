@@ -60,8 +60,11 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         entity_id = task.params.get('id') or task.params['model_version_id']
         entity = task.params.get('entity', 'model-version')
         #####
-
         org_id = task.params['organization_id']
+
+        self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
+                          'task': entity_id, 'model version': entity, 'org_id': org_id})
+
         topic_names = [get_data_topic_name(org_id, entity_id, entity)]
         reinsert_task = False
 
@@ -105,6 +108,8 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         if reinsert_task:
             await insert_model_version_topic_delete_task(org_id, entity_id, entity, session)
 
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
+                          'task': entity_id, 'model version': entity, 'org_id': org_id})
 
 async def insert_model_version_topic_delete_task(organization_id, entity_id, entity, session):
     """Insert task to check delete kafka topics.

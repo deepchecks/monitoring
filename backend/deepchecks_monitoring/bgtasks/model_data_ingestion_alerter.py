@@ -53,6 +53,9 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         end_time = task.params["end_time"]
         start_time = task.params["start_time"]
 
+        self.logger.info({'message': 'entered job', 'worker name': str(type(self)),
+                          'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})
+
         organization_schema = (await session.execute(
             sa.select(Organization.schema_name).where(
                 Organization.id == org_id)
@@ -102,6 +105,9 @@ class ModelDataIngestionAlerter(BackgroundWorker):
             session) for version in model.versions]
         if not tables:
             return
+
+        self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
+                          'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})
 
         labels_table = model.get_sample_labels_table(session)
         # Get all samples within time window from all the versions
@@ -156,3 +162,6 @@ class ModelDataIngestionAlerter(BackgroundWorker):
 
         await session.execute(sa.delete(Task).where(Task.id == task.id))
         await session.commit()
+
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
+                          'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})

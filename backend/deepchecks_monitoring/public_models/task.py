@@ -10,6 +10,7 @@
 """Task entity model."""
 import abc
 import typing as t
+from typing import TYPE_CHECKING
 from datetime import datetime
 
 import sqlalchemy as sa
@@ -17,6 +18,7 @@ from redis.asyncio.lock import Lock
 from sqlalchemy import Integer, func
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
+from backend.deepchecks_monitoring.monitoring_utils import configure_logger
 
 from deepchecks_monitoring.public_models import Base
 
@@ -25,10 +27,21 @@ __all__ = ['Task', 'UNIQUE_NAME_TASK_CONSTRAINT', 'BackgroundWorker']
 
 UNIQUE_NAME_TASK_CONSTRAINT = 'task_unique_constraint'
 
+if TYPE_CHECKING:
+    from backend.deepchecks_monitoring.bgtasks.tasks_runner import WorkerSettings
 
 class BackgroundWorker(abc.ABC):
     """Base class for background workers."""
 
+    def __init__(self, settings: 'WorkerSettings'):
+        super().__init__()
+        self.logger = configure_logger(
+            name='worker',
+            log_level=settings.loglevel,
+            logfile=settings.logfile,
+            logfile_backup_count=settings.logfile_backup_count,
+        )
+    
     @classmethod
     @abc.abstractmethod
     def queue_name(cls) -> str:

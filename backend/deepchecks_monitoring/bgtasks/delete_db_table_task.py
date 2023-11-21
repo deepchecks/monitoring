@@ -36,10 +36,12 @@ class DeleteDbTableTask(BackgroundWorker):
         return 0
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider, lock):
+        self.logger.info({'message': 'started job', 'worker name': str(type(self))})
         for table in task.params['full_table_paths']:
             await session.execute(text(f'DROP TABLE IF EXISTS {table}'))
         # Deleting the task
         await session.execute(delete(Task).where(Task.id == task.id))
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self))})
 
 
 async def insert_delete_db_table_task(session: AsyncSession, full_table_paths: t.List[str]):

@@ -52,11 +52,12 @@ class MixpanelSystemStateEvent(BackgroundWorker):
         lock: Lock
     ):
         """Run task."""
+        
         if not resources_provider.is_analytics_enabled:
             return
         if not resources_provider.settings.is_on_prem or resources_provider.settings.is_cloud:
             return
-
+        self.logger.info({'message': 'started job', 'worker name': str(type(self))})
         organizations = (await session.scalars(
             sa.select(Organization))
         ).all()
@@ -70,6 +71,8 @@ class MixpanelSystemStateEvent(BackgroundWorker):
                     mixpanel.HealthcheckEvent.create_event,
                     organization=org
                 )
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self))})
+
 
     @classmethod
     async def enqueue_task(cls, session: AsyncSession):

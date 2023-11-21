@@ -105,10 +105,10 @@ class TaskRunner:
             self.logger.info(f'Failed to acquire lock for task id: {task_id}')
             return
 
-        task = await session.scalar(select(Task).where(Task.id == task_id))
+        task: Task = await session.scalar(select(Task).where(Task.id == task_id))
         # Making sure task wasn't deleted for some reason
         if task is not None:
-            self.logger.info(f'Running task id: {task_id}')
+            self.logger.info(f'Running task id: {task_id} for {task.bg_worker_task}')
             await self._run_task(task, session, queued_timestamp, lock)
         else:
             self.logger.info(f'Got already removed task id: {task_id}')
@@ -141,7 +141,7 @@ class BaseWorkerSettings():
     """Worker settings."""
 
     logfile: t.Optional[str] = None
-    loglevel: str = 'INFO'
+    loglevel: str = 'DEBUG'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
     num_workers: int = 10
@@ -207,11 +207,11 @@ def execute_worker():
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
 
             workers = [
-                ModelVersionCacheInvalidation(),
-                ModelDataIngestionAlerter(),
-                DeleteDbTableTask(),
-                AlertsTask(),
-                MixpanelSystemStateEvent()
+                ModelVersionCacheInvalidation(settings),
+                ModelDataIngestionAlerter(settings),
+                DeleteDbTableTask(settings),
+                AlertsTask(settings),
+                MixpanelSystemStateEvent(settings)
             ]
 
             # Adding kafka related workers
