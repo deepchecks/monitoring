@@ -10,7 +10,6 @@
 """Task entity model."""
 import abc
 import typing as t
-from typing import TYPE_CHECKING
 from datetime import datetime
 
 import sqlalchemy as sa
