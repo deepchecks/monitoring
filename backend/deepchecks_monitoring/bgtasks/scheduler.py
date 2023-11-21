@@ -248,7 +248,7 @@ class AlertsScheduler:
                                       params=dict(model_id=model.id, organization_id=organization.id)))
             if len(tasks) > 0:
                 await session.execute(insert(Task).values(tasks)
-                                    .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+                                      .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
                 await session.commit()
 
 
