@@ -80,11 +80,12 @@ class TaskRunner:
             raise
 
     async def wait_for_task(self, timeout=120):
+        self.logger.info('Checking for tasks')
         task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
 
         # If timeout is not 0 we might get return value of None
         if task_entry is None:
-            self.logger.debug('Got from redis queue task_id none')
+            self.logger.info('Got from redis queue task_id none')
             return
         else:
             # Return value from redis is (redis key, value, score)
@@ -101,16 +102,16 @@ class TaskRunner:
         lock = self.redis.lock(lock_name, blocking=False, timeout=60 * 5)
         lock_acquired = await lock.acquire()
         if not lock_acquired:
-            self.logger.debug(f'Failed to acquire lock for task id: {task_id}')
+            self.logger.info(f'Failed to acquire lock for task id: {task_id}')
             return
 
         task = await session.scalar(select(Task).where(Task.id == task_id))
         # Making sure task wasn't deleted for some reason
         if task is not None:
-            self.logger.debug(f'Running task id: {task_id}')
+            self.logger.info(f'Running task id: {task_id}')
             await self._run_task(task, session, queued_timestamp, lock)
         else:
-            self.logger.debug(f'Got already removed task id: {task_id}')
+            self.logger.info(f'Got already removed task id: {task_id}')
 
         try:
             await lock.release()
@@ -130,7 +131,7 @@ class TaskRunner:
                 delay = start.int_timestamp - queued_timestamp
                 self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})
             else:
-                self.logger.error({'message': f'Unknown task type: {task.bg_worker_task}'})
+                self.logger.info({'message': f'Unknown task type: {task.bg_worker_task}'})
         except Exception:  # pylint: disable=broad-except
             await session.rollback()
             self.logger.exception({'message': 'Exception running task', 'task': task.bg_worker_task})
