@@ -83,6 +83,7 @@ class ModelVersionCacheInvalidation(BackgroundWorker):
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': task.id, 'model version': model_version_id, 'org_id': org_id})
 
+
 async def insert_model_version_cache_invalidation_task(organization_id, model_version_id, session):
     """Insert task to remove cache monitors entries which were invalidated.
 

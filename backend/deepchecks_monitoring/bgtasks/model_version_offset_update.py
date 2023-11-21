@@ -62,7 +62,7 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
         #####
         org_id = task.params['organization_id']
         self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
-                    'task': entity_id, 'model version': entity, 'org_id': org_id})
+                          'task': entity_id, 'model version': entity, 'org_id': org_id})
         succeeded = await _read_offset_from_kafka(org_id, entity_id, entity, session, self.consumer)
         # Deleting the task
         await session.execute(delete(Task).where(Task.id == task.id))
@@ -70,7 +70,7 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
         if not succeeded:
             await insert_model_version_offset_update_task(org_id, entity_id, entity, session)
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
-                    'task': entity_id, 'model version': entity, 'org_id': org_id})
+                          'task': entity_id, 'model version': entity, 'org_id': org_id})
 
 async def _read_offset_from_kafka(org_id, entity_id, entity, session, consumer):
     """Read offset from kafka, return True if succeeded."""

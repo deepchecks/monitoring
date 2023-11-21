@@ -112,6 +112,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': entity_id, 'model version': entity, 'org_id': org_id})
 
+
 async def insert_model_version_topic_delete_task(organization_id, entity_id, entity, session):
     """Insert task to check delete kafka topics.
 

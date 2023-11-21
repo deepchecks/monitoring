@@ -125,7 +125,7 @@ class TasksQueuer:
                     worker = task['bg_worker_task']
                     num_pushed = task['num_pushed']
                     self.logger.info(f'pushing task {task_id} for {worker} that was pushed {num_pushed}')
-                return  pushed_count
+                return pushed_count
             except redis_exceptions.ConnectionError:
                 # If redis failed, does not commit the update to the db
                 await session.rollback()

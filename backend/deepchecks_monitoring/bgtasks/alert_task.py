@@ -102,6 +102,7 @@ class AlertsTask(BackgroundWorker):
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': task.id, 'monitor_id': monitor_id, 'org_id': organization_id})
 
+
 async def execute_monitor(
         monitor_id: int,
         timestamp: str,
