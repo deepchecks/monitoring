@@ -51,7 +51,7 @@ class TasksQueuer:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
-            redis_client,
+            redis_client: RedisCluster | Redis,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
             run_interval: int,
@@ -74,7 +74,7 @@ class TasksQueuer:
                 Task.bg_worker_task == bg_worker.queue_name(),
                 datetime.timedelta(seconds=bg_worker.retry_seconds())
             ) for bg_worker in workers],
-            else_=datetime.timedelta(seconds=600)
+            else_=datetime.timedelta(seconds=200)
         )
 
         retry_expression = Task.num_pushed * retry_by_type

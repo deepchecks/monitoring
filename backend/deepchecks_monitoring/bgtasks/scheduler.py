@@ -246,10 +246,10 @@ class AlertsScheduler:
                     tasks.append(dict(name=f'{organization.id}:{model.id}',
                                       bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
                                       params=dict(model_id=model.id, organization_id=organization.id)))
-
-            await session.execute(insert(Task).values(tasks)
-                                  .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
-            await session.commit()
+            if len(tasks) > 0:
+                await session.execute(insert(Task).values(tasks)
+                                      .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+                await session.commit()
 
 
 async def get_versions_hour_windows(
