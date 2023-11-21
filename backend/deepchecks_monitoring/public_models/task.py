@@ -30,7 +30,6 @@ UNIQUE_NAME_TASK_CONSTRAINT = 'task_unique_constraint'
 class BackgroundWorker(abc.ABC):
     """Base class for background workers."""
 
-
     @classmethod
     @abc.abstractmethod
     def queue_name(cls) -> str:
