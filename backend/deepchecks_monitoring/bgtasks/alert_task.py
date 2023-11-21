@@ -38,6 +38,10 @@ __all__ = ["AlertsTask"]
 class AlertsTask(BackgroundWorker):
     """Worker to calculate alerts"""
 
+    def __init__(self):
+        super().__init__()
+        self._logger = logging.getLogger(__name__)
+
     @classmethod
     def queue_name(cls) -> str:
         return "alerts"
@@ -83,7 +87,7 @@ class AlertsTask(BackgroundWorker):
                 organization_id=organization_id,
                 session=session,
                 resources_provider=resources_provider,
-                logger=self.logger.getChild("alert-notificator")
+                logger=self._logger.getChild("alert-notificator")
             )
             await resources_provider.report_mixpanel_event(
                 AlertTriggeredEvent.create_event,
