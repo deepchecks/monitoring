@@ -144,7 +144,7 @@ class BaseWorkerSettings():
     loglevel: str = 'DEBUG'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
-    num_workers: int = 10
+    num_workers: int = 5
 
     class Config:
         """Model config."""
