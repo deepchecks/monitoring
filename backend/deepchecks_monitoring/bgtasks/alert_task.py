@@ -38,10 +38,6 @@ __all__ = ["AlertsTask"]
 class AlertsTask(BackgroundWorker):
     """Worker to calculate alerts"""
 
-    def __init__(self):
-        super().__init__()
-        self._logger = logging.getLogger(__name__)
-
     @classmethod
     def queue_name(cls) -> str:
         return "alerts"

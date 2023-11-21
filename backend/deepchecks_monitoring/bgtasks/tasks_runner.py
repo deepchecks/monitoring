@@ -228,7 +228,7 @@ def execute_worker():
 
             # Adding ee workers
             if with_ee:
-                workers.append(ee.bgtasks.ObjectStorageIngestor(rp))
+                workers.append(ee.bgtasks.ObjectStorageIngestor(rp, settings))
 
             async with anyio.create_task_group() as g:
                 worker = tasks_runner.TaskRunner(rp, async_redis, workers, logger)
