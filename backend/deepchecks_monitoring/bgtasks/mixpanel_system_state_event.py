@@ -14,6 +14,7 @@ from redis.asyncio.lock import Lock
 from sqlalchemy.dialects.postgresql import insert as pginsert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -28,6 +29,10 @@ DELAY = 0
 
 class MixpanelSystemStateEvent(BackgroundWorker):
     """Worker that sends a system state event to the mixpanel."""
+
+    def __init__(self):
+        super().__init__()
+        self.logger = configure_logger(self.__class__.__name__)
 
     @classmethod
     def queue_name(cls) -> str:

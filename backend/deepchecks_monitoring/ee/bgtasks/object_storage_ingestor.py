@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 import io
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import boto3
@@ -35,14 +34,12 @@ from deepchecks_monitoring.utils import database
 
 __all__ = ['ObjectStorageIngestor']
 
-if TYPE_CHECKING:
-    from backend.deepchecks_monitoring.bgtasks.tasks_runner import WorkerSettings
 
 class ObjectStorageIngestor(BackgroundWorker):
     """Worker to ingest files from s3"""
 
-    def __init__(self, resources_provider: ResourcesProvider, settings: 'WorkerSettings'):
-        super().__init__(settings)
+    def __init__(self, resources_provider: ResourcesProvider):
+        super().__init__()
         self.ingestion_backend = DataIngestionBackend(resources_provider)
         self.logger = configure_logger(self.__class__.__name__)
 

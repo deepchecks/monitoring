@@ -15,6 +15,7 @@ from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.logic.keys import build_monitor_cache_key, get_invalidation_set_key
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 
@@ -24,6 +25,10 @@ DELAY = 60
 
 class ModelVersionCacheInvalidation(BackgroundWorker):
     """Worker to remove monitor cache entries which data has been updated."""
+
+    def __init__(self):
+        super().__init__()
+        self.logger = configure_logger(self.__class__.__name__)
 
     @classmethod
     def queue_name(cls) -> str:

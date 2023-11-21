@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.keys import get_data_topic_name
-from deepchecks_monitoring.monitoring_utils import TimeUnit
+from deepchecks_monitoring.monitoring_utils import configure_logger, TimeUnit
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -44,6 +44,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
     def __init__(self, kafka_admin: ExtendedAIOKafkaAdminClient):
         super().__init__()
         self.kafka_admin = kafka_admin
+        self.logger = configure_logger(self.__class__.__name__)
 
     @classmethod
     def queue_name(cls) -> str:

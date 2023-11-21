@@ -207,11 +207,11 @@ def execute_worker():
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
 
             workers = [
-                ModelVersionCacheInvalidation(settings),
-                ModelDataIngestionAlerter(settings),
-                DeleteDbTableTask(settings),
-                AlertsTask(settings),
-                MixpanelSystemStateEvent(settings)
+                ModelVersionCacheInvalidation(),
+                ModelDataIngestionAlerter(),
+                DeleteDbTableTask(),
+                AlertsTask(),
+                MixpanelSystemStateEvent()
             ]
 
             # Adding kafka related workers
@@ -228,7 +228,7 @@ def execute_worker():
 
             # Adding ee workers
             if with_ee:
-                workers.append(ee.bgtasks.ObjectStorageIngestor(rp, settings))
+                workers.append(ee.bgtasks.ObjectStorageIngestor(rp))
 
             async with anyio.create_task_group() as g:
                 worker = tasks_runner.TaskRunner(rp, async_redis, workers, logger)
