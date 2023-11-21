@@ -50,7 +50,7 @@ class TaskRunner:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
-            redis,
+            redis: RedisCluster | Redis,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
     ):
@@ -79,7 +79,7 @@ class TaskRunner:
             self.logger.warning('Worker interrupted')
             raise
 
-    async def wait_for_task(self, timeout=0):
+    async def wait_for_task(self, timeout=120):
         task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
 
         # If timeout is not 0 we might get return value of None
@@ -107,6 +107,7 @@ class TaskRunner:
         task = await session.scalar(select(Task).where(Task.id == task_id))
         # Making sure task wasn't deleted for some reason
         if task is not None:
+            self.logger.debug(f'Running task id: {task_id}')
             await self._run_task(task, session, queued_timestamp, lock)
         else:
             self.logger.debug(f'Got already removed task id: {task_id}')
@@ -132,7 +133,7 @@ class TaskRunner:
                 self.logger.error({'message': f'Unknown task type: {task.bg_worker_task}'})
         except Exception:  # pylint: disable=broad-except
             await session.rollback()
-            self.logger.exception({'message': 'Exception running task'})
+            self.logger.exception({'message': 'Exception running task', 'task': task.bg_worker_task})
 
 
 class BaseWorkerSettings():
