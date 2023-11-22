@@ -57,6 +57,9 @@ class ObjectStorageIngestor(BackgroundWorker):
         organization_id = task.params['organization_id']
         model_id = task.params['model_id']
 
+        self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
+                          'task': task.id, 'model_id': model_id, 'org_id': organization_id})
+
         organization_schema = (await session.scalar(
             select(Organization.schema_name)
             .where(Organization.id == organization_id)
@@ -168,6 +171,9 @@ class ObjectStorageIngestor(BackgroundWorker):
         finally:
             await self._finalize_before_exit(session, errors)
             s3.close()
+
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
+                          'task': task.id, 'model_id': model_id, 'org_id': organization_id})
 
     def ingest_prefix(self, s3, bucket, prefix, last_file_time, errors, model_id, version_id=None):
         """Ingest all files in prefix, return df and file time"""

@@ -16,6 +16,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.keys import get_data_topic_name
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 from deepchecks_monitoring.schema_models import Model, ModelVersion
@@ -42,6 +43,7 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
     def __init__(self, consumer: aiokafka.AIOKafkaConsumer):
         super().__init__()
         self.consumer = consumer
+        self.logger = configure_logger(self.__class__.__name__)
 
     @classmethod
     def queue_name(cls) -> str:
@@ -59,12 +61,16 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
         entity = task.params.get('entity', 'model-version')
         #####
         org_id = task.params['organization_id']
+        self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
+                          'task': entity_id, 'model version': entity, 'org_id': org_id})
         succeeded = await _read_offset_from_kafka(org_id, entity_id, entity, session, self.consumer)
         # Deleting the task
         await session.execute(delete(Task).where(Task.id == task.id))
         # If failed to read offset, scheduling task to run again
         if not succeeded:
             await insert_model_version_offset_update_task(org_id, entity_id, entity, session)
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
+                          'task': entity_id, 'model version': entity, 'org_id': org_id})
 
 
 async def _read_offset_from_kafka(org_id, entity_id, entity, session, consumer):

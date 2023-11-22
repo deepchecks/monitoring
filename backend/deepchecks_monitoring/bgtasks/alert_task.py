@@ -21,7 +21,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
-from deepchecks_monitoring.monitoring_utils import DataFilterList, make_oparator_func
+from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -32,7 +32,7 @@ from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_p
 from deepchecks_monitoring.utils import database
 from deepchecks_monitoring.utils.mixpanel import AlertTriggeredEvent
 
-__all__ = ["AlertsTask"]
+__all__ = ['AlertsTask']
 
 
 class AlertsTask(BackgroundWorker):
@@ -40,20 +40,23 @@ class AlertsTask(BackgroundWorker):
 
     def __init__(self):
         super().__init__()
-        self._logger = logging.getLogger(__name__)
+        self.logger = configure_logger(self.__class__.__name__)
 
     @classmethod
     def queue_name(cls) -> str:
-        return "alerts"
+        return 'alerts'
 
     @classmethod
     def delay_seconds(cls) -> int:
         return 0
 
     async def run(self, task: Task, session: AsyncSession, resources_provider: ResourcesProvider, lock):
-        organization_id = task.params["organization_id"]
-        monitor_id = task.params["monitor_id"]
-        timestamp = task.params["timestamp"]
+        organization_id = task.params['organization_id']
+        monitor_id = task.params['monitor_id']
+        timestamp = task.params['timestamp']
+
+        self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
+                          'task': task.id, 'monitor_id': monitor_id, 'org_id': organization_id})
 
         organization_schema = (await session.execute(
             select(Organization.schema_name).where(Organization.id == organization_id)
@@ -63,14 +66,14 @@ class AlertsTask(BackgroundWorker):
         if organization_schema is not None:
             await database.attach_schema_switcher_listener(
                 session=session,
-                schema_search_path=[organization_schema, "public"]
+                schema_search_path=[organization_schema, 'public']
             )
             alerts = await execute_monitor(
                 session=session,
                 resources_provider=resources_provider,
                 monitor_id=monitor_id,
                 timestamp=timestamp,
-                logger=self._logger,
+                logger=self.logger,
                 organization_id=organization_id,
             )
         else:
@@ -87,7 +90,7 @@ class AlertsTask(BackgroundWorker):
                 organization_id=organization_id,
                 session=session,
                 resources_provider=resources_provider,
-                logger=self._logger.getChild("alert-notificator")
+                logger=self.logger.getChild('alert-notificator')
             )
             await resources_provider.report_mixpanel_event(
                 AlertTriggeredEvent.create_event,
@@ -95,6 +98,9 @@ class AlertsTask(BackgroundWorker):
                 organization=await session.get(Organization, organization_id)
             )
             await notificator.notify()
+
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
+                          'task': task.id, 'monitor_id': monitor_id, 'org_id': organization_id})
 
 
 async def execute_monitor(
@@ -106,8 +112,8 @@ async def execute_monitor(
         logger: t.Optional[logging.Logger] = None,
 ) -> t.List[Alert]:
     """Execute monitor alert rules."""
-    logger = logger or logging.getLogger("monitor-executor")
-    logger.info("Execution of Monitor(id:%s) for timestamp %s", monitor_id, timestamp)
+    logger = logger or logging.getLogger('monitor-executor')
+    logger.info('Execution of Monitor(id:%s) for timestamp %s', monitor_id, timestamp)
 
     monitor = t.cast(Monitor, await session.scalar(
         sa.select(Monitor)
@@ -119,13 +125,13 @@ async def execute_monitor(
     ))
 
     if monitor is None:
-        raise ValueError(f"Did not find monitor with the id {monitor_id}")
+        raise ValueError(f'Did not find monitor with the id {monitor_id}')
 
     check = monitor.check
     alert_rules = monitor.alert_rules
 
     if len(alert_rules) == 0:
-        logger.info("Monitor(id:%s) does not have alert rules", monitor_id)
+        logger.info('Monitor(id:%s) does not have alert rules', monitor_id)
         return []
 
     monitor_frequency = t.cast(Frequency, monitor.frequency).to_pendulum_duration()
@@ -141,7 +147,7 @@ async def execute_monitor(
     )).all())
 
     if not model_versions:
-        logger.info("Model(id:%s) is empty (does not have versions)", check.model_id)
+        logger.info('Model(id:%s) is empty (does not have versions)', check.model_id)
         return []
 
     # First looking for results in cache if already calculated
@@ -154,7 +160,7 @@ async def execute_monitor(
             cache_results[model_version] = cache_result.value
         else:
             model_versions_without_cache.append(model_version)
-        logger.debug("Cache result: %s", cache_results)
+        logger.debug('Cache result: %s', cache_results)
 
     # For model versions without result in cache running calculation
     if model_versions_without_cache:
@@ -178,7 +184,7 @@ async def execute_monitor(
             resources_provider.cache_functions.set_monitor_cache(
                 organization_id, version.id, monitor_id, start_time, end_time, result)
 
-        logger.debug("Check execution result: %s", result_per_version)
+        logger.debug('Check execution result: %s', result_per_version)
     else:
         result_per_version = {}
 
@@ -192,20 +198,20 @@ async def execute_monitor(
             await session.execute(update(AlertRule).where(AlertRule.id == alert_rule.id)
                                   .values({AlertRule.start_time: func.least(AlertRule.start_time, end_time)}))
         if not alert_rule.is_active:
-            logger.info("AlertRule(id:%s) is not active, skipping it", alert_rule.id)
+            logger.info('AlertRule(id:%s) is not active, skipping it', alert_rule.id)
         elif alert := assert_check_results(alert_rule, check_results):
             alert.start_time = start_time
             alert.end_time = end_time
             AlertCreationSchema.validate(alert)
             session.add(alert)
-            logger.info("Alert(id:%s) instance created for monitor(id:%s)", alert.id, monitor.id)
+            logger.info('Alert(id:%s) instance created for monitor(id:%s)', alert.id, monitor.id)
             alerts.append(alert)
 
     if (n_of_alerts := len(alerts)) > 0:
-        logger.info("%s alerts raised for Monitor(id:%s)", n_of_alerts, monitor.id)
+        logger.info('%s alerts raised for Monitor(id:%s)', n_of_alerts, monitor.id)
         return alerts
 
-    logger.info("No alerts were raised for Monitor(id:%s)", monitor.id)
+    logger.info('No alerts were raised for Monitor(id:%s)', monitor.id)
     return []
 
 
