@@ -72,6 +72,7 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': entity_id, 'model version': entity, 'org_id': org_id})
 
+
 async def _read_offset_from_kafka(org_id, entity_id, entity, session, consumer):
     """Read offset from kafka, return True if succeeded."""
     organization_schema = (await session.execute(

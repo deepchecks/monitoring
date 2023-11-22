@@ -78,7 +78,6 @@ class MixpanelSystemStateEvent(BackgroundWorker):
                 )
         self.logger.info({'message': 'finished job', 'worker name': str(type(self))})
 
-
     @classmethod
     async def enqueue_task(cls, session: AsyncSession):
         """Enqueue task."""
