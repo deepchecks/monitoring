@@ -15,8 +15,8 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.logic.keys import get_data_topic_name
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 from deepchecks_monitoring.schema_models import Model, ModelVersion

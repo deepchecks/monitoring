@@ -15,8 +15,8 @@ from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.logic.keys import build_monitor_cache_key, get_invalidation_set_key
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 
 QUEUE_NAME = 'monitor cache invalidation'

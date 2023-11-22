@@ -13,7 +13,7 @@ import asyncio
 
 import dotenv
 from redis.asyncio import Redis, RedisCluster
-from redis.exceptions import RedisClusterException, LockNotOwnedError
+from redis.exceptions import LockNotOwnedError, RedisClusterException
 from sqlalchemy import create_engine, select
 
 from deepchecks_monitoring.ee.bgtasks import ObjectStorageIngestor
