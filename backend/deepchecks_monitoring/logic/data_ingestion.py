@@ -44,6 +44,9 @@ from deepchecks_monitoring.utils.other import datetime_sample_formatter
 __all__ = ["DataIngestionBackend", "log_data", "log_labels", "save_failures"]
 
 
+QUERY_PARAM_LIMIT = 32765
+
+
 async def log_data(
         model_version: ModelVersion,
         data: t.List[t.Dict[t.Any, t.Any]],
@@ -113,17 +116,21 @@ async def log_data(
         # Starting by adding to the version map
         versions_map = model.get_samples_versions_map_table(session)
         ids_to_log = [{SAMPLE_ID_COL: sample_id, "version_id": model_version.id} for sample_id in valid_data]
-        statement = (postgresql.insert(versions_map).values(ids_to_log)
-                     .on_conflict_do_nothing(index_elements=versions_map.primary_key.columns)
-                     .returning(versions_map.c[SAMPLE_ID_COL]))
-        ids_not_existing = set((await session.execute(statement)).scalars())
+        ids_not_existing = set()
+        max_messages_per_insert = QUERY_PARAM_LIMIT // 5
+        for start_index in range(0, len(ids_to_log), max_messages_per_insert):
+            statement = (postgresql.insert(versions_map)
+                         .values(ids_to_log[start_index:start_index + max_messages_per_insert])
+                         .on_conflict_do_nothing(index_elements=versions_map.primary_key.columns)
+                         .returning(versions_map.c[SAMPLE_ID_COL]))
+            ids_not_existing.update((await session.execute(statement)).scalars())
         # Filter from the data ids which weren't logged to the versions table
         data_list = [sample for id, sample in valid_data.items() if id in ids_not_existing]
         if data_list:
             # Postgres driver has a limit of 32767 query params, which for 1000 messages, limits us to 32 columns. In
             # order to solve that we can either pre-compile the statement with bind literals, or separate to batches
             num_columns = len(data_list[0])
-            max_messages_per_insert = 32767 // num_columns
+            max_messages_per_insert = QUERY_PARAM_LIMIT // num_columns
             monitor_table = model_version.get_monitor_table(session)
             for start_index in range(0, len(data_list), max_messages_per_insert):
                 batch = data_list[start_index:start_index + max_messages_per_insert]
