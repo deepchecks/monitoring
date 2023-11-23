@@ -147,22 +147,22 @@ class ObjectStorageIngestor(BackgroundWorker):
                 for prefix in version_prefixes:
                     for df, time in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time,
                                                        errors, version.model_id, version.id):
+                        # For each file, set lock expiry to 240 seconds from now
+                        await lock.extend(240, replace_ttl=True)
                         await self.ingestion_backend.log_samples(version, df, session, organization_id, new_scan_time)
                         version.latest_file_time = max(version.latest_file_time or
                                                        pdl.datetime(year=1970, month=1, day=1), time)
-                        # For each file, set lock expiry to 120 seconds from now
-                        await lock.extend(120, replace_ttl=True)
 
             # Ingest labels
             for prefix in model_prefixes:
                 labels_path = f'{model_path}/labels/{prefix}'
                 for df, time in self.ingest_prefix(s3, bucket, labels_path, model.latest_labels_file_time,
                                                    errors, model_id):
+                    # For each file, set lock expiry to 240 seconds from now
+                    await lock.extend(240, replace_ttl=True)
                     await self.ingestion_backend.log_labels(model, df, session, organization_id)
                     model.latest_labels_file_time = max(model.latest_labels_file_time
-                                                        or pdl.datetime(year=1970, month=1, day=1), time)
-                    # For each file, set lock expiry to 120 seconds from now
-                    await lock.extend(120, replace_ttl=True)
+                                                        or pdl.datetime(year=1970, month=1, day=1), time)        
 
             model.obj_store_last_scan_time = new_scan_time
         except Exception:  # pylint: disable=broad-except
