@@ -211,12 +211,15 @@ async def log_labels(
                 "model_id": model.id,
             })
         else:
-            error = None
             # If got same index more than once, log it as error
             if sample[SAMPLE_ID_COL] in logged_ids:
-                error = f"Got duplicate sample id: {sample[SAMPLE_ID_COL]}"
-
-            if not error:
+                errors.append({
+                    "sample": str(sample),
+                    "sample_id": sample.get(SAMPLE_ID_COL),
+                    "error": f"Got duplicate label for sample id: {sample[SAMPLE_ID_COL]}",
+                    "model_id": model.id,
+                })
+            else:
                 unbatched_valid_data[sample[SAMPLE_ID_COL]] = sample
                 logged_ids.add(sample[SAMPLE_ID_COL])
 
