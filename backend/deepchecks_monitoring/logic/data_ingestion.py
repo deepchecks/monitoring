@@ -237,8 +237,8 @@ async def log_labels(
         # the timestamps to invalidate the monitors cache
         versions_table = model.get_samples_versions_map_table(session)
         versions_select = (select(versions_table.c["version_id"], array_agg(versions_table.c[SAMPLE_ID_COL]))
-                                .where(versions_table.c[SAMPLE_ID_COL].in_(list(valid_data.keys())))
-                                .group_by(versions_table.c["version_id"]))
+                                  .where(versions_table.c[SAMPLE_ID_COL].in_(list(valid_data.keys())))
+                                  .group_by(versions_table.c["version_id"]))
         results = (await session.execute(versions_select)).all()
 
         # Validation of classes amount for binary tasks
