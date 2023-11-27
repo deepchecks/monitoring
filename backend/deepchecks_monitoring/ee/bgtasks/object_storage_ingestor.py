@@ -146,9 +146,9 @@ class ObjectStorageIngestor(BackgroundWorker):
                 version_prefixes = model_prefixes if version.latest_file_time is not None else ['']
                 for prefix in version_prefixes:
                     for df, time in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time,
-                                                       errors, version.model_id, version.id):
-                        # For each file, set lock expiry to 240 seconds from now
-                        await lock.extend(240, replace_ttl=True)
+                                                       errors, version.model_id, version.id, need_ts=True):
+                        # For each file, set lock expiry to 360 seconds from now
+                        await lock.extend(360, replace_ttl=True)
                         await self.ingestion_backend.log_samples(version, df, session, organization_id, new_scan_time)
                         version.latest_file_time = max(version.latest_file_time or
                                                        pdl.datetime(year=1970, month=1, day=1), time)
@@ -158,8 +158,8 @@ class ObjectStorageIngestor(BackgroundWorker):
                 labels_path = f'{model_path}/labels/{prefix}'
                 for df, time in self.ingest_prefix(s3, bucket, labels_path, model.latest_labels_file_time,
                                                    errors, model_id):
-                    # For each file, set lock expiry to 240 seconds from now
-                    await lock.extend(240, replace_ttl=True)
+                    # For each file, set lock expiry to 360 seconds from now
+                    await lock.extend(360, replace_ttl=True)
                     await self.ingestion_backend.log_labels(model, df, session, organization_id)
                     model.latest_labels_file_time = max(model.latest_labels_file_time
                                                         or pdl.datetime(year=1970, month=1, day=1), time)
@@ -175,7 +175,8 @@ class ObjectStorageIngestor(BackgroundWorker):
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': task.id, 'model_id': model_id, 'org_id': organization_id})
 
-    def ingest_prefix(self, s3, bucket, prefix, last_file_time, errors, model_id, version_id=None):
+    def ingest_prefix(self, s3, bucket, prefix, last_file_time, errors,
+                      model_id, version_id=None, need_ts: bool = False):
         """Ingest all files in prefix, return df and file time"""
         last_file_time = last_file_time or pdl.datetime(year=1970, month=1, day=1)
         # First read all file names, then retrieve them sorted by date
@@ -226,15 +227,15 @@ class ObjectStorageIngestor(BackgroundWorker):
                 self._handle_error(errors, f'Invalid file extension: {file["extension"]}, for file: {file["key"]}',
                                    model_id, version_id)
                 continue
-
-            if SAMPLE_TS_COL not in df or not is_integer_dtype(df[SAMPLE_TS_COL]):
-                self._handle_error(errors, f'Invalid timestamp column: {SAMPLE_TS_COL}, in file: {file["key"]}',
-                                   model_id, version_id)
-                continue
-            # The user facing API requires unix timestamps, but for the ingestion we convert it to ISO format
-            df[SAMPLE_TS_COL] = df[SAMPLE_TS_COL].apply(lambda x: pdl.from_timestamp(x).isoformat())
-            # Sort by timestamp
-            df = df.sort_values(by=[SAMPLE_TS_COL])
+            if need_ts:
+                if SAMPLE_TS_COL not in df or not is_integer_dtype(df[SAMPLE_TS_COL]):
+                    self._handle_error(errors, f'Invalid timestamp column: {SAMPLE_TS_COL}, in file: {file["key"]}',
+                                       model_id, version_id)
+                    continue
+                # The user facing API requires unix timestamps, but for the ingestion we convert it to ISO format
+                df[SAMPLE_TS_COL] = df[SAMPLE_TS_COL].apply(lambda x: pdl.from_timestamp(x).isoformat())
+                # Sort by timestamp
+                df = df.sort_values(by=[SAMPLE_TS_COL])
             yield df, file['time']
 
     def _handle_error(self, errors, error_message, model_id=None, model_version_id=None, set_warning_in_logs=True):
