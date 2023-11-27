@@ -185,7 +185,8 @@ async def log_labels(
         cache_functions,
         logger
 ):
-    valid_data = {}
+    unbatched_valid_data = pd.Series()
+    logged_ids = set()
     labels_table_columns = model.get_sample_labels_columns()
     labels_table_json_schema = {
         "type": "object",
@@ -198,29 +199,41 @@ async def log_labels(
     }
 
     validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(labels_table_json_schema))
-
+    errors = []
     for sample in data:
         try:
             validator(sample)
-        except fastjsonschema.JsonSchemaValueException:
-            pass
-            # TODO: new table for model ingestion errors?
+        except fastjsonschema.JsonSchemaValueException as e:
+            errors.append({
+                "sample": str(sample),
+                "sample_id": sample.get(SAMPLE_ID_COL),
+                "error": f"Exception saving label: {str(e)}, for id: {sample.get(SAMPLE_ID_COL)}",
+                "model_id": model.id,
+            })
         else:
             error = None
             # If got same index more than once, log it as error
-            if sample[SAMPLE_ID_COL] in valid_data:
+            if sample[SAMPLE_ID_COL] in logged_ids:
                 error = f"Got duplicate sample id: {sample[SAMPLE_ID_COL]}"
 
             if not error:
-                valid_data[sample[SAMPLE_ID_COL]] = sample
+                unbatched_valid_data[sample[SAMPLE_ID_COL]] = sample
+                logged_ids.add(sample[SAMPLE_ID_COL])
 
-    if valid_data:
+    await save_failures(session, errors, logger)
+
+    if len(unbatched_valid_data) == 0:
+        return
+    max_messages_per_insert = QUERY_PARAM_LIMIT // 5
+    ids_to_log = unbatched_valid_data.keys()
+    for start_index in range(0, len(ids_to_log), max_messages_per_insert):
+        valid_data = unbatched_valid_data[ids_to_log[start_index:start_index + max_messages_per_insert]]
         # Query from the ids mapping all the relevant versions per each version. This is needed in order to query
         # the timestamps to invalidate the monitors cache
         versions_table = model.get_samples_versions_map_table(session)
         versions_select = (select(versions_table.c["version_id"], array_agg(versions_table.c[SAMPLE_ID_COL]))
-                           .where(versions_table.c[SAMPLE_ID_COL].in_(list(valid_data.keys())))
-                           .group_by(versions_table.c["version_id"]))
+                            .where(versions_table.c[SAMPLE_ID_COL].in_(list(valid_data.keys())))
+                            .group_by(versions_table.c["version_id"]))
         results = (await session.execute(versions_select)).all()
 
         # Validation of classes amount for binary tasks
@@ -245,39 +258,39 @@ async def log_labels(
                         del valid_data[sample_id]
             await save_failures(session, errors, logger)
 
-    if valid_data:
-        # update label statistics
-        for row in results:
-            version_id = row[0]
-            sample_ids = [sample_id for sample_id in row[1] if sample_id in valid_data]
-            model_version: ModelVersion = \
-                (await session.execute(select(ModelVersion).where(ModelVersion.id == version_id))).scalars().first()
-            updated_statistics = copy.deepcopy(model_version.statistics)
-            for sample_id in sample_ids:
-                update_statistics_from_sample(updated_statistics, valid_data[sample_id])
-            if model_version.statistics != updated_statistics:
-                await model_version.update_statistics(updated_statistics, session)
+        if len(valid_data) > 0:
+            # update label statistics
+            for row in results:
+                version_id = row[0]
+                sample_ids = [sample_id for sample_id in row[1] if sample_id in valid_data]
+                model_version: ModelVersion = \
+                    (await session.execute(select(ModelVersion).where(ModelVersion.id == version_id))).scalars().first()
+                updated_statistics = copy.deepcopy(model_version.statistics)
+                for sample_id in sample_ids:
+                    update_statistics_from_sample(updated_statistics, valid_data[sample_id])
+                if model_version.statistics != updated_statistics:
+                    await model_version.update_statistics(updated_statistics, session)
 
-        # Insert or update all labels
-        labels_table = model.get_sample_labels_table(session)
-        insert_statement = postgresql.insert(labels_table)
-        upsert_statement = insert_statement.on_conflict_do_update(
-            index_elements=[SAMPLE_ID_COL],
-            set_={SAMPLE_LABEL_COL: insert_statement.excluded[SAMPLE_LABEL_COL]}
-        )
-        await session.execute(upsert_statement, list(valid_data.values()))
+            # Insert or update all labels
+            labels_table = model.get_sample_labels_table(session)
+            insert_statement = postgresql.insert(labels_table)
+            upsert_statement = insert_statement.on_conflict_do_update(
+                index_elements=[SAMPLE_ID_COL],
+                set_={SAMPLE_LABEL_COL: insert_statement.excluded[SAMPLE_LABEL_COL]}
+            )
+            await session.execute(upsert_statement, valid_data.tolist())
 
-        for row in results:
-            version_id = row[0]
-            sample_ids = [sample_id for sample_id in row[1] if sample_id in valid_data]
-            monitor_table_name = get_monitor_table_name(model.id, version_id)
-            ts_select = (select(Column(SAMPLE_TS_COL))
-                         .select_from(text(monitor_table_name))
-                         .where(Column(SAMPLE_ID_COL).in_(sample_ids)))
-            timestamps_affected = [pdl.instance(x) for x in (await session.execute(ts_select)).scalars()]
-            await add_cache_invalidation(org_id, version_id, timestamps_affected, session, cache_functions)
+            for row in results:
+                version_id = row[0]
+                sample_ids = [sample_id for sample_id in row[1] if sample_id in valid_data]
+                monitor_table_name = get_monitor_table_name(model.id, version_id)
+                ts_select = (select(Column(SAMPLE_TS_COL))
+                            .select_from(text(monitor_table_name))
+                            .where(Column(SAMPLE_ID_COL).in_(sample_ids)))
+                timestamps_affected = [pdl.instance(x) for x in (await session.execute(ts_select)).scalars()]
+                await add_cache_invalidation(org_id, version_id, timestamps_affected, session, cache_functions)
 
-        model.last_update_time = pdl.now()
+            model.last_update_time = pdl.now()
 
 
 async def add_cache_invalidation(organization_id, model_version_id, timestamps_updated, session, cache_functions):
