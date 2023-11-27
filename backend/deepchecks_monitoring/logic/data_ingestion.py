@@ -238,7 +238,7 @@ async def log_labels(
         versions_table = model.get_samples_versions_map_table(session)
         versions_select = (
             select(
-                versions_table.c["version_id"], 
+                versions_table.c["version_id"],
                 array_agg(versions_table.c[SAMPLE_ID_COL])
             )
             .where(versions_table.c[SAMPLE_ID_COL].in_(list(valid_data.keys())))
