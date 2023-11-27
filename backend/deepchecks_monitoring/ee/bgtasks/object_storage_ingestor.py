@@ -162,7 +162,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                     await lock.extend(240, replace_ttl=True)
                     await self.ingestion_backend.log_labels(model, df, session, organization_id)
                     model.latest_labels_file_time = max(model.latest_labels_file_time
-                                                        or pdl.datetime(year=1970, month=1, day=1), time)        
+                                                        or pdl.datetime(year=1970, month=1, day=1), time)
 
             model.obj_store_last_scan_time = new_scan_time
         except Exception:  # pylint: disable=broad-except
