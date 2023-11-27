@@ -230,7 +230,7 @@ class ObjectStorageIngestor(BackgroundWorker):
             if need_ts:
                 if SAMPLE_TS_COL not in df or not is_integer_dtype(df[SAMPLE_TS_COL]):
                     self._handle_error(errors, f'Invalid timestamp column: {SAMPLE_TS_COL}, in file: {file["key"]}',
-                                    model_id, version_id)
+                                       model_id, version_id)
                     continue
                 # The user facing API requires unix timestamps, but for the ingestion we convert it to ISO format
                 df[SAMPLE_TS_COL] = df[SAMPLE_TS_COL].apply(lambda x: pdl.from_timestamp(x).isoformat())

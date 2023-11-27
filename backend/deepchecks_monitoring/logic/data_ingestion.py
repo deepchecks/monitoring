@@ -237,8 +237,8 @@ async def log_labels(
         # the timestamps to invalidate the monitors cache
         versions_table = model.get_samples_versions_map_table(session)
         versions_select = (select(versions_table.c["version_id"], array_agg(versions_table.c[SAMPLE_ID_COL]))
-                            .where(versions_table.c[SAMPLE_ID_COL].in_(list(valid_data.keys())))
-                            .group_by(versions_table.c["version_id"]))
+                           .where(versions_table.c[SAMPLE_ID_COL].in_(list(valid_data.keys())))
+                           .group_by(versions_table.c["version_id"]))
         results = (await session.execute(versions_select)).all()
 
         # Validation of classes amount for binary tasks
@@ -290,8 +290,8 @@ async def log_labels(
                 sample_ids = [sample_id for sample_id in row[1] if sample_id in valid_data]
                 monitor_table_name = get_monitor_table_name(model.id, version_id)
                 ts_select = (select(Column(SAMPLE_TS_COL))
-                            .select_from(text(monitor_table_name))
-                            .where(Column(SAMPLE_ID_COL).in_(sample_ids)))
+                             .select_from(text(monitor_table_name))
+                             .where(Column(SAMPLE_ID_COL).in_(sample_ids)))
                 timestamps_affected = [pdl.instance(x) for x in (await session.execute(ts_select)).scalars()]
                 await add_cache_invalidation(org_id, version_id, timestamps_affected, session, cache_functions)
 
