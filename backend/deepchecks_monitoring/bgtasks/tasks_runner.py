@@ -134,7 +134,7 @@ class TaskRunner:
                 self.logger.info({'message': f'Unknown task type: {task.bg_worker_task}'})
         except Exception:  # pylint: disable=broad-except
             self.logger.exception({'message': 'Exception running task', 'task': task.bg_worker_task})
-            await session.rollback()         
+            await session.rollback()
 
 
 class BaseWorkerSettings():

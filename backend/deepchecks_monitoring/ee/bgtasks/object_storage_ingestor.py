@@ -175,7 +175,8 @@ class ObjectStorageIngestor(BackgroundWorker):
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': task.id, 'model_id': model_id, 'org_id': organization_id})
 
-    def ingest_prefix(self, s3, bucket, prefix, last_file_time, errors, model_id, version_id=None, need_ts: bool = False):
+    def ingest_prefix(self, s3, bucket, prefix, last_file_time, errors,
+                      model_id, version_id=None, need_ts: bool = False):
         """Ingest all files in prefix, return df and file time"""
         last_file_time = last_file_time or pdl.datetime(year=1970, month=1, day=1)
         # First read all file names, then retrieve them sorted by date
