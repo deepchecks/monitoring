@@ -216,7 +216,8 @@ async def log_labels(
                 errors.append({
                     "sample": str(sample),
                     "sample_id": sample.get(SAMPLE_ID_COL),
-                    "error": f"Got duplicate label for sample id: {sample[SAMPLE_ID_COL]}",
+                    "error": f"Got duplicate label for sample id: {sample[SAMPLE_ID_COL]}. 
+                              {sample.get(SAMPLE_LABEL_COL)} vs {unbatched_valid_data[sample[SAMPLE_ID_COL]].get(SAMPLE_LABEL_COL)}",
                     "model_id": model.id,
                 })
             else:
