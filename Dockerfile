@@ -24,7 +24,7 @@ RUN yarn build
 
 # Build the backend image
 
-FROM python:3.11.3
+FROM python:3.11
 
 ENV PYTHONUNBUFFERED 1
 
