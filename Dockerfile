@@ -39,8 +39,7 @@ ENV MIXPANEL_ID=$MIXPANEL_ID
 ARG DEEPCHECKS_CI_TOKEN
 
 RUN pip install -U pip setuptools
-# For ARM arch, ray>2.3.1 uses grpcio==1.51.3 which doesn't has wheel and takes forever to build from source
-RUN pip install ray==2.3.1 grpcio==1.54.2
+RUN pip install ray grpcio
 RUN pip install -r requirements.txt --compile --no-cache-dir
 
 RUN adduser --system --group deepchecks
