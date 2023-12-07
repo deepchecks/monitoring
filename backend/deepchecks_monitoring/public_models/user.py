@@ -36,7 +36,7 @@ class UserOAuthDTO(PydanticModel):
 
     name: str
     email: EmailStr
-    email_verified: bool
+    email_verified: t.Optional[bool] = False
     picture: t.Optional[AnyHttpUrl] = None
 
 
