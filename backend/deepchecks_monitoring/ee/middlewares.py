@@ -140,6 +140,7 @@ class SecurityAuditMiddleware:
                 "email": access_token.email,
                 "is_admin": access_token.is_admin,
                 "exp": access_token.exp,
+                "email_verified": access_token.email_verified,
             }
 
         if state and (user := state.get("user")):
