@@ -269,10 +269,9 @@ class CurrentUser:
         session : AsyncSession
             SQLAlchemy session.
         """
-        user_email = await get_user(request, token, session)
         user = request.state.user = t.cast(
             "models.User",
-            user_email
+            await get_user(request, token, session)
         )
         if user is None:
             if self.enforce:
