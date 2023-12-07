@@ -126,7 +126,7 @@ class CloudFeaturesControl(FeaturesControl):
         ld_user = context.build()
         tier_conf = self.ld_client.variation("paid-features", ld_user, default={})
         if getattr(self.user, "email_verified", False):
-            self._signup_enabled = self.ld_client.variation("signUpEnabled", ld_user, default=False)
+            self._signup_enabled = self.ld_client.variation("signUpEnabled", ld_user, default=True)
         else:
             self._signup_enabled = False
         tier_conf = TierConfSchema(**tier_conf)
