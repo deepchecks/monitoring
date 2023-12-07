@@ -7,7 +7,7 @@ from tests.common import generate_user
 
 @pytest.mark.asyncio
 async def test_user_creation_from_oauth_info(async_session: AsyncSession, settings):
-    oauth_info = UserOAuthDTO(email="user@gmail.com", name="New User", email_verified=True)
+    oauth_info = UserOAuthDTO(email="user@gmail.com", name="New User")
     user = await User.from_oauth_info(info=oauth_info, session=async_session, auth_jwt_secret=settings.auth_jwt_secret)
 
     async_session.add(user)
@@ -26,7 +26,7 @@ async def test_user_retrieval_with_oauth_info(async_session: AsyncSession, setti
     # initial_access_token = user.access_token
     initial_last_login = user.last_login
 
-    oauth_info = UserOAuthDTO(email=user.email, name=user.full_name, email_verified=True)
+    oauth_info = UserOAuthDTO(email=user.email, name=user.full_name)
     retrieved_user = await User.from_oauth_info(info=oauth_info, session=async_session,
                                                 auth_jwt_secret=settings.auth_jwt_secret)
 
