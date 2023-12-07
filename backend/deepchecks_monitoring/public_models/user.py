@@ -36,6 +36,7 @@ class UserOAuthDTO(PydanticModel):
 
     name: str
     email: EmailStr
+    email_verified: t.Optional[bool] = False
     picture: t.Optional[AnyHttpUrl] = None
 
 
@@ -98,7 +99,7 @@ class User(Base):
         organization_id: int | None = None
     ) -> Self:
         """Create or get user instance from ouath info."""
-        token_data = auth.UserAccessToken(email=info.email, is_admin=True)
+        token_data = auth.UserAccessToken(email=info.email, email_verified=info.email_verified, is_admin=True)
         access_token = auth.create_access_token(token_data, auth_jwt_secret, expires_delta=pdl.duration(days=7))
 
         # Checking if the user is already in the database

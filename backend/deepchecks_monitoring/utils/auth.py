@@ -32,6 +32,7 @@ ALGORITHM = "HS256"
 
 class UserAccessToken(BaseModel):
     email: EmailStr
+    email_verified: bool
     is_admin: bool
     exp: t.Optional[float] = None
 
@@ -54,7 +55,7 @@ async def get_user(
         return
 
     if isinstance(token, UserAccessToken):
-        return (await session.scalar(
+        user = (await session.scalar(
             select(models.User)
             .where(models.User.email == token.email)
             .options(
@@ -62,6 +63,8 @@ async def get_user(
                 joinedload(models.User.roles)
             )
         ))
+        user.email_verified = token.email_verified
+        return user
 
     if isinstance(token, APIAccessToken):
         # If we have api token query the user and validate the secret
@@ -274,8 +277,7 @@ class CurrentUser:
             if self.enforce:
                 raise Unauthorized("expired or invalid access token")
             return
-        else:
-            return request.state.user
+        return request.state.user
 
 
 class CurrentActiveUser(CurrentUser):

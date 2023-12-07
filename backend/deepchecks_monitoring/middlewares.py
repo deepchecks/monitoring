@@ -21,6 +21,7 @@ def _fill_user_and_token_from_state(info, state):
             "email": access_token.email,
             "is_admin": access_token.is_admin,
             "exp": access_token.exp,
+            "email_verified": access_token.email_verified,
         }
 
     # TODO: this creates DetachedInstanceError for some reason
