@@ -1,4 +1,4 @@
-import { Box, Modal, styled, TextField, Typography } from '@mui/material';
+import { Box, IconButton, Modal, styled, TextField, Typography } from '@mui/material';
 
 export const StyledModal = styled(Modal)({
   display: 'flex',
@@ -9,12 +9,7 @@ export const StyledModal = styled(Modal)({
 export const StyledDescription = styled(Typography)({
   fontWeight: '400',
   fontSize: '16px',
-  marginBottom: 0
-});
-
-export const StyledForm = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column'
+  marginBottom: '5px'
 });
 
 export const StyledTextField = styled(TextField)({
@@ -31,4 +26,15 @@ export const StyledUploadArea = styled(Box)({
   borderRadius: '0 0 3px 3px',
   border: 'solid 1px #bbb',
   borderTop: 'none'
+});
+
+export const StyledPreviewContainer = styled(Box)({
+  marginTop: '10px',
+  position: 'relative'
+});
+
+export const StyledIconButton = styled(IconButton)({
+  position: 'absolute',
+  top: 0,
+  left: '12.3%'
 });
