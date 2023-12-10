@@ -10,5 +10,6 @@ declare namespace Cypress {
     createModelAndVersion(arg1, arg2, arg3): Promise;
     addNullsCheck(arg): void;
     addCheck(arg1, arg2?): Promise;
+    resetState(arg?): void;
   }
 }
