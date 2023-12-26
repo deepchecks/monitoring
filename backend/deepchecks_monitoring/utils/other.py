@@ -1,17 +1,17 @@
 """Represent global utility functions."""
-from datetime import datetime
 import typing as t
+from datetime import datetime
 from ssl import SSLContext
 
 import numpy as np
 import pandas as pd
 import pendulum as pdl
-from pendulum.datetime import DateTime as PendulumDateTime
+import rfc3339_validator
 from aiokafka.admin import AIOKafkaAdminClient
 from aiokafka.admin import __version__ as aiokafka_version
 from aiokafka.client import AIOKafkaClient
+from pendulum.datetime import DateTime as PendulumDateTime
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-import rfc3339_validator
 
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.schema_models.model_version import ModelVersion

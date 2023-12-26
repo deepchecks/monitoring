@@ -22,7 +22,6 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from deepchecks_monitoring.utils.other import datetime_formatter, string_formatter
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend, save_failures
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import Organization
@@ -32,6 +31,7 @@ from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType
 from deepchecks_monitoring.schema_models.data_sources import DataSource
 from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.utils.other import datetime_formatter, string_formatter
 
 __all__ = ['ObjectStorageIngestor']
 
