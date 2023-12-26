@@ -16,7 +16,7 @@ import rfc3339_validator
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
-__all__ = ['generate_random_user', 'generate_test_user', 'datetime_sample_formatter', 
+__all__ = ['generate_random_user', 'generate_test_user', 'datetime_sample_formatter',
            'datetime_formatter', 'string_formatter', 'parse_timestamp']
 
 
