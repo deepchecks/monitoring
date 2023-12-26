@@ -21,9 +21,8 @@ from redis.asyncio.lock import Lock
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from backend.client.deepchecks_client.tabular.client import _datetime_formatter, _string_formatter
-from backend.deepchecks_monitoring.utils.other import datetime_formatter, string_formatter
 
+from deepchecks_monitoring.utils.other import datetime_formatter, string_formatter
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend, save_failures
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import Organization
