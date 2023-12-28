@@ -28,9 +28,10 @@ from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType
 from deepchecks_monitoring.schema_models.data_sources import DataSource
 from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.utils.other import datetime_formatter, string_formatter
 
 __all__ = ['ObjectStorageIngestor']
 
@@ -147,6 +148,12 @@ class ObjectStorageIngestor(BackgroundWorker):
                 for prefix in version_prefixes:
                     for df, time in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time,
                                                        errors, version.model_id, version.id, need_ts=True):
+                        for name, kind in version.features_columns.items():
+                            if kind == ColumnType.CATEGORICAL and name in df.columns:
+                                df[name] = df[name].apply(string_formatter)
+                            elif kind == ColumnType.DATETIME and name in df.columns:
+                                df[name] = df[name].apply(datetime_formatter)
+
                         # For each file, set lock expiry to 360 seconds from now
                         await lock.extend(360, replace_ttl=True)
                         await self.ingestion_backend.log_samples(version, df, session, organization_id, new_scan_time)
