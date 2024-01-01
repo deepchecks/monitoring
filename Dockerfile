@@ -24,9 +24,15 @@ RUN yarn build
 
 # Build the backend image
 
-FROM python:3.11.3
+FROM ubuntu:22.04
 
 ENV PYTHONUNBUFFERED 1
+ENV TZ=Asia/Jerusalem
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get -y update && apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa &&  \
+    apt install -y git python3.11 python3.11-dev python3.11-distutils curl g++ libpq-dev &&  \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
 
 WORKDIR /code
 
@@ -38,10 +44,10 @@ ENV MIXPANEL_ID=$MIXPANEL_ID
 # ---
 ARG DEEPCHECKS_CI_TOKEN
 
-RUN pip install -U pip setuptools
+RUN ln -s /usr/bin/python3.11 /usr/bin/python && python -m pip install -U pip "setuptools"
 # For ARM arch, ray>2.3.1 uses grpcio==1.51.3 which doesn't has wheel and takes forever to build from source
-RUN pip install ray==2.3.1 grpcio==1.54.2
-RUN pip install -r requirements.txt --compile --no-cache-dir
+RUN python -m pip install ray==2.3.1 grpcio==1.54.2 --no-cache-dir
+RUN python -m pip install -r requirements.txt --compile --no-cache-dir
 
 RUN adduser --system --group deepchecks
 
@@ -61,7 +67,7 @@ RUN if [ -z "$IS_DEEPCHECKS_OSS" ] ; then pip install -q -r backend/addon-requir
 USER root
 
 # RUN pip install deepchecks-monitoring --no-index --find-links file:///code/backend/
-RUN pip install -q -e backend/
+RUN python -m pip install -q -e backend/
 
 COPY ./bin ./bin/
 
