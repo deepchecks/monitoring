@@ -12,7 +12,7 @@ psycopg2==2.9.3
 orjson==3.9.10
 python-multipart==0.0.5
 jinja2==3.1.2
-aiokafka==0.8.0
+aiokafka==0.10.0
 uvloop==0.17.0
 nbformat>=5.4.0,<6
 deepchecks@git+https://github.com/deepchecks/deepchecks.git@main
