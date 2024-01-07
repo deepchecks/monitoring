@@ -133,7 +133,7 @@ def string_formatter(some_obj):
 
 
 def numeric_to_boolean(some_obj):
-    # written this way so it will still fail if inavlid boolean column
+    # written this way so it will still fail if invalid boolean column
     if pd.isna(some_obj):
         return None
     elif some_obj == 1:
