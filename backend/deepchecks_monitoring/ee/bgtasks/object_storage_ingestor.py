@@ -31,7 +31,7 @@ from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType
 from deepchecks_monitoring.schema_models.data_sources import DataSource
 from deepchecks_monitoring.utils import database
-from deepchecks_monitoring.utils.other import datetime_formatter, string_formatter, numeric_to_boolean
+from deepchecks_monitoring.utils.other import datetime_formatter, numeric_to_boolean, string_formatter
 
 __all__ = ['ObjectStorageIngestor']
 

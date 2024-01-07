@@ -18,9 +18,9 @@ from time import perf_counter
 import anyio
 import pendulum as pdl
 import redis.exceptions as redis_exceptions
+import sqlalchemy as sa
 import uvloop
 from redis.asyncio import Redis, RedisCluster
-import sqlalchemy as sa
 from sqlalchemy.cimmutabledict import immutabledict
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
