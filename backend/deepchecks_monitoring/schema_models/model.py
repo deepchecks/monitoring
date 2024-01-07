@@ -150,9 +150,9 @@ class Model(Base, MetadataMixin, PermissionMixin):
         """Get table name of the sample labels table."""
         return f"model_{self.id}_sample_labels"
 
-    def get_sample_labels_table(self, connection=None) -> Table:
+    def get_sample_labels_table(self) -> Table:
         """Get table object of the sample labels table."""
-        metadata = MetaData(bind=connection)
+        metadata = MetaData()
         columns_sqlalchemy = column_types_to_table_columns(self.get_sample_labels_columns())
         return Table(self.get_sample_labels_table_name(), metadata, *columns_sqlalchemy)
 
@@ -166,9 +166,9 @@ class Model(Base, MetadataMixin, PermissionMixin):
         """Get table name of the versions mapping table."""
         return f"model_{self.id}_samples_versions_map"
 
-    def get_samples_versions_map_table(self, connection=None) -> Table:
+    def get_samples_versions_map_table(self) -> Table:
         """Get table object of the versions mapping table."""
-        metadata = MetaData(bind=connection)
+        metadata = MetaData()
         columns = (sa.Column(SAMPLE_ID_COL, sa.Text),
                    sa.Column("version_id", sa.Integer))
         pk_constraint = PrimaryKeyConstraint(SAMPLE_ID_COL, "version_id")

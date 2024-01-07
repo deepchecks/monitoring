@@ -46,8 +46,8 @@ async def test_classification_model_production_data_retrieval(
         options=[joinedload(ModelVersion.model)]
     )
 
-    prod_table = model_version.get_monitor_table(async_session)
-    labels_table = model_version.model.get_sample_labels_table(async_session)
+    prod_table = model_version.get_monitor_table()
+    labels_table = model_version.model.get_sample_labels_table()
     prod_query = await async_session.execute(
         select(list(prod_table.c) + [labels_table.c[SAMPLE_LABEL_COL]])
         .join(labels_table, prod_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
@@ -116,7 +116,7 @@ async def test_classification_model_reference_data_retrieval(
         multiclass_model_version_client.model_version_id
     )
 
-    prod_table = model_version.get_reference_table(async_session)
+    prod_table = model_version.get_reference_table()
     prod_query = await async_session.execute(select(prod_table))
 
     prod_df = pd.DataFrame(

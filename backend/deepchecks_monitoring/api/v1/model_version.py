@@ -628,8 +628,8 @@ async def get_time_window_statistics(
     """
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, options=joinedload(ModelVersion.model),
                                                      id=model_version_id)
-    test_table = model_version.get_monitor_table(session)
-    sample_labels_table = model_version.model.get_sample_labels_table(session)
+    test_table = model_version.get_monitor_table()
+    sample_labels_table = model_version.model.get_sample_labels_table()
     sample_id = test_table.c[SAMPLE_ID_COL]
     sample_label = sample_labels_table.c[SAMPLE_LABEL_COL]
     sample_timestamp = test_table.c[SAMPLE_TS_COL]

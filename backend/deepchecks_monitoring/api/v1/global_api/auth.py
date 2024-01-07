@@ -88,7 +88,6 @@ async def auth0_callback(
     )
 
     await session.flush()
-    await session.commit()
 
     MixpanelEvent = (
         SignupEvent

@@ -114,7 +114,7 @@ async def log_data(
     logged_ids = set()
     if valid_data:
         # Starting by adding to the version map
-        versions_map = model.get_samples_versions_map_table(session)
+        versions_map = model.get_samples_versions_map_table()
         ids_to_log = [{SAMPLE_ID_COL: sample_id, "version_id": model_version.id} for sample_id in valid_data]
         ids_not_existing = set()
         max_messages_per_insert = QUERY_PARAM_LIMIT // 5
@@ -131,7 +131,7 @@ async def log_data(
             # order to solve that we can either pre-compile the statement with bind literals, or separate to batches
             num_columns = len(data_list[0])
             max_messages_per_insert = QUERY_PARAM_LIMIT // num_columns
-            monitor_table = model_version.get_monitor_table(session)
+            monitor_table = model_version.get_monitor_table()
             for start_index in range(0, len(data_list), max_messages_per_insert):
                 batch = data_list[start_index:start_index + max_messages_per_insert]
                 statement = (postgresql.insert(monitor_table).values(batch)
@@ -235,7 +235,7 @@ async def log_labels(
         valid_data = unbatched_valid_data[ids_to_log[start_index:start_index + max_messages_per_insert]]
         # Query from the ids mapping all the relevant versions per each version. This is needed in order to query
         # the timestamps to invalidate the monitors cache
-        versions_table = model.get_samples_versions_map_table(session)
+        versions_table = model.get_samples_versions_map_table()
         versions_select = (
             select(
                 versions_table.c["version_id"],
@@ -282,7 +282,7 @@ async def log_labels(
                     await model_version.update_statistics(updated_statistics, session)
 
             # Insert or update all labels
-            labels_table = model.get_sample_labels_table(session)
+            labels_table = model.get_sample_labels_table()
             insert_statement = postgresql.insert(labels_table)
             upsert_statement = insert_statement.on_conflict_do_update(
                 index_elements=[SAMPLE_ID_COL],

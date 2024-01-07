@@ -217,7 +217,6 @@ async def update_organization(
                 .values(**data)
             )
 
-        await session.commit()
 
 
 @router.delete('/organization')
@@ -233,7 +232,6 @@ async def remove_organization(
         await session.execute(DropSchema(user.organization.schema_name, cascade=True))
         await session.execute(sa.delete(Organization).where(Organization.id == org_id),
                               execution_options={'synchronize_session': False})
-        await session.commit()
         return Response()
     else:
         return BadRequest('User is not associated with an organization.')
@@ -323,7 +321,6 @@ async def leave_organization(
                          'delete the organization.')
 
     user.organization_id = None
-    await session.commit()
 
 
 @router.get(

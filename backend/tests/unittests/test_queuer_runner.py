@@ -31,7 +31,6 @@ class Worker(BackgroundWorker):
 
     async def run(self, task: Task, session: AsyncSession, resources_provider, lock):
         await session.execute(sa.update(Task).where(Task.id == task.id).values({'params': {'run': True}}))
-        await session.commit()
 
 
 logger = logging.Logger('test')

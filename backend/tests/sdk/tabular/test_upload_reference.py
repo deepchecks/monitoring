@@ -45,7 +45,7 @@ async def test_classification_upload(
         ModelVersion,
         multiclass_model_version_client.model_version_id
     )
-    ref_table = model_version.get_reference_table(async_session)
+    ref_table = model_version.get_reference_table()
 
     ref_dict = (await async_session.execute(select(
         ref_table.c.a,
@@ -107,7 +107,7 @@ async def test_classification_upload_without_classes(
 
     # Assert
     model_version = await async_session.get(ModelVersion, version['id'])
-    ref_table = model_version.get_reference_table(async_session)
+    ref_table = model_version.get_reference_table()
 
     ref_dict = (await async_session.execute(select(
         ref_table.c.a,
@@ -136,7 +136,7 @@ async def test_regression_upload(
     )
 
     model_version = await async_session.get(ModelVersion, regression_model_version_client.model_version_id)
-    ref_table = model_version.get_reference_table(async_session)
+    ref_table = model_version.get_reference_table()
 
     ref_dict = (await async_session.execute(
         select(
@@ -179,7 +179,7 @@ async def test_regression_upload_w_date(regression_model: Payload,
         predictions=pred
     )
     model_version = await async_session.get(ModelVersion, version_client.model_version_id)
-    ref_table = model_version.get_reference_table(async_session)
+    ref_table = model_version.get_reference_table()
 
     ref_dict = (await async_session.execute(select(
         ref_table.c.a,

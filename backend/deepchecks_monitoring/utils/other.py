@@ -81,7 +81,7 @@ async def generate_random_user(session: AsyncSession, auth_jwt_secret: str, with
         await org.schema_builder.create(AsyncEngine(session.get_bind()))
         session.add(org)
 
-    await session.commit()
+    await session.flush()
     await session.refresh(u)
     return u
 
@@ -102,7 +102,7 @@ async def generate_test_user(session: AsyncSession, auth_jwt_secret: str, with_o
         await org.schema_builder.create(AsyncEngine(session.get_bind()))
         session.add(org)
 
-    await session.commit()
+    await session.flush()
     await session.refresh(u)
     return u
 

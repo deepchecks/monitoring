@@ -54,26 +54,26 @@ async def generate_user(
         if organization_id:
             u.organization_id = organization_id
 
-            await session.commit()
+            await session.flush()
             await session.refresh(u)
 
             model_ids = await session.scalars(sa.select(Model.id))
             model_members = [ModelMember(user_id=u.id, model_id=model_id) for model_id in model_ids]
             session.add_all(model_members)
-            await session.commit()
+            await session.flush()
         else:
             org = await Organization.create_for_user(owner=u, name=f.name(), session=session)
             await org.schema_builder.create(AsyncEngine(session.get_bind()))
             org.email_notification_levels = list(AlertSeverity)
             org.slack_notification_levels = list(AlertSeverity)
             session.add(org)
-            await session.commit()
+            await session.flush()
             await session.refresh(u)
             await session.refresh(org)
             await session.execute(sa.insert(Billing).values(bought_models=7, organization_id=u.organization_id))
-            await session.commit()
+            await session.flush()
     else:
-        await session.commit()
+        await session.flush()
         await session.refresh(u)
 
     if switch_schema and org:

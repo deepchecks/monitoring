@@ -137,7 +137,6 @@ async def update_webhook(
         raise BadRequest("Incorrect payload kind, it does not match webhook kind")
 
     session.add(data.update_instance(webhook))
-    await session.commit()
 
 
 @router.delete(

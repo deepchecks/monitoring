@@ -95,5 +95,4 @@ async def generate_monitor_with_alert_rules(
     create_alert(rule["id"], session, resolved=False)
     create_alert(rule["id"], session, resolved=False)
 
-    await session.commit()
     return monitor

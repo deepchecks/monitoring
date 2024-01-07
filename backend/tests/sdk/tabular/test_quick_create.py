@@ -57,7 +57,7 @@ async def test_quick_version(deepchecks_sdk: DeepchecksClient, async_session: As
     assert model.get_versions() == {'ver': 1}
 
     model_version: ModelVersion = await async_session.get(ModelVersion, 1)
-    ref_table = model_version.get_reference_table(async_session)
+    ref_table = model_version.get_reference_table()
 
     ref_data = (await async_session.execute(select(
         ref_table.c.a,

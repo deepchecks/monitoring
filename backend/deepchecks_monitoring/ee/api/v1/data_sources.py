@@ -80,7 +80,6 @@ async def new_data_source(body: DataSourceCreationSchema,
         raise BadRequest('Invalid data source type')
 
     session.add(data_source)
-    await session.commit()
     return Response(status_code=status.HTTP_200_OK)
 
 
@@ -91,5 +90,4 @@ async def delete_data_source(data_source_id: int,
                              ):
     data_source = await fetch_or_404(session, DataSource, id=data_source_id)
     await session.delete(data_source)
-    await session.commit()
     return Response(status_code=status.HTTP_200_OK)

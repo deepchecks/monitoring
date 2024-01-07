@@ -52,9 +52,9 @@ def _calculate_default_latest_schedule(context: DefaultExecutionContext):
         .where(Model.id == Check.model_id)
     ).first()
 
-    tz = record["timezone"]
-    start_time = pdl.instance(record["start_time"])
-    end_time = pdl.instance(record["end_time"])
+    tz = record.timezone
+    start_time = pdl.instance(record.start_time)
+    end_time = pdl.instance(record.end_time)
 
     return calculate_initial_latest_schedule(
         frequency=frequency,

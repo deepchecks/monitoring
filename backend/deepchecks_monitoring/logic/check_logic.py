@@ -516,7 +516,7 @@ def create_execution_data_query(
         elif with_labels:
             columns = columns + [SAMPLE_LABEL_COL]
 
-        data_query = select([table.c[col] for col in sorted(columns)])
+        data_query = select(*[table.c[col] for col in sorted(columns)])
 
         if filter_labels_exist:
             data_query = data_query.where(table.c[SAMPLE_LABEL_COL].isnot(None))
@@ -537,7 +537,7 @@ def create_execution_data_query(
         # Sort the columns to create a deterministic query for profiling purposes
         columns = sorted(columns)
 
-        data_query = select([table.c[col] for col in columns]).filter(options.sql_columns_filter()) \
+        data_query = select(*[table.c[col] for col in columns]).filter(options.sql_columns_filter()) \
             .filter(table.c[SAMPLE_TS_COL] >= period.start, table.c[SAMPLE_TS_COL] < period.end) \
             .order_by(func.hashtext(table.c[SAMPLE_ID_COL]))\
             .limit(n_samples)
@@ -545,7 +545,7 @@ def create_execution_data_query(
         # For monitoring tables, we join the labels table if needed
         if with_labels:
             sample_labels_table = model_version.model.get_sample_labels_table()
-            data_query = select([*data_query.c, sample_labels_table.c[SAMPLE_LABEL_COL]]).select_from(data_query).join(
+            data_query = select(*[*data_query.c, sample_labels_table.c[SAMPLE_LABEL_COL]]).select_from(data_query).join(
                 sample_labels_table,
                 onclause=data_query.c[SAMPLE_ID_COL] == sample_labels_table.c[SAMPLE_ID_COL],
                 isouter=True

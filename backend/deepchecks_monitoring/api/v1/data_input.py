@@ -211,7 +211,7 @@ async def save_reference(
         database session instance
     """
     max_samples = 100_000
-    ref_table = model_version.get_reference_table(session)
+    ref_table = model_version.get_reference_table()
     n_of_samples_query = select(count()).select_from(ref_table)
     current_samples = await session.scalar(n_of_samples_query)
     limit_exceeded_message = "Maximum allowed number of reference data samples is already uploaded"

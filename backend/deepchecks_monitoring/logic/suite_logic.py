@@ -60,8 +60,6 @@ async def run_suite_for_model_version(model_version: ModelVersion, window_option
         ref_df = DataFrame(ref_session.all(), columns=[str(key) for key in ref_session.keys()])
     else:
         ref_df = DataFrame()
-    # The suite takes a long time to run, therefore commit the db connection to not hold it open unnecessarily
-    await session.commit()
 
     suite_name = f"Test Suite - Model {model_version.name} - Window {window_options.end_time_dt().date()}"
     task_type = model.task_type

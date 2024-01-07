@@ -140,7 +140,6 @@ class ObjectStorageIngestor(BackgroundWorker):
                     date = date.add(days=1)
                     model_prefixes.append(date.isoformat())
 
-            version: ModelVersion
             for version in model.versions:
                 version_path = f'{model_path}/{version.name}'
                 # If first scan of specific version - scan all files under version, else scan only new files by date

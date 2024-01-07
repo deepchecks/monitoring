@@ -621,7 +621,7 @@ async def run_check_group_by_feature(
         raise BadRequest(f'Feature {feature} was not found in model version schema')
 
     # Get all data count
-    data_table = model_version.get_monitor_table(session)
+    data_table = model_version.get_monitor_table()
     count_query = select(func.count()).where(monitor_options.sql_time_filter(),
                                              monitor_options.sql_columns_filter()).select_from(data_table)
     if check.is_label_required:

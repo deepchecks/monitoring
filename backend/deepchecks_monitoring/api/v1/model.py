@@ -23,7 +23,7 @@ import sqlalchemy as sa
 from fastapi import BackgroundTasks, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
-from sqlalchemy.cimmutabledict import immutabledict
+from sqlalchemy.util import immutabledict
 from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
@@ -201,13 +201,12 @@ async def get_create_model(
         await session.flush()
 
         # Create model tables
-        labels_table = model.get_sample_labels_table(session)
-        versions_map_table = model.get_samples_versions_map_table(session)
+        labels_table = model.get_sample_labels_table()
+        versions_map_table = model.get_samples_versions_map_table()
 
         connection = await session.connection()
         await connection.run_sync(labels_table.metadata.create_all)
         await connection.run_sync(versions_map_table.metadata.create_all)
-        await session.commit()
 
         await resources_provider.report_mixpanel_event(
             ModelCreatedEvent.create_event,
@@ -331,11 +330,11 @@ async def _retrieve_models_data_ingestion(
     all_models_queries = []
 
     for model in models:
-        tables = [version.get_monitor_table(session) for version in model.versions]
+        tables = [version.get_monitor_table() for version in model.versions]
         if not tables:
             continue
 
-        labels_table = model.get_sample_labels_table(session)
+        labels_table = model.get_sample_labels_table()
         # Get all samples within time window from all the versions
         data_query = sa.union_all(*(
             sa.select(
@@ -597,7 +596,7 @@ async def delete_model(
 
     await insert_delete_db_table_task(session=session, full_table_paths=tables)
     await session.execute(sa.delete(Model).where(model_identifier.as_expression))
-    await session.commit()
+    await session.flush()
     report_mixpanel_event()
 
 
@@ -763,7 +762,7 @@ async def retrieve_connected_models(
             await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
         ).scalar()
 
-        tables = [version.get_monitor_table(session) for version in model.versions]
+        tables = [version.get_monitor_table() for version in model.versions]
 
         if len(tables) == 0:
             sample_count = 0
@@ -775,7 +774,7 @@ async def retrieve_connected_models(
             row = (await session.execute(sa.select(
                         sa.func.count(data_query.c.sample_id).label("count")))).first()
             sample_count = row.count
-            labels_table = model.get_sample_labels_table(session)
+            labels_table = model.get_sample_labels_table()
             row = (await session.execute(sa.select(
                         sa.func.count(_sample_id(labels_table.c)).label("label_count")))).first()
             label_count = row.label_count

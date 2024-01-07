@@ -215,7 +215,7 @@ class AlertsScheduler:
                         try:
                             await enqueue_ingestion_tasks(alert_rule, schedules, frequency, organization, session)
                             alert_rule.latest_schedule = schedules[-1]
-                            await session.commit()
+                            await session.flush()
                         # NOTE:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
                         # error is possible. In that case we just skip the monitor and try again next time.
@@ -266,7 +266,7 @@ async def get_versions_hour_windows(
         A list of dictionaries of hour (timestamp) to a dictionary window data
     """
     results = []
-    labels_table = model.get_sample_labels_table(session)
+    labels_table = model.get_sample_labels_table()
     for version in versions:
         label_type = get_predictions_columns_by_type(model.task_type, False)[0][SAMPLE_PRED_COL].to_sqlalchemy_type()
         # We don't need to load all columns, just initializing the needed columns

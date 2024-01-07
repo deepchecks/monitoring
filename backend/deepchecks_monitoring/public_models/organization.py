@@ -65,7 +65,7 @@ class Organization(Base):
         nullable=False
     )
 
-    invitations: t.List[Mapped["Invitation"]] = relationship(
+    invitations: Mapped[t.List["Invitation"]] = relationship(
         "Invitation",
         back_populates="organization",
         cascade="save-update, merge, delete",

@@ -78,7 +78,7 @@ async def get_onboarding_state(
     # if start time is after end time, it means no data has been ingested yet
     if latest_version.start_time > latest_version.end_time:
         return StepSchema(step=Step.DATA)
-    labels_table = model.get_sample_labels_table(session)
+    labels_table = model.get_sample_labels_table()
     has_labels = (await session.execute(
         sa.select(labels_table.c[SAMPLE_LABEL_COL]).where(labels_table.c[SAMPLE_LABEL_COL].isnot(None)).limit(1)
     )).scalars().first() is not None

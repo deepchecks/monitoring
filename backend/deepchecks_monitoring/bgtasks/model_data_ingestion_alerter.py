@@ -68,7 +68,6 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         # If organization was removed - doing nothing
         if organization_schema is None:
             await session.execute(sa.delete(Task).where(Task.id == task.id))
-            await session.commit()
             return
 
         await database.attach_schema_switcher_listener(
@@ -83,7 +82,6 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         # in case it was deleted
         if alert_rule is None:
             await session.execute(sa.delete(Task).where(Task.id == task.id))
-            await session.commit()
             return
 
         model: Model = (await session.execute(sa.select(Model)
@@ -105,15 +103,14 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         def sample_label(columns):
             return getattr(columns, SAMPLE_LABEL_COL)
 
-        tables = [version.get_monitor_table(
-            session) for version in model.versions]
+        tables = [version.get_monitor_table() for version in model.versions]
         if not tables:
             return
 
         self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
                           'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})
 
-        labels_table = model.get_sample_labels_table(session)
+        labels_table = model.get_sample_labels_table()
         # Get all samples within time window from all the versions
         data_query = sa.union_all(*(
             sa.select(
@@ -165,7 +162,6 @@ class ModelDataIngestionAlerter(BackgroundWorker):
                 session.add(alert)
 
         await session.execute(sa.delete(Task).where(Task.id == task.id))
-        await session.commit()
 
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})

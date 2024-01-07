@@ -437,7 +437,7 @@ async def test_log_data_exceeding_rate(
     }
 
     model_version = await async_session.get(ModelVersion, classification_model_version["id"])
-    monitor_table = model_version.get_monitor_table(async_session)
+    monitor_table = model_version.get_monitor_table()
     count = await async_session.scalar(select(func.count()).select_from(monitor_table))
 
     assert count == ROWS_PER_MINUTE_LIMIT

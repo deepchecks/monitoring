@@ -22,7 +22,7 @@ import uvloop
 from redis.asyncio import Redis, RedisCluster
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.cimmutabledict import immutabledict
+from sqlalchemy.util import immutabledict
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
@@ -64,14 +64,14 @@ class TasksQueuer:
 
         # Build the query once to be used later
         delay_by_type = sa.case(
-            [(
+            *[(
                 Task.bg_worker_task == bg_worker.queue_name(),
                 datetime.timedelta(seconds=bg_worker.delay_seconds())
             ) for bg_worker in workers],
             else_=datetime.timedelta(seconds=0)
         )
         retry_by_type = sa.case(
-            [(
+            *[(
                 Task.bg_worker_task == bg_worker.queue_name(),
                 datetime.timedelta(seconds=bg_worker.retry_seconds())
             ) for bg_worker in workers],
@@ -112,24 +112,24 @@ class TasksQueuer:
             self.logger.warning('Worker interrupted')
             raise
 
-    async def move_tasks_to_queue(self, session) -> int:
+    async def move_tasks_to_queue(self, session: AsyncSession) -> int:
         """Return the number of queued tasks."""
         # SQLAlchemy evaluates the WHERE criteria in the UPDATE statement in Python, to locate matching objects
         # within the Session and update them. Therefore, we must use synchronize_session=False to tell sqlalchemy
         # that we don't care about updating ORM objects in the session.
         tasks = (await session.execute(
             self.query, execution_options=immutabledict({'synchronize_session': False}))
-        ).all()
+        ).fetchall()
         ts = pdl.now().int_timestamp
-        task_ids = {x['id']: ts for x in tasks}
+        task_ids = {x.id: ts for x in tasks}
         if task_ids:
             try:
                 # Push to sorted set. if task id is already in set then do nothing.
                 pushed_count = await self.redis.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
                 for task in tasks:
-                    task_id = task['id']
-                    worker = task['bg_worker_task']
-                    num_pushed = task['num_pushed']
+                    task_id = task.id
+                    worker = task.bg_worker_task
+                    num_pushed = task.num_pushed
                     self.logger.info(f'pushing task {task_id} for {worker} that was pushed {num_pushed}')
                 return pushed_count
             except redis_exceptions.ConnectionError:

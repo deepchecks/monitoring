@@ -81,7 +81,7 @@ class AlertsTask(BackgroundWorker):
 
         # Deleting the task
         await session.execute(delete(Task).where(Task.id == task.id))
-        await session.commit()
+        await session.flush()
 
         for alert in alerts:
             # TODO: move to different worker?

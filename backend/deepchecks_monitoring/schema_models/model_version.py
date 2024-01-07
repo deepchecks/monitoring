@@ -113,7 +113,7 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
         passive_updates=True,
     )
 
-    _optional_fields: t.List[str] = None
+    _optional_fields: t.ClassVar[t.List[str]] = None
 
     @property
     def optional_fields(self) -> t.List[str]:
@@ -139,9 +139,9 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
         """Get name of monitor table."""
         return get_monitor_table_name(self.model_id, self.id)
 
-    def get_monitor_table(self, connection=None) -> Table:
+    def get_monitor_table(self) -> Table:
         """Get table object of the monitor table."""
-        metadata = MetaData(bind=connection)
+        metadata = MetaData()
         columns = {**self.features_columns, **self.additional_data_columns, **self.model_columns, **self.meta_columns,
                    **self.private_columns}
         columns = {name: ColumnType(col_type) for name, col_type in columns.items()}
@@ -161,9 +161,9 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
             return [feat[0] for feat in most_important_features], pd.Series(dict(most_important_features))
         return list(sorted(self.features_columns.keys()))[:n_top], None
 
-    def get_reference_table(self, connection=None) -> Table:
+    def get_reference_table(self) -> Table:
         """Get table object of the reference table."""
-        metadata = MetaData(bind=connection)
+        metadata = MetaData()
         columns_in_ref = {
             **self.features_columns,
             **self.additional_data_columns,

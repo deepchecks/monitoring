@@ -69,10 +69,10 @@ async def bins_for_feature(
         # Handle the case when quantile is 1, in this case the floor(quantile * bins number) doesn't work so setting it
         # into the last bin manually (bins number - 1).
         # For nulls the window function returns 1, so they will get the last bin + 1.
-        bucket = case([(Column('quantile') == 1, num_bins - 1)],
+        bucket = case((Column('quantile') == 1, num_bins - 1),
                       else_=func.floor(Column('quantile') * num_bins)).label('bucket')
         # Grouping the quantiles into buckets
-        query = select([
+        query = select(*[
             func.min(feature_column).label('min'),
             func.max(feature_column).label('max'),
             func.count().label('count'),

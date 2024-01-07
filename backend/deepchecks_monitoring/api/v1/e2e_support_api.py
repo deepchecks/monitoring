@@ -48,8 +48,8 @@ async def wait_for_queue(
     start_time = perf_counter()
 
     while topic_end_offset != model_version.ingestion_offset and perf_counter() - start_time < 30:
-        # Commit before refresh save topic_offset and load ingestion_offset
-        await session.commit()
+        # Flush before refresh save topic_offset and load ingestion_offset
+        await session.flush()
         await session.refresh(model_version)
         await asyncio.sleep(0.1)
 

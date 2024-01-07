@@ -223,7 +223,7 @@ async def regenerate_api_token(
     hash_password, user_token = create_api_token(user.email)
     user.api_secret_hash = hash_password
     session.add(user)
-    await session.commit()
+    await session.flush()
     return user_token
 
 
@@ -235,8 +235,6 @@ async def regenerate_api_token(
 )
 async def accept_eula(
     user: User = Depends(auth.CurrentActiveUser()),
-    session: AsyncSession = AsyncSessionDep
 ):
     """Accept End-User License Aggrement."""
     user.eula = True
-    await session.commit()
