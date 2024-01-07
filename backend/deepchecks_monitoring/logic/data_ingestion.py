@@ -317,8 +317,8 @@ async def save_failures(session: AsyncSession, errors, logger):
     try:
         if not errors:
             return
-        for i in range(0, len(errors), 10_000):
-            batch = errors[i : i + 10_000]
+        for i in range(0, len(errors), 1_000):
+            batch = errors[i : i + 1_000]
             await session.execute(postgresql.insert(IngestionError).values(batch).on_conflict_do_nothing())
             await session.flush()
     except Exception as exception:   # pylint: disable=broad-except
