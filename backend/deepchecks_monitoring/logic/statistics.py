@@ -58,7 +58,7 @@ async def bins_for_feature(
     num_bins = numeric_bins if feature_type in [ColumnType.NUMERIC, ColumnType.INTEGER] else categorical_bins
     if feature_type in [ColumnType.NUMERIC, ColumnType.INTEGER]:
         # Adds for each feature his quantile
-        feature_quantiles_cte = (select([feature_column,
+        feature_quantiles_cte = (select(*[feature_column,
                                         func.cume_dist().over(order_by=feature_column).label('quantile')])
                                  .select_from(table)
                                  .where(monitor_options.sql_time_filter(), monitor_options.sql_columns_filter()))
@@ -82,7 +82,7 @@ async def bins_for_feature(
         _add_scaled_bins_names(bins)
         return feature_type, bins
     elif feature_type == ColumnType.CATEGORICAL:
-        query = (select([
+        query = (select(*[
             feature_column.label('value'),
             func.count().label('count')
         ]).select_from(table)

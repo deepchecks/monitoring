@@ -86,9 +86,9 @@ class AlertsScheduler:
     async def run_all_organizations(self):
         """Enqueue tasks for execution."""
         async with self.async_session_factory() as session:
-            organizations = (await session.execute(
+            organizations = list((await session.execute(
                 sa.select(Organization).options(load_only(Organization.schema_name))
-            )).scalars()
+            )).scalars())
 
         if not organizations:
             self.logger.info('No organizations')
@@ -123,6 +123,7 @@ class AlertsScheduler:
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
         async with self.async_session_factory() as session:
+            session: AsyncSession
             await database.attach_schema_switcher_listener(
                 session=session,
                 schema_search_path=[organization.schema_name, 'public']
@@ -290,7 +291,7 @@ async def get_versions_hour_windows(
             .where(hour_window > minimum_time)\
             .group_by(hour_window)
 
-        records = (await session.execute(query)).all()
+        records = (await session.execute(query)).mappings()
         results.append({int(r['hour_window'].timestamp()): r for r in records})
     return results
 
