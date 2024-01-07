@@ -20,7 +20,7 @@ import pendulum as pdl
 import redis.exceptions as redis_exceptions
 import uvloop
 from redis.asyncio import Redis, RedisCluster
-from sqlalchemy import case, func, update
+import sqlalchemy as sa
 from sqlalchemy.cimmutabledict import immutabledict
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
@@ -62,14 +62,14 @@ class TasksQueuer:
         self.redis = redis_client
 
         # Build the query once to be used later
-        delay_by_type = case(
+        delay_by_type = sa.case(
             [(
                 Task.bg_worker_task == bg_worker.queue_name(),
                 datetime.timedelta(seconds=bg_worker.delay_seconds())
             ) for bg_worker in workers],
             else_=datetime.timedelta(seconds=0)
         )
-        retry_by_type = case(
+        retry_by_type = sa.case(
             [(
                 Task.bg_worker_task == bg_worker.queue_name(),
                 datetime.timedelta(seconds=bg_worker.retry_seconds())
@@ -81,9 +81,13 @@ class TasksQueuer:
         next_execution_time = Task.creation_time + delay_by_type + retry_expression
 
         self.query = (
-            update(Task)
-            .where(next_execution_time <= func.statement_timestamp())
-            .values({Task.num_pushed: Task.num_pushed + 1})
+            sa.update(Task)
+            .where(Task.id.in_((
+                sa.select(Task.id)
+                .where(next_execution_time <= sa.func.statement_timestamp())
+                .with_for_update()
+            )))
+            .values(num_pushed=Task.num_pushed + 1)
             .returning(Task.id, Task.bg_worker_task, Task.num_pushed)
         )
 
@@ -128,6 +132,7 @@ class TasksQueuer:
                 return pushed_count
             except redis_exceptions.ConnectionError:
                 # If redis failed, does not commit the update to the db
+                self.logger.error('Failed connecting to redis')
                 await session.rollback()
         return 0
 

@@ -17,7 +17,7 @@ from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 __all__ = ['generate_random_user', 'generate_test_user', 'datetime_sample_formatter',
-           'datetime_formatter', 'string_formatter', 'parse_timestamp']
+           'datetime_formatter', 'string_formatter', 'numeric_to_boolean', 'parse_timestamp']
 
 
 class ExtendedAIOKafkaAdminClient(AIOKafkaAdminClient):  # pylint: disable=missing-class-docstring
@@ -130,6 +130,18 @@ def string_formatter(some_obj):
     if pd.isna(some_obj):
         return None
     return str(some_obj)
+
+
+def numeric_to_boolean(some_obj):
+    # written this way so it will still fail if inavlid boolean column
+    if pd.isna(some_obj):
+        return None
+    elif some_obj == 1:
+        return True
+    elif some_obj == 0:
+        return False
+    else:
+        return some_obj
 
 
 def parse_timestamp(timestamp: t.Union[int, datetime, str]) -> 'PendulumDateTime':
