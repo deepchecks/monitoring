@@ -117,8 +117,9 @@ class TasksQueuer:
         # SQLAlchemy evaluates the WHERE criteria in the UPDATE statement in Python, to locate matching objects
         # within the Session and update them. Therefore, we must use synchronize_session=False to tell sqlalchemy
         # that we don't care about updating ORM objects in the session.
-        tasks = (await session.execute(self.query, execution_options=immutabledict({'synchronize_session': False})))\
-            .all()
+        tasks = (await session.execute(
+            self.query, execution_options=immutabledict({'synchronize_session': False}))
+        ).all()
         ts = pdl.now().int_timestamp
         task_ids = {x['id']: ts for x in tasks}
         if task_ids:
@@ -133,6 +134,7 @@ class TasksQueuer:
                 return pushed_count
             except redis_exceptions.ConnectionError:
                 # If redis failed, does not commit the update to the db
+                self.logger.error('Failed connecting to redis')
                 await session.rollback()
         return 0
 

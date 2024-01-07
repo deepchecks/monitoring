@@ -775,6 +775,8 @@ def _process_sample(
             sample[name] = _string_formatter(sample[name])
         elif kind == ColumnType.DATETIME and name in sample:
             sample[name] = _datetime_formatter(sample[name])
+        elif kind == ColumnType.BOOLEAN and name in sample:
+            sample[name] = _numeric_to_boolean(sample[name])
 
     sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
     schema_validator(sample)
@@ -817,6 +819,17 @@ def _string_formatter(some_obj):
         return None
     return str(some_obj)
 
+
+def _numeric_to_boolean(some_obj):
+    # written this way so it will still fail if inavlid boolean column
+    if pd.isna(some_obj):
+        return None
+    elif some_obj == 1:
+        return True
+    elif some_obj == 0:
+        return False
+    else:
+        return some_obj
 
 def _feature_importance_validate(feature_importance: dict, features: dict):
     if not isinstance(feature_importance, dict):

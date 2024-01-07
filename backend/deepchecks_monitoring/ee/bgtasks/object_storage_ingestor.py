@@ -31,7 +31,7 @@ from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType
 from deepchecks_monitoring.schema_models.data_sources import DataSource
 from deepchecks_monitoring.utils import database
-from deepchecks_monitoring.utils.other import datetime_formatter, string_formatter
+from deepchecks_monitoring.utils.other import datetime_formatter, string_formatter, numeric_to_boolean
 
 __all__ = ['ObjectStorageIngestor']
 
@@ -157,6 +157,8 @@ class ObjectStorageIngestor(BackgroundWorker):
                                 df[name] = df[name].apply(string_formatter)
                             elif kind == ColumnType.DATETIME and name in df.columns:
                                 df[name] = df[name].apply(datetime_formatter)
+                            elif kind == ColumnType.BOOLEAN and name in df.columns:
+                                df[name] = df[name].apply(numeric_to_boolean)
 
                         # For each file, set lock expiry to 360 seconds from now
                         await lock.extend(360, replace_ttl=True)
