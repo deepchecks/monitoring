@@ -208,6 +208,7 @@ async def get_create_model(
         await connection.run_sync(labels_table.metadata.create_all)
         await connection.run_sync(versions_map_table.metadata.create_all)
 
+        await session.flush()
         await resources_provider.report_mixpanel_event(
             ModelCreatedEvent.create_event,
             model=model,

@@ -68,6 +68,7 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         # If organization was removed - doing nothing
         if organization_schema is None:
             await session.execute(sa.delete(Task).where(Task.id == task.id))
+            await session.commit()
             return
 
         await database.attach_schema_switcher_listener(
@@ -82,6 +83,7 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         # in case it was deleted
         if alert_rule is None:
             await session.execute(sa.delete(Task).where(Task.id == task.id))
+            await session.commit()
             return
 
         model: Model = (await session.execute(sa.select(Model)
@@ -162,6 +164,7 @@ class ModelDataIngestionAlerter(BackgroundWorker):
                 session.add(alert)
 
         await session.execute(sa.delete(Task).where(Task.id == task.id))
+        await session.commit()
 
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})
