@@ -312,12 +312,15 @@ async def add_cache_invalidation(organization_id, model_version_id, timestamps_u
         await insert_model_version_cache_invalidation_task(organization_id, model_version_id, session)
 
 
-async def save_failures(session, errors, logger):
+async def save_failures(session: AsyncSession, errors, logger):
     """Save failed messages into ingestion errors table."""
     try:
         if not errors:
             return
-        await session.execute(postgresql.insert(IngestionError).values(errors))
+        for i in range(0, len(errors), 10_000):
+            batch = errors[i : i + 10_000]
+            await session.execute(postgresql.insert(IngestionError).values(batch).on_conflict_do_nothing())
+            await session.flush()
     except Exception as exception:   # pylint: disable=broad-except
         if isinstance(exception, sqlalchemy.exc.SQLAlchemyError):
             # SQLAlchemy wraps the original error in a weird way, so we need to extract it
