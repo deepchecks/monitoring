@@ -91,7 +91,7 @@ async def bins_for_feature(
             .order_by(desc(text('count'))).limit(num_bins))
         if filter_labels_exist:
             query = model_version.model.filter_labels_exist(query, table, filter_not_null=True)
-        bins = (await session.execute(query)).all()
+        bins = (await session.execute(query)).mappings()
         return feature_type, bins
     else:
         raise Exception(f'Don\'t know to create bins for feature of type {feature_type}')
