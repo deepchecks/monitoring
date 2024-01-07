@@ -1,6 +1,6 @@
 boto3==1.26.4
 fastapi>=0.87.0
-sqlalchemy[asyncio]==1.4.39
+sqlalchemy[asyncio]==2.0.25
 dynaconf>=3.1.8
 pydantic[dotenv,email]==1.10.9
 pendulum==2.1.2
