@@ -148,7 +148,11 @@ class ObjectStorageIngestor(BackgroundWorker):
                 for prefix in version_prefixes:
                     for df, time in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time,
                                                        errors, version.model_id, version.id, need_ts=True):
-                        for name, kind in version.features_columns.items():
+                        all_columns = {
+                            **version.features_columns,
+                            **version.additional_data_columns
+                        }
+                        for name, kind in all_columns.items():
                             if kind == ColumnType.CATEGORICAL and name in df.columns:
                                 df[name] = df[name].apply(string_formatter)
                             elif kind == ColumnType.DATETIME and name in df.columns:
