@@ -231,7 +231,7 @@ class ObjectStorageIngestor(BackgroundWorker):
             key = obj['Key']
             file_with_extension = key.rsplit('/', maxsplit=1)[-1]
             if len(file_with_extension) == 0:  # ingesting the folder
-                self._handle_error(errors, f'No files with extention found for bucket {bucket} and prefix {prefix}', 
+                self._handle_error(errors, f'No files with extention found for bucket {bucket} and prefix {prefix}',
                                    model_id, version_id)
                 continue
             if file_with_extension.count('.') != 1:
