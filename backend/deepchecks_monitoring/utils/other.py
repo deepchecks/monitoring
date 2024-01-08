@@ -1,23 +1,17 @@
 """Represent global utility functions."""
 import typing as t
-from datetime import datetime
 from ssl import SSLContext
 
-import numpy as np
-import pandas as pd
 import pendulum as pdl
-import rfc3339_validator
 from aiokafka.admin import AIOKafkaAdminClient
 from aiokafka.admin import __version__ as aiokafka_version
 from aiokafka.client import AIOKafkaClient
-from pendulum.datetime import DateTime as PendulumDateTime
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
-__all__ = ['generate_random_user', 'generate_test_user', 'datetime_sample_formatter',
-           'datetime_formatter', 'string_formatter', 'parse_timestamp']
+__all__ = ['generate_random_user', 'generate_test_user', 'datetime_sample_formatter']
 
 
 class ExtendedAIOKafkaAdminClient(AIOKafkaAdminClient):  # pylint: disable=missing-class-docstring
@@ -114,37 +108,3 @@ def datetime_sample_formatter(sample: t.Dict, model_version: ModelVersion):
             continue
         if model_columns[col_name].get('format') == 'date-time':
             sample[col_name] = pdl.parse(val)
-
-
-def datetime_formatter(datetime_obj):
-    if datetime_obj is None:
-        return None
-    if isinstance(datetime_obj, pd.Period):
-        datetime_obj = datetime_obj.to_timestamp()
-    elif isinstance(datetime_obj, np.datetime64):
-        datetime_obj = pd.Timestamp(datetime_obj.to_timestamp())
-    return parse_timestamp(datetime_obj).to_iso8601_string()
-
-
-def string_formatter(some_obj):
-    if pd.isna(some_obj):
-        return None
-    return str(some_obj)
-
-
-def parse_timestamp(timestamp: t.Union[int, datetime, str]) -> 'PendulumDateTime':
-    """Parse timestamp to datetime object."""
-    # If no timezone in datetime, assumed to be UTC and converted to local timezone
-    if isinstance(timestamp, int) or np.issubdtype(type(timestamp), np.integer):
-        return pdl.from_timestamp(timestamp, pdl.local_timezone())
-    elif isinstance(timestamp, PendulumDateTime):
-        return timestamp
-    elif isinstance(timestamp, datetime):
-        return pdl.instance(timestamp, pdl.local_timezone())
-    elif isinstance(timestamp, str):
-        if rfc3339_validator.validate_rfc3339(timestamp):
-            return pdl.parse(timestamp)
-        else:
-            raise ValueError(f'Not supported timestamp format for: {timestamp}')
-    else:
-        raise ValueError(f'Not supported timestamp type: {type(timestamp)}')

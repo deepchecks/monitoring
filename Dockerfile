@@ -36,7 +36,8 @@ RUN apt-get -y update && apt-get install -y software-properties-common && add-ap
 
 WORKDIR /code
 
-COPY backend/requirements.txt ./
+COPY backend/requirements.txt ./backend_requirements.txt
+COPY backend/client/requirements.txt ./client_requirements.txt
 
 # TODO: not secure, use docker build-kit instead
 ARG MIXPANEL_ID
@@ -47,7 +48,8 @@ ARG DEEPCHECKS_CI_TOKEN
 RUN ln -s /usr/bin/python3.11 /usr/bin/python && python -m pip install -U pip "setuptools"
 # For ARM arch, ray>2.3.1 uses grpcio==1.51.3 which doesn't has wheel and takes forever to build from source
 RUN python -m pip install ray==2.9.0 grpcio==1.60.0 --no-cache-dir
-RUN python -m pip install -r requirements.txt --compile --no-cache-dir
+RUN python -m pip install -r backend_requirements.txt --compile --no-cache-dir
+RUN python -m pip install -r client_requirements.txt --compile --no-cache-dir
 
 RUN adduser --system --group deepchecks
 
@@ -68,6 +70,7 @@ USER root
 
 # RUN pip install deepchecks-monitoring --no-index --find-links file:///code/backend/
 RUN python -m pip install -q -e backend/
+RUN python -m pip install -q -e backend/client
 
 COPY ./bin ./bin/
 

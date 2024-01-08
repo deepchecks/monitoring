@@ -9,13 +9,17 @@
 # ----------------------------------------------------------------------------
 #
 import io
+import typing as t
 from urllib.parse import urlparse
 
 import boto3
+import fastjsonschema
 import pandas as pd
 import pendulum as pdl
 from botocore.config import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
+from deepchecks_client.core.utils import TaskType
+from deepchecks_client.tabular.client import process_batch
 from pandas.core.dtypes.common import is_integer_dtype
 from redis.asyncio.lock import Lock
 from sqlalchemy import delete, select
@@ -28,10 +32,10 @@ from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL,
+                                                             SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.data_sources import DataSource
 from deepchecks_monitoring.utils import database
-from deepchecks_monitoring.utils.other import datetime_formatter, string_formatter
 
 __all__ = ['ObjectStorageIngestor']
 
@@ -152,15 +156,39 @@ class ObjectStorageIngestor(BackgroundWorker):
                             **version.features_columns,
                             **version.additional_data_columns
                         }
-                        for name, kind in all_columns.items():
-                            if kind == ColumnType.CATEGORICAL and name in df.columns:
-                                df[name] = df[name].apply(string_formatter)
-                            elif kind == ColumnType.DATETIME and name in df.columns:
-                                df[name] = df[name].apply(datetime_formatter)
+                        sample_ids = df[SAMPLE_ID_COL]
+                        df.drop(SAMPLE_ID_COL, axis=1, inplace=True)
+                        timestamps = df[SAMPLE_TS_COL]
+                        df.drop(SAMPLE_TS_COL, axis=1, inplace=True)
+
+                        if SAMPLE_PRED_COL in df.columns:
+                            predictions = df[SAMPLE_PRED_COL]
+                            df.drop(SAMPLE_PRED_COL, axis=1, inplace=True)
+                        else:
+                            predictions = None
+                        if SAMPLE_PRED_PROBA_COL in df.columns:
+                            prediction_probas = df[SAMPLE_PRED_PROBA_COL]
+                            df.drop(SAMPLE_PRED_PROBA_COL, axis=1, inplace=True)
+                        else:
+                            prediction_probas = None
+
+                        data_batch = process_batch(
+                            schema_validator=t.cast(t.Callable[..., t.Any],
+                                                    fastjsonschema.compile(version.monitor_json_schema)),
+                            data_columns=all_columns,
+                            task_type=TaskType(model.task_type.value),
+                            sample_ids=sample_ids,
+                            data=df,
+                            timestamps=timestamps,
+                            predictions=predictions,
+                            prediction_probas=prediction_probas,
+                            model_classes=version.classes,
+                        )
 
                         # For each file, set lock expiry to 360 seconds from now
                         await lock.extend(360, replace_ttl=True)
-                        await self.ingestion_backend.log_samples(version, df, session, organization_id, new_scan_time)
+                        await self.ingestion_backend.log_samples(version, pd.DataFrame(data_batch),
+                                                                 session, organization_id, new_scan_time)
                         version.latest_file_time = max(version.latest_file_time or
                                                        pdl.datetime(year=1970, month=1, day=1), time)
 
@@ -243,8 +271,6 @@ class ObjectStorageIngestor(BackgroundWorker):
                     self._handle_error(errors, f'Invalid timestamp column: {SAMPLE_TS_COL}, in file: {file["key"]}',
                                        model_id, version_id)
                     continue
-                # The user facing API requires unix timestamps, but for the ingestion we convert it to ISO format
-                df[SAMPLE_TS_COL] = df[SAMPLE_TS_COL].apply(lambda x: pdl.from_timestamp(x).isoformat())
                 # Sort by timestamp
                 df = df.sort_values(by=[SAMPLE_TS_COL])
             yield df, file['time']
