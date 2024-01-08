@@ -191,6 +191,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                                                                  session, organization_id, new_scan_time)
                         version.latest_file_time = max(version.latest_file_time or
                                                        pdl.datetime(year=1970, month=1, day=1), time)
+                        await session.commit()
 
             # Ingest labels
             for prefix in model_prefixes:
@@ -202,6 +203,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                     await self.ingestion_backend.log_labels(model, df, session, organization_id)
                     model.latest_labels_file_time = max(model.latest_labels_file_time
                                                         or pdl.datetime(year=1970, month=1, day=1), time)
+                    await session.commit()
 
             model.obj_store_last_scan_time = new_scan_time
         except Exception:  # pylint: disable=broad-except
