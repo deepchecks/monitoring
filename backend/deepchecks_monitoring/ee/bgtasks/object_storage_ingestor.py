@@ -121,7 +121,7 @@ class ObjectStorageIngestor(BackgroundWorker):
             aws_secret_access_key=secret_key
         )
 
-        if model.obj_store_path is None:
+        if not model.obj_store_path:
             self._handle_error(errors, 'Model is missing object store path configuration', model_id)
             await self._finalize_before_exit(session, errors)
             return
@@ -205,7 +205,8 @@ class ObjectStorageIngestor(BackgroundWorker):
 
             model.obj_store_last_scan_time = new_scan_time
         except Exception:  # pylint: disable=broad-except
-            self.logger.exception({'message': 'General Error when ingesting data'})
+            self.logger.exception({'message': 'General Error when ingesting data',
+                                   'task': task.id, 'model_id': model_id, 'org_id': organization_id})
             self._handle_error(errors, 'General Error when ingesting data', model_id)
         finally:
             await self._finalize_before_exit(session, errors)
@@ -230,6 +231,8 @@ class ObjectStorageIngestor(BackgroundWorker):
             key = obj['Key']
             file_with_extension = key.rsplit('/', maxsplit=1)[-1]
             if len(file_with_extension) == 0:  # ingesting the folder
+                self._handle_error(errors, f'No files with extention found for bucket {bucket} and prefix {prefix}', 
+                                   model_id, version_id)
                 continue
             if file_with_extension.count('.') != 1:
                 self._handle_error(errors, f'Expected single dot in file name: {key}', model_id,

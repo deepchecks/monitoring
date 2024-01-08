@@ -233,6 +233,7 @@ class AlertsScheduler:
             models: t.List[Model] = (await session.scalars(
                 select(Model)
                 .where(Model.obj_store_path.isnot(None))
+                .where(Model.obj_store_path != '')
             )).all()
 
             if len(models) == 0:

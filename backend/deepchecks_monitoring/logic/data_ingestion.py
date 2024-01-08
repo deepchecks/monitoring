@@ -328,6 +328,8 @@ async def save_failures(session: AsyncSession, errors, logger):
             if isinstance(pg_exception, asyncpg.exceptions.ForeignKeyViolationError):
                 # In case model version was deleted, we will get foreign key violation, so we ignore it
                 logger.info("Got %s probably due to model version being removed", " ".join(exception.args))
+            else:
+                logger.exception("Got unexpected sqlalchemy error while saving ingestion errors")
         else:
             logger.exception("Got unexpected error while saving ingestion errors")
 
