@@ -18,21 +18,22 @@ import pandas as pd
 import pendulum as pdl
 from botocore.config import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
+from deepchecks_client.core.utils import TaskType
+from deepchecks_client.tabular.client import process_batch
 from pandas.core.dtypes.common import is_integer_dtype
 from redis.asyncio.lock import Lock
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from deepchecks_client.core.utils import TaskType
 
-from deepchecks_client.tabular.client import process_batch
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend, save_failures
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL,
+                                                             SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.data_sources import DataSource
 from deepchecks_monitoring.utils import database
 
