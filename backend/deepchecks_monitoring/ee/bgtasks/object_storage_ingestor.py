@@ -58,12 +58,12 @@ class ObjectStorageIngestor(BackgroundWorker):
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider, lock: Lock):
         await session.execute(delete(Task).where(Task.id == task.id))
-
+        task_id = task.id
         organization_id = task.params['organization_id']
         model_id = task.params['model_id']
 
         self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
-                          'task': task.id, 'model_id': model_id, 'org_id': organization_id})
+                          'task': task_id, 'model_id': model_id, 'org_id': organization_id})
 
         organization_schema = (await session.scalar(
             select(Organization.schema_name)
@@ -147,56 +147,75 @@ class ObjectStorageIngestor(BackgroundWorker):
             version: ModelVersion
             for version in model.versions:
                 version_path = f'{model_path}/{version.name}'
+                version_id = version.id
                 # If first scan of specific version - scan all files under version, else scan only new files by date
                 version_prefixes = model_prefixes if version.latest_file_time is not None else ['']
                 for prefix in version_prefixes:
-                    for df, time in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time,
-                                                       errors, version.model_id, version.id, need_ts=True):
-                        all_columns = {
-                            **version.features_columns,
-                            **version.additional_data_columns
-                        }
-                        sample_ids = df[SAMPLE_ID_COL]
-                        df.drop(SAMPLE_ID_COL, axis=1, inplace=True)
-                        timestamps = df[SAMPLE_TS_COL]
-                        df.drop(SAMPLE_TS_COL, axis=1, inplace=True)
+                    for df, time, file_name in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}',
+                                                                  version.latest_file_time,
+                                                                  errors, model_id, version_id, need_ts=True):
+                        try:
+                            all_columns = {
+                                **version.features_columns,
+                                **version.additional_data_columns
+                            }
+                            sample_ids = df[SAMPLE_ID_COL]
+                            df.drop(SAMPLE_ID_COL, axis=1, inplace=True)
+                            timestamps = df[SAMPLE_TS_COL]
+                            df.drop(SAMPLE_TS_COL, axis=1, inplace=True)
 
-                        if SAMPLE_PRED_COL in df.columns:
-                            predictions = df[SAMPLE_PRED_COL]
-                            df.drop(SAMPLE_PRED_COL, axis=1, inplace=True)
+                            if SAMPLE_PRED_COL in df.columns:
+                                predictions = df[SAMPLE_PRED_COL]
+                                df.drop(SAMPLE_PRED_COL, axis=1, inplace=True)
+                            else:
+                                predictions = None
+                            if SAMPLE_PRED_PROBA_COL in df.columns:
+                                prediction_probas = df[SAMPLE_PRED_PROBA_COL]
+                                df.drop(SAMPLE_PRED_PROBA_COL, axis=1, inplace=True)
+                            else:
+                                prediction_probas = None
+
+                            data_batch = process_batch(
+                                schema_validator=t.cast(t.Callable[..., t.Any],
+                                                        fastjsonschema.compile(version.monitor_json_schema)),
+                                data_columns=all_columns,
+                                task_type=TaskType(model.task_type.value),
+                                sample_ids=sample_ids,
+                                data=df,
+                                timestamps=timestamps,
+                                predictions=predictions,
+                                prediction_probas=prediction_probas,
+                                model_classes=version.classes,
+                            )
+                        except ValueError as e:
+                            self._handle_error(
+                                errors,
+                                f'Validation Error while processing file {file_name}: {str(e)}',
+                                model_id=model_id,
+                                model_version_id=version_id
+                            )
+                        except Exception as e:  # pylint: disable=broad-except
+                            self._handle_error(
+                                errors,
+                                f'Error while processing file {file_name}',
+                                model_id=model_id,
+                                model_version_id=version_id
+                            )
+                            self.logger.exception({'message': f'Error while processing file {file_name}',
+                                                   'task': task_id, 'model_id': model_id, 'org_id': organization_id})
                         else:
-                            predictions = None
-                        if SAMPLE_PRED_PROBA_COL in df.columns:
-                            prediction_probas = df[SAMPLE_PRED_PROBA_COL]
-                            df.drop(SAMPLE_PRED_PROBA_COL, axis=1, inplace=True)
-                        else:
-                            prediction_probas = None
-
-                        data_batch = process_batch(
-                            schema_validator=t.cast(t.Callable[..., t.Any],
-                                                    fastjsonschema.compile(version.monitor_json_schema)),
-                            data_columns=all_columns,
-                            task_type=TaskType(model.task_type.value),
-                            sample_ids=sample_ids,
-                            data=df,
-                            timestamps=timestamps,
-                            predictions=predictions,
-                            prediction_probas=prediction_probas,
-                            model_classes=version.classes,
-                        )
-
-                        # For each file, set lock expiry to 360 seconds from now
-                        await lock.extend(360, replace_ttl=True)
-                        await self.ingestion_backend.log_samples(version, pd.DataFrame(data_batch),
-                                                                 session, organization_id, new_scan_time)
-                        version.latest_file_time = max(version.latest_file_time or
-                                                       pdl.datetime(year=1970, month=1, day=1), time)
+                            # For each file, set lock expiry to 360 seconds from now
+                            await lock.extend(360, replace_ttl=True)
+                            await self.ingestion_backend.log_samples(version, pd.DataFrame(data_batch),
+                                                                        session, organization_id, new_scan_time)
+                            version.latest_file_time = max(version.latest_file_time or
+                                                            pdl.datetime(year=1970, month=1, day=1), time)
 
             # Ingest labels
             for prefix in model_prefixes:
                 labels_path = f'{model_path}/labels/{prefix}'
-                for df, time in self.ingest_prefix(s3, bucket, labels_path, model.latest_labels_file_time,
-                                                   errors, model_id):
+                for df, time, file_name in self.ingest_prefix(s3, bucket, labels_path, model.latest_labels_file_time,
+                                                              errors, model_id):
                     # For each file, set lock expiry to 360 seconds from now
                     await lock.extend(360, replace_ttl=True)
                     await self.ingestion_backend.log_labels(model, df, session, organization_id)
@@ -206,14 +225,14 @@ class ObjectStorageIngestor(BackgroundWorker):
             model.obj_store_last_scan_time = new_scan_time
         except Exception:  # pylint: disable=broad-except
             self.logger.exception({'message': 'General Error when ingesting data',
-                                   'task': task.id, 'model_id': model_id, 'org_id': organization_id})
+                                   'task': task_id, 'model_id': model_id, 'org_id': organization_id})
             self._handle_error(errors, 'General Error when ingesting data', model_id)
         finally:
             await self._finalize_before_exit(session, errors)
             s3.close()
 
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
-                          'task': task.id, 'model_id': model_id, 'org_id': organization_id})
+                          'task': task_id, 'model_id': model_id, 'org_id': organization_id})
 
     def ingest_prefix(self, s3, bucket, prefix, last_file_time, errors,
                       model_id, version_id=None, need_ts: bool = False):
@@ -231,8 +250,9 @@ class ObjectStorageIngestor(BackgroundWorker):
             key = obj['Key']
             file_with_extension = key.rsplit('/', maxsplit=1)[-1]
             if len(file_with_extension) == 0:  # ingesting the folder
-                self._handle_error(errors, f'No files with extention found for bucket {bucket} and prefix {prefix}',
-                                   model_id, version_id)
+                if obj['Size'] != 0:  # not a folder then
+                    self._handle_error(errors, f'No files with extention found for bucket {bucket} and prefix {prefix}',
+                                       model_id, version_id)
                 continue
             if file_with_extension.count('.') != 1:
                 self._handle_error(errors, f'Expected single dot in file name: {key}', model_id,
@@ -276,7 +296,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                     continue
                 # Sort by timestamp
                 df = df.sort_values(by=[SAMPLE_TS_COL])
-            yield df, file['time']
+            yield df, file['time'], file_with_extension
 
     def _handle_error(self, errors, error_message, model_id=None, model_version_id=None, set_warning_in_logs=True):
 
@@ -296,4 +316,3 @@ class ObjectStorageIngestor(BackgroundWorker):
 
     async def _finalize_before_exit(self, session, errors):
         await save_failures(session, errors, self.logger)
-        await session.commit()
