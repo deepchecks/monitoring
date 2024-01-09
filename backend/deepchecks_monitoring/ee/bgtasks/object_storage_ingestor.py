@@ -187,6 +187,17 @@ class ObjectStorageIngestor(BackgroundWorker):
                                 prediction_probas=prediction_probas,
                                 model_classes=version.classes,
                             )
+
+                            # For each file, set lock expiry to 360 seconds from now
+                            await lock.extend(360, replace_ttl=True)
+                            model_version: ModelVersion = (
+                                await session.scalar(select(ModelVersion).options(selectinload(ModelVersion.model))
+                                                     .where(ModelVersion.id == version_id))
+                            )
+                            await self.ingestion_backend.log_samples(model_version, pd.DataFrame(data_batch),
+                                                                     session, organization_id, new_scan_time)
+                            model_version.latest_file_time = max(model_version.latest_file_time or
+                                                                 pdl.datetime(year=1970, month=1, day=1), time)
                         except ValueError as e:
                             self._handle_error(
                                 errors,
@@ -203,28 +214,34 @@ class ObjectStorageIngestor(BackgroundWorker):
                             )
                             self.logger.exception({'message': f'Error while processing file {file_name}',
                                                    'task': task_id, 'model_id': model_id, 'org_id': organization_id})
-                        else:
-                            # For each file, set lock expiry to 360 seconds from now
-                            await lock.extend(360, replace_ttl=True)
-                            model_version: ModelVersion = (
-                                await session.scalar(select(ModelVersion).options(selectinload(ModelVersion.model))
-                                                     .where(ModelVersion.id == version_id))
-                            )
-                            await self.ingestion_backend.log_samples(model_version, pd.DataFrame(data_batch),
-                                                                     session, organization_id, new_scan_time)
-                            model_version.latest_file_time = max(model_version.latest_file_time or
-                                                                 pdl.datetime(year=1970, month=1, day=1), time)
 
             # Ingest labels
             for prefix in model_prefixes:
                 labels_path = f'{model_path}/labels/{prefix}'
                 for df, time, file_name in self.ingest_prefix(s3, bucket, labels_path, model.latest_labels_file_time,
                                                               errors, model_id):
-                    # For each file, set lock expiry to 360 seconds from now
-                    await lock.extend(360, replace_ttl=True)
-                    await self.ingestion_backend.log_labels(model, df, session, organization_id)
-                    model.latest_labels_file_time = max(model.latest_labels_file_time
-                                                        or pdl.datetime(year=1970, month=1, day=1), time)
+                    try:
+                        # For each file, set lock expiry to 360 seconds from now
+                        await lock.extend(360, replace_ttl=True)
+                        await self.ingestion_backend.log_labels(model, df, session, organization_id)
+                        model.latest_labels_file_time = max(model.latest_labels_file_time
+                                                            or pdl.datetime(year=1970, month=1, day=1), time)
+                    except ValueError as e:
+                        self._handle_error(
+                            errors,
+                            f'Validation Error while processing labels file {file_name}: {str(e)}',
+                            model_id=model_id,
+                            model_version_id=version_id
+                        )
+                    except Exception as e:  # pylint: disable=broad-except
+                        self._handle_error(
+                            errors,
+                            f'Error while processing file {file_name}',
+                            model_id=model_id,
+                            model_version_id=version_id
+                        )
+                        self.logger.exception({'message': f'Error while labels processing file {file_name}',
+                                               'task': task_id, 'model_id': model_id, 'org_id': organization_id})
 
             model.obj_store_last_scan_time = new_scan_time
         except Exception:  # pylint: disable=broad-except
