@@ -226,11 +226,11 @@ class ObjectStorageIngestor(BackgroundWorker):
                         # For each file, set lock expiry to 360 seconds from now
                         await lock.extend(360, replace_ttl=True)
                         tmp_model: Model = (
-                                await session.scalar(select(Model).where(Model.id == model_id))
+                            await session.scalar(select(Model).where(Model.id == model_id))
                         )
                         await self.ingestion_backend.log_labels(tmp_model, df, session, organization_id)
                         tmp_model.latest_labels_file_time = max(tmp_model.latest_labels_file_time
-                                                            or pdl.datetime(year=1970, month=1, day=1), time)
+                                                                or pdl.datetime(year=1970, month=1, day=1), time)
                         await session.commit()
                     except Exception:  # pylint: disable=broad-except
                         self._handle_error(
@@ -244,7 +244,7 @@ class ObjectStorageIngestor(BackgroundWorker):
 
             await session.execute(update(Model)
                                   .where(Model.id == model_id)
-                                  .values(obj_store_last_scan_time = new_scan_time))
+                                  .values(obj_store_last_scan_time=new_scan_time))
         except Exception:  # pylint: disable=broad-except
             self.logger.exception({'message': 'General Error when ingesting data',
                                    'task': task_id, 'model_id': model_id, 'org_id': organization_id})
