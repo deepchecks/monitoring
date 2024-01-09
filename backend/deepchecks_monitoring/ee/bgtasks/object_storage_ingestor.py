@@ -226,13 +226,6 @@ class ObjectStorageIngestor(BackgroundWorker):
                         await self.ingestion_backend.log_labels(model, df, session, organization_id)
                         model.latest_labels_file_time = max(model.latest_labels_file_time
                                                             or pdl.datetime(year=1970, month=1, day=1), time)
-                    except ValueError as e:
-                        self._handle_error(
-                            errors,
-                            f'Validation Error while processing labels file {file_name}: {str(e)}',
-                            model_id=model_id,
-                            model_version_id=version_id
-                        )
                     except Exception as e:  # pylint: disable=broad-except
                         self._handle_error(
                             errors,
