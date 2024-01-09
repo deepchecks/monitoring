@@ -183,7 +183,9 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
         if max_timestamp > self.end_time:
             updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, max_timestamp)
         if updates:
-            await async_object_session(self).execute(update(ModelVersion).where(ModelVersion.id == self.id).values(updates))
+            await async_object_session(self).execute(update(ModelVersion)
+                                                     .where(ModelVersion.id == self.id)
+                                                     .values(updates))
 
     async def update_statistics(self, new_statistics: dict):
         """Update the statistics with a lock on the row."""
