@@ -164,15 +164,15 @@ async def log_data(
     min_ts = min(logged_timestamps)
     # IMPORTANT: In order to prevent deadlock in case of model deletion, we need to update the model first, because
     # we must acquire the locks on the model and model versions in the same order (model first, then model version).
-    await model.update_timestamps(min_ts, max_ts, session)
+    await model.update_timestamps(min_ts, max_ts)
 
     # Save errors only after updating model, since it also acquires a lock on the model version
     await save_failures(session, errors, logger)
 
     # Update model version statistics and timestamps
     if model_version.statistics != updated_statistics:
-        await model_version.update_statistics(updated_statistics, session)
-    await model_version.update_timestamps(min_ts, max_ts, session)
+        await model_version.update_statistics(updated_statistics)
+    await model_version.update_timestamps(min_ts, max_ts)
     await add_cache_invalidation(org_id, model_version.id, logged_timestamps, session, cache_functions)
     model_version.last_update_time = pdl.now()
 
@@ -279,7 +279,7 @@ async def log_labels(
                 for sample_id in sample_ids:
                     update_statistics_from_sample(updated_statistics, valid_data[sample_id])
                 if model_version.statistics != updated_statistics:
-                    await model_version.update_statistics(updated_statistics, session)
+                    await model_version.update_statistics(updated_statistics)
 
             # Insert or update all labels
             labels_table = model.get_sample_labels_table(session)

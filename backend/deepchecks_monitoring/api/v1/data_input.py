@@ -278,7 +278,7 @@ async def save_reference(
     for sample in items:
         update_statistics_from_sample(updated_statistics, sample)
     if model_version.statistics != updated_statistics:
-        await model_version.update_statistics(updated_statistics, session)
+        await model_version.update_statistics(updated_statistics)
 
     await session.execute(ref_table.insert(), items)
     return Response(status_code=status.HTTP_200_OK)

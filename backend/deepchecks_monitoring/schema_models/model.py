@@ -130,7 +130,7 @@ class Model(Base, MetadataMixin, PermissionMixin):
                                     .where(ModelMember.user_id == user.id)
                                     .where(cls.id == obj_id))
 
-    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
+    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime):
         """Update start and end date if needed based on given timestamps."""
         # Running an update with min/max in order to prevent race condition when running in parallel
         updates = {}
@@ -140,7 +140,7 @@ class Model(Base, MetadataMixin, PermissionMixin):
             updates[Model.end_time] = func.greatest(Model.end_time, max_timestamp)
 
         if updates:
-            await session.execute(update(Model).where(Model.id == self.id).values(updates))
+            await async_object_session(self).execute(update(Model).where(Model.id == self.id).values(updates))
 
     def has_data(self) -> bool:
         """Check if model has data."""

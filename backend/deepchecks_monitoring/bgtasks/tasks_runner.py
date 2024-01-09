@@ -122,18 +122,19 @@ class TaskRunner:
     async def _run_task(self, task: Task, session, queued_timestamp, lock):
         """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
         to log the task parameters and queued time."""
+        bg_worker_task = task.bg_worker_task
         try:
-            worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
+            worker: BackgroundWorker = self.workers.get(bg_worker_task)
             if worker:
                 start = pdl.now()
                 await worker.run(task, session, self.resource_provider, lock)
                 duration = (pdl.now() - start).total_seconds()
                 delay = start.int_timestamp - queued_timestamp
-                self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})
+                self.logger.info({'duration': duration, 'task': bg_worker_task, 'delay': delay})
             else:
-                self.logger.info({'message': f'Unknown task type: {task.bg_worker_task}'})
+                self.logger.info({'message': f'Unknown task type: {bg_worker_task}'})
         except Exception:  # pylint: disable=broad-except
-            self.logger.exception({'message': 'Exception running task', 'task': task.bg_worker_task})
+            self.logger.exception({'message': 'Exception running task', 'task': bg_worker_task})
             await session.rollback()
 
 
