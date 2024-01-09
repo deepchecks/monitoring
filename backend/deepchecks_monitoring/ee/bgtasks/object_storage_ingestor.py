@@ -266,7 +266,7 @@ class ObjectStorageIngestor(BackgroundWorker):
             if len(file_with_extension) == 0:  # ingesting the folder
                 if obj['Size'] != 0:  # not a folder then
                     self._handle_error(errors,
-                                       f'Files without extention {key} found for bucket {bucket} and prefix {prefix}',
+                                       f'File without extention {key} found for bucket {bucket} and prefix {prefix}',
                                        model_id, version_id)
                 continue
             if file_with_extension.count('.') != 1:
