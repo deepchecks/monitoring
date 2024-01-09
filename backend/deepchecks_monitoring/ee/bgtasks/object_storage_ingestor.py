@@ -206,10 +206,14 @@ class ObjectStorageIngestor(BackgroundWorker):
                         else:
                             # For each file, set lock expiry to 360 seconds from now
                             await lock.extend(360, replace_ttl=True)
-                            await self.ingestion_backend.log_samples(version, pd.DataFrame(data_batch),
-                                                                        session, organization_id, new_scan_time)
-                            version.latest_file_time = max(version.latest_file_time or
-                                                            pdl.datetime(year=1970, month=1, day=1), time)
+                            model_version: ModelVersion = (
+                                await session.scalar(select(ModelVersion).options(selectinload(ModelVersion.model))
+                                                     .where(ModelVersion.id == version_id))
+                            )
+                            await self.ingestion_backend.log_samples(model_version, pd.DataFrame(data_batch),
+                                                                     session, organization_id, new_scan_time)
+                            model_version.latest_file_time = max(model_version.latest_file_time or
+                                                                 pdl.datetime(year=1970, month=1, day=1), time)
 
             # Ingest labels
             for prefix in model_prefixes:
