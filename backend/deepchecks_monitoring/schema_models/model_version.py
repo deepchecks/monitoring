@@ -20,7 +20,7 @@ from pydantic.main import BaseModel
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, MetaData, String, Table,
                         UniqueConstraint, func, select, update)
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.asyncio import AsyncSession, async_object_session
+from sqlalchemy.ext.asyncio import async_object_session
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin
