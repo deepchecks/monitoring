@@ -22,7 +22,7 @@ from deepchecks_client.core.utils import TaskType
 from deepchecks_client.tabular.client import process_batch
 from pandas.core.dtypes.common import is_integer_dtype
 from redis.asyncio.lock import Lock
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -143,11 +143,12 @@ class ObjectStorageIngestor(BackgroundWorker):
                 while date <= new_scan_time.date():
                     date = date.add(days=1)
                     model_prefixes.append(date.isoformat())
-
+            session.expunge(model)
             version: ModelVersion
             for version in model.versions:
                 version_path = f'{model_path}/{version.name}'
                 version_id = version.id
+                session.expunge(version)
                 # If first scan of specific version - scan all files under version, else scan only new files by date
                 version_prefixes = model_prefixes if version.latest_file_time is not None else ['']
                 for prefix in version_prefixes:
@@ -198,6 +199,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                                                                      session, organization_id, new_scan_time)
                             model_version.latest_file_time = max(model_version.latest_file_time or
                                                                  pdl.datetime(year=1970, month=1, day=1), time)
+                            await session.commit()
                         except ValueError as e:
                             self._handle_error(
                                 errors,
@@ -223,9 +225,13 @@ class ObjectStorageIngestor(BackgroundWorker):
                     try:
                         # For each file, set lock expiry to 360 seconds from now
                         await lock.extend(360, replace_ttl=True)
-                        await self.ingestion_backend.log_labels(model, df, session, organization_id)
-                        model.latest_labels_file_time = max(model.latest_labels_file_time
-                                                            or pdl.datetime(year=1970, month=1, day=1), time)
+                        tmp_model: Model = (
+                            await session.scalar(select(Model).where(Model.id == model_id))
+                        )
+                        await self.ingestion_backend.log_labels(tmp_model, df, session, organization_id)
+                        tmp_model.latest_labels_file_time = max(tmp_model.latest_labels_file_time
+                                                                or pdl.datetime(year=1970, month=1, day=1), time)
+                        await session.commit()
                     except Exception:  # pylint: disable=broad-except
                         self._handle_error(
                             errors,
@@ -236,7 +242,9 @@ class ObjectStorageIngestor(BackgroundWorker):
                         self.logger.exception({'message': f'Error while labels processing file {file_name}',
                                                'task': task_id, 'model_id': model_id, 'org_id': organization_id})
 
-            model.obj_store_last_scan_time = new_scan_time
+            await session.execute(update(Model)
+                                  .where(Model.id == model_id)
+                                  .values(obj_store_last_scan_time=new_scan_time))
         except Exception:  # pylint: disable=broad-except
             self.logger.exception({'message': 'General Error when ingesting data',
                                    'task': task_id, 'model_id': model_id, 'org_id': organization_id})
