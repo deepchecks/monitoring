@@ -41,7 +41,7 @@ schema.
 - Create a database named `deepchecks` in postgres.
 - Install all the requirements for the server:
 ```bash
-pip install -r requirements.txt dev-requirements.txt
+pip install -r requirements.txt -r dev-requirements.txt
 pip install -e .
 ```
 - Run the migrations for the public schema. For more info on migrations see below.
