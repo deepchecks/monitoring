@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 import boto3
 import fastjsonschema
+import numpy as np
 import pandas as pd
 import pendulum as pdl
 from botocore.config import Config
@@ -195,7 +196,10 @@ class ObjectStorageIngestor(BackgroundWorker):
                                 await session.scalar(select(ModelVersion).options(selectinload(ModelVersion.model))
                                                      .where(ModelVersion.id == version_id))
                             )
-                            await self.ingestion_backend.log_samples(model_version, pd.DataFrame(data_batch),
+                            proccessed_df = pd.DataFrame(data_batch)
+                            # Force replace NaN as .apply() will not work for numeric columns
+                            proccessed_df.replace(np.nan, None, inplace=True)
+                            await self.ingestion_backend.log_samples(model_version, proccessed_df,
                                                                      session, organization_id, new_scan_time)
                             model_version.latest_file_time = max(model_version.latest_file_time or
                                                                  pdl.datetime(year=1970, month=1, day=1), time)
@@ -235,11 +239,11 @@ class ObjectStorageIngestor(BackgroundWorker):
                     except Exception:  # pylint: disable=broad-except
                         self._handle_error(
                             errors,
-                            f'Error while processing file {file_name}',
+                            f'Error while processing labels file {file_name}',
                             model_id=model_id,
                             model_version_id=version_id
                         )
-                        self.logger.exception({'message': f'Error while labels processing file {file_name}',
+                        self.logger.exception({'message': f'Error while processing labels file {file_name}',
                                                'task': task_id, 'model_id': model_id, 'org_id': organization_id})
 
             await session.execute(update(Model)
