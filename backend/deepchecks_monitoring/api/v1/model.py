@@ -508,19 +508,19 @@ async def retrieve_available_models(
         alerts_count.c.max.label("max_severity"),
         monitors_count.c.count.label("n_of_monitors"),
     )
-    .select_from(Model)
-    .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-    .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
-    .options(
-        joinedload(Model.members),
-        joinedload(Model.versions).load_only(
-            ModelVersion.id,
-            ModelVersion.name,
-            ModelVersion.model_id,
-            ModelVersion.start_time,
-            ModelVersion.end_time,
-        )
-    ))
+        .select_from(Model)
+        .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
+        .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
+        .options(
+            joinedload(Model.members),
+            joinedload(Model.versions).load_only(
+                ModelVersion.id,
+                ModelVersion.name,
+                ModelVersion.model_id,
+                ModelVersion.start_time,
+                ModelVersion.end_time,
+            )
+        ))
 
     if resources_provider.get_features_control(user).model_assignment and \
             not (show_all and auth.is_admin(user)):
