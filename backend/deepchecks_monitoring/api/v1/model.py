@@ -771,11 +771,18 @@ async def retrieve_connected_models(
             label_ratio = 0
         else:
             labels_table = model.get_sample_labels_table(session)
-            data_query = \
-                sa.union_all(*(sa.select(_sample_id(table.c).label("sample_id")).distinct() for table in tables))
-            joined_query = sa.select(data_query.c.sample_id,
-                                     sa.func.cast(_sample_label(labels_table.c), sa.String).label("label")) \
-                .join(labels_table, onclause=data_query.c.sample_id == _sample_id(labels_table.c), isouter=True)
+            data_query = sa.union_all(
+                *(sa.select(_sample_id(table.c)
+                            .label("sample_id"))
+                  .distinct()
+                  for table in tables))
+            joined_query = (sa.select(data_query.c.sample_id,
+                                     sa.func.cast(_sample_label(labels_table.c),
+                                                  sa.String)
+                                     .label("label"))
+                            .join(labels_table,
+                                  onclause=data_query.c.sample_id == _sample_id(labels_table.c),
+                                  isouter=True))
             row = (await session.execute(
                 sa.select(
                     sa.func.count(joined_query.c.sample_id).label("count"),
