@@ -19,7 +19,7 @@ export function getData(data: number[], labels: any[]): ChartData<'line', number
   };
 }
 
-export const getOptions = (average: number, condition: number): ChartOptions<'line'> => ({
+export const getOptions = (): ChartOptions<'line'> => ({
   responsive: true,
   elements: {
     line: {
@@ -32,58 +32,58 @@ export const getOptions = (average: number, condition: number): ChartOptions<'li
     },
     title: {
       display: false
-    },
-    annotation: {
-      annotations: [
-        {
-          drawTime: 'afterDatasetsDraw',
-          type: 'line',
-          scaleID: 'x',
-          value: average,
-          borderWidth: 2,
-          borderColor: 'black',
-          label: {
-            content: 'Average',
-            display: true,
-            position: 'end',
-            backgroundColor: 'transparent',
-            color: 'black',
-            xAdjust: -24,
-            padding: 0,
-            font: {
-              family: 'Manrope',
-              size: 11,
-              weight: '700',
-              lineHeight: '14px'
-            }
-          }
-        },
-        {
-          drawTime: 'afterDatasetsDraw',
-          type: 'line',
-          scaleID: 'x',
-          value: condition,
-          borderWidth: 2,
-          borderColor: theme.palette.grey[500],
-          borderDash: [6],
-          label: {
-            content: 'Condition',
-            display: true,
-            position: 'start',
-            backgroundColor: 'transparent',
-            color: theme.palette.grey[500],
-            xAdjust: 28,
-            padding: 0,
-            font: {
-              family: 'Manrope',
-              size: 11,
-              weight: '700',
-              lineHeight: '14px'
-            }
-          }
-        }
-      ]
     }
+    // annotation: {
+    //   annotations: [
+    //     {
+    //       drawTime: 'afterDatasetsDraw',
+    //       type: 'line',
+    //       scaleID: 'x',
+    //       value: average,
+    //       borderWidth: 2,
+    //       borderColor: 'black',
+    //       label: {
+    //         content: 'Average',
+    //         display: true,
+    //         position: 'end',
+    //         backgroundColor: 'transparent',
+    //         color: 'black',
+    //         xAdjust: -24,
+    //         padding: 0,
+    //         font: {
+    //           family: 'Manrope',
+    //           size: 11,
+    //           weight: '700',
+    //           lineHeight: '14px'
+    //         }
+    //       }
+    //     },
+    //     {
+    //       drawTime: 'afterDatasetsDraw',
+    //       type: 'line',
+    //       scaleID: 'x',
+    //       value: condition,
+    //       borderWidth: 2,
+    //       borderColor: theme.palette.grey[500],
+    //       borderDash: [6],
+    //       label: {
+    //         content: 'Condition',
+    //         display: true,
+    //         position: 'start',
+    //         backgroundColor: 'transparent',
+    //         color: theme.palette.grey[500],
+    //         xAdjust: 28,
+    //         padding: 0,
+    //         font: {
+    //           family: 'Manrope',
+    //           size: 11,
+    //           weight: '700',
+    //           lineHeight: '14px'
+    //         }
+    //       }
+    //     }
+    //   ]
+    // }
   },
   scales: {
     x: {

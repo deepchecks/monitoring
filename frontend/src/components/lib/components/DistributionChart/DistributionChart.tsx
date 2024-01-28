@@ -12,7 +12,7 @@ import {
   Legend
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import annotationPlugin from 'chartjs-plugin-annotation';
+// import annotationPlugin from 'chartjs-plugin-annotation';
 
 import { Box, BoxProps } from '@mui/material';
 
@@ -27,8 +27,8 @@ ChartJS?.register(
   Title,
   Tooltip,
   Filler,
-  Legend,
-  annotationPlugin
+  Legend
+  // annotationPlugin
 );
 
 interface DistributionChartProps extends BoxProps {
@@ -43,13 +43,13 @@ export const DistributionChart = ({
   data,
   labels,
   title,
-  average,
-  condition,
+  // average,
+  // condition,
   width = 560,
   ...otherProps
 }: DistributionChartProps) => (
   <Box width={width} key={title} {...otherProps}>
     <StyledTitleText text={title} type="body" />
-    <Line options={getOptions(average, condition)} data={getData(data, labels)} />
+    <Line options={getOptions()} data={getData(data, labels)} />
   </Box>
 );

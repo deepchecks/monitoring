@@ -1,5 +1,5 @@
 import React, { useContext, useRef, useState } from 'react';
-import { AppBar, Box } from '@mui/material';
+import { AppBar, Box, useTheme } from '@mui/material';
 
 import { GlobalStateContext } from 'helpers/context/GlobalProvider';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
@@ -16,6 +16,8 @@ import { StyledButton, StyledContainer, StyledLogo } from 'components/lib';
 export const Sidebar = () => {
   const width = useWindowResize();
   const contentRef = useRef<HTMLElement>();
+
+  const { palette } = useTheme();
 
   const [userInviteOpen, setUserInviteOpen] = useState(false);
   const [openAnalysisSubMenu, setOpenAnalysisSubMenu] = useState<boolean>(false);
@@ -52,7 +54,7 @@ export const Sidebar = () => {
         width: '237px',
         height: '100vh',
         zIndex: 100,
-        background: '#D8DDE1'
+        background: palette?.grey[200]
       }}
     >
       <StyledContainer
@@ -68,7 +70,7 @@ export const Sidebar = () => {
             justifyContent: 'space-between',
             position: 'relative',
             zIndex: 10,
-            background: '#D8DDE1'
+            background: palette?.grey[200]
           }}
         >
           <Box>
