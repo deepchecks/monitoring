@@ -777,9 +777,9 @@ async def retrieve_connected_models(
                   .distinct()
                   for table in tables))
             joined_query = (sa.select(data_query.c.sample_id,
-                                     sa.func.cast(_sample_label(labels_table.c),
-                                                  sa.String)
-                                     .label("label"))
+                                      sa.func.cast(_sample_label(labels_table.c),
+                                                   sa.String)
+                                      .label("label"))
                             .join(labels_table,
                                   onclause=data_query.c.sample_id == _sample_id(labels_table.c),
                                   isouter=True))
