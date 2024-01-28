@@ -55,7 +55,7 @@ export const MonitorFormAdvancedSection = ({
       <Collapse in={advanced}>
         <Stack alignItems="center">
           <Stack direction="row" alignItems="center">
-            <StyledText text={aggregationStr} type="smallBold" />
+            <StyledText text={aggregationStr} type="small" />
             <IconButton onClick={resetToDefault} sx={{ marginLeft: '5px' }}>
               <RefreshIcon />
             </IconButton>

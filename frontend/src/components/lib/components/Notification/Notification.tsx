@@ -21,7 +21,7 @@ export const Notification = (props: NotificationProps) => {
   const bgColor = () => {
     switch (severity) {
       case 'low':
-        return (paletteOptions.secondary as any).main;
+        return paletteOptions.secondary?.['main' as keyof typeof paletteOptions.secondary];
       case 'medium':
         return paletteOptions.severity?.medium;
       case 'high':
@@ -29,7 +29,7 @@ export const Notification = (props: NotificationProps) => {
       case 'critical':
         return paletteOptions.severity?.critical;
       default:
-        return (paletteOptions.primary as any).main;
+        return paletteOptions.primary?.['main' as keyof typeof paletteOptions.primary];
     }
   };
 

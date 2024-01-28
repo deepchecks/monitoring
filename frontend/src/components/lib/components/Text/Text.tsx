@@ -1,22 +1,14 @@
 import React, { ReactNode } from 'react';
+
 import { Typography, TypographyProps } from '@mui/material';
 import { Variant } from '@mui/material/styles/createTypography';
 
-export type TextTypes =
-  | 'h1'
-  | 'h2'
-  | 'h3'
-  | 'bodyNormal'
-  | 'bodyBold'
-  | 'smallNormal'
-  | 'smallBold'
-  | 'smallBoldFontSecondary'
-  | 'tiny'
-  | 'button';
+export type TextTypes = 'h1' | 'h2' | 'h3' | 'button' | 'small' | 'body' | 'bodyBold' | 'tiny' | 'tinyBold';
 
 export interface TextProps extends Omit<TypographyProps, 'variant'> {
   text: ReactNode;
   type?: TextTypes;
+  component?: React.ElementType;
 }
 
 function getTextType(type: TextTypes | undefined): Variant {
@@ -30,26 +22,23 @@ function getTextType(type: TextTypes | undefined): Variant {
     case 'h3':
       return 'h3';
 
-    case 'bodyNormal':
+    case 'button':
+      return 'button';
+
+    case 'small':
+      return 'h5';
+
+    case 'body':
       return 'body1';
 
     case 'bodyBold':
       return 'body2';
 
-    case 'smallNormal':
-      return 'h5';
-
-    case 'smallBold':
+    case 'tiny':
       return 'subtitle1';
 
-    case 'smallBoldFontSecondary':
+    case 'tinyBold':
       return 'subtitle2';
-
-    case 'tiny':
-      return 'h6';
-
-    case 'button':
-      return 'button';
 
     default:
       return 'body1';
@@ -57,7 +46,15 @@ function getTextType(type: TextTypes | undefined): Variant {
 }
 
 export const Text = (props: TextProps) => {
-  const { text, type, whiteSpace = 'pre-line', overflow = 'hidden', textOverflow = 'ellipsis' } = props;
+  const {
+    text,
+    type,
+    whiteSpace = 'pre-line',
+    overflow = 'hidden',
+    textOverflow = 'ellipsis',
+    component = 'p',
+    ...otherProps
+  } = props;
 
   return (
     <Typography
@@ -65,7 +62,8 @@ export const Text = (props: TextProps) => {
       overflow={overflow}
       whiteSpace={whiteSpace}
       textOverflow={textOverflow}
-      {...props}
+      component={component}
+      {...otherProps}
     >
       {text}
     </Typography>
