@@ -785,8 +785,12 @@ async def retrieve_connected_models(
                                   isouter=True))
             row = (await session.execute(
                 sa.select(
-                    sa.func.count(joined_query.c.sample_id).label("count"),
-                    sa.func.count(sa.func.cast(joined_query.c.label, sa.String)).label("label_count"))
+                    sa.func.count(joined_query.c.sample_id)
+                    .label("count"),
+                    sa.func.count(
+                        sa.func.cast(joined_query.c.label,
+                                     sa.String))
+                    .label("label_count"))
             )).first()
             sample_count = row.count
             label_count = row.label_count
