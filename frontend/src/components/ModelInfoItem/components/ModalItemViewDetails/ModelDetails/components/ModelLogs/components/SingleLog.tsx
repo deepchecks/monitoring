@@ -23,9 +23,11 @@ export const SingleLog = ({ log }: SingleErrorProps) => (
       <StyledCellText>{log.created_at ? `${dayjs(log.created_at).format('L LT')}` : '- '}</StyledCellText>
     </StyledTableCell>
     <StyledTableCell width="20%">
-      <StyledCellText width="265px" noWrap={true}>
-        {log.error}
-      </StyledCellText>
+      <StyledToolTip text={log?.error}>
+        <StyledCellText width="265px" noWrap={true}>
+          {log.error}
+        </StyledCellText>
+      </StyledToolTip>
     </StyledTableCell>
     <StyledTableCell width="20%">
       <StyledCellText>{log.sample_id}</StyledCellText>
