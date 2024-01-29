@@ -51,9 +51,9 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
     <>
       <StyledNavLink
         linkLabel={info.title}
-        icon={Icon ? <Icon /> : null}
+        icon={Icon ? <Icon /> : <></>}
         isActive={active}
-        activeIcon={ActiveIcon ? <ActiveIcon /> : null}
+        activeIcon={ActiveIcon ? <ActiveIcon /> : <></>}
       />
       {info.title === 'Analysis' && (
         <Box

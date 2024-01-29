@@ -1,16 +1,17 @@
-import { styled, MenuProps, Box } from '@mui/material';
 import Select from '@mui/material/Select';
+import { styled, MenuProps, Box } from '@mui/material';
 
 import { paletteOptions } from '../../theme/palette';
 
 const StyledSelect = styled(Select)(({ theme }) => ({
-  color: theme.palette.common.white,
-  backgroundColor: theme.palette.primary.main,
-  borderRadius: '28px',
+  color: theme.palette.grey[500],
+  backgroundColor: theme.palette.grey[200],
+  borderRadius: '8px',
   border: 'none',
+  fontSize: '16px',
 
   '& .MuiSelect-select': {
-    padding: '5.5px 16px 6.5px 16px'
+    padding: '9px 16px 7px'
   },
 
   '& .MuiOutlinedInput-notchedOutline, &:hover .MuiOutlinedInput-notchedOutline': {
@@ -22,30 +23,38 @@ const StyledSelect = styled(Select)(({ theme }) => ({
   }
 }));
 
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
 const menuProps = (searchField: boolean): Partial<MenuProps> => ({
   PaperProps: {
     style: {
-      maxHeight: ITEM_HEIGHT * 6.5 + ITEM_PADDING_TOP,
-      backgroundColor: (paletteOptions.primary as any).main,
+      maxHeight: '300px',
+      backgroundColor: paletteOptions.grey?.[200],
       borderRadius: '8px',
       marginTop: '8px'
     }
   },
   MenuListProps: {
     style: {
+      paddingBottom: 0,
       paddingTop: searchField ? 0 : '8px'
     }
   }
 });
 
-const StyledStickyContainer = styled(Box)(({ theme }) => ({
+const StyledStickyContainer = styled(Box)(() => ({
   zIndex: 1,
-  position: 'sticky',
   top: 0,
   padding: '8px 16px',
-  backgroundColor: theme.palette.primary.main
+  position: 'sticky',
+  backgroundColor: paletteOptions.grey?.[200]
 }));
 
-export { StyledSelect, menuProps, StyledStickyContainer };
+const StyledBottomContainer = styled(Box)(() => ({
+  zIndex: 3,
+  bottom: 0,
+  padding: '16px',
+  cursor: 'pointer',
+  position: 'sticky',
+  backgroundColor: paletteOptions.grey?.[200]
+}));
+
+export { StyledSelect, menuProps, StyledStickyContainer, StyledBottomContainer };

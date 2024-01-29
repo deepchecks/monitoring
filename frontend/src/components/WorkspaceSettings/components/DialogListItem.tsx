@@ -26,7 +26,7 @@ export const DialogListItem = ({ title, subtitle, selected, ...otherProps }: Dia
       <Checkbox checked={selected} sx={{ marginRight: '15px' }} />
       <Stack>
         <StyledText type="h3" text={title} sx={{ fontWeight: 700, marginBottom: '3px' }} />
-        <StyledText type="smallNormal" text={subtitle} />
+        <StyledText type="small" text={subtitle} />
       </Stack>
     </StyledContainer>
   );
