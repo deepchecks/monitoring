@@ -346,7 +346,7 @@ async def _retrieve_models_data_ingestion(
                 end_time
             )).distinct()  # TODO why distinct?
             for table in tables)
-        )
+                                  )
         # Join with labels table
         all_models_queries.append(
             sa.select(sa.literal(getattr(model, model_identifier_name)).label("model_id"),
@@ -493,34 +493,34 @@ class ModelManagmentSchema(BaseModel):
     description="Retrieve list of available models."
 )
 async def retrieve_available_models(
-    show_all: bool = Query(default=False),
-    session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.CurrentUser()),
-    resources_provider: ResourcesProvider = ResourcesProviderDep,
+        show_all: bool = Query(default=False),
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[ModelManagmentSchema]:
     """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.cte()
     monitors_count = MonitorsCountPerModel.cte()
 
     query = (sa.select(
-                Model,
-                alerts_count.c.count.label("n_of_alerts"),
-                alerts_count.c.max.label("max_severity"),
-                monitors_count.c.count.label("n_of_monitors"),
+        Model,
+        alerts_count.c.count.label("n_of_alerts"),
+        alerts_count.c.max.label("max_severity"),
+        monitors_count.c.count.label("n_of_monitors"),
+    )
+        .select_from(Model)
+        .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
+        .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
+        .options(
+            joinedload(Model.members),
+            joinedload(Model.versions).load_only(
+                ModelVersion.id,
+                ModelVersion.name,
+                ModelVersion.model_id,
+                ModelVersion.start_time,
+                ModelVersion.end_time,
             )
-            .select_from(Model)
-            .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-            .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
-            .options(
-                joinedload(Model.members),
-                joinedload(Model.versions).load_only(
-                    ModelVersion.id,
-                    ModelVersion.name,
-                    ModelVersion.model_id,
-                    ModelVersion.start_time,
-                    ModelVersion.end_time,
-                )
-            ))
+        ))
 
     if resources_provider.get_features_control(user).model_assignment and \
             not (show_all and auth.is_admin(user)):
@@ -737,18 +737,18 @@ async def retrieve_connected_models(
         .cte()
     )
     q = (sa.select(
-            Model.id,
-            Model.name,
-            Model.task_type,
-            Model.description,
-            alerts_count.c.count.label("n_of_alerts"),
-            ingestion_info.c.latest_update,
-            ingestion_info.c.n_of_pending_rows,
-            ingestion_info.c.n_of_updating_versions
-        )
-        .select_from(Model)
-        .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id))
+        Model.id,
+        Model.name,
+        Model.task_type,
+        Model.description,
+        alerts_count.c.count.label("n_of_alerts"),
+        ingestion_info.c.latest_update,
+        ingestion_info.c.n_of_pending_rows,
+        ingestion_info.c.n_of_updating_versions
+    )
+         .select_from(Model)
+         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
+         .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id))
 
     if resources_provider.get_features_control(user).model_assignment:
         q = q.join(Model.members).where(ModelMember.user_id == user.id)
@@ -770,14 +770,29 @@ async def retrieve_connected_models(
             label_count = 0
             label_ratio = 0
         else:
-            data_query = \
-                sa.union_all(*(sa.select(_sample_id(table.c).label("sample_id")).distinct() for table in tables))
-            row = (await session.execute(sa.select(
-                        sa.func.count(data_query.c.sample_id).label("count")))).first()
-            sample_count = row.count
             labels_table = model.get_sample_labels_table(session)
-            row = (await session.execute(sa.select(
-                        sa.func.count(_sample_id(labels_table.c)).label("label_count")))).first()
+            data_query = sa.union_all(
+                *(sa.select(_sample_id(table.c)
+                            .label("sample_id"))
+                  .distinct()
+                  for table in tables))
+            joined_query = (sa.select(data_query.c.sample_id,
+                                      sa.func.cast(_sample_label(labels_table.c),
+                                                   sa.String)
+                                      .label("label"))
+                            .join(labels_table,
+                                  onclause=data_query.c.sample_id == _sample_id(labels_table.c),
+                                  isouter=True))
+            row = (await session.execute(
+                sa.select(
+                    sa.func.count(joined_query.c.sample_id)
+                    .label("count"),
+                    sa.func.count(
+                        sa.func.cast(joined_query.c.label,
+                                     sa.String))
+                    .label("label_count"))
+            )).first()
+            sample_count = row.count
             label_count = row.label_count
             label_ratio = sample_count and label_count / sample_count
 
