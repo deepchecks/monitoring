@@ -30,7 +30,9 @@ ENV PYTHONUNBUFFERED 1
 ENV TZ=Asia/Jerusalem
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt-get -y update && apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa &&  \
+RUN apt-get -y update &&  apt-get -y upgrade
+
+RUN apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa &&  \
     apt install -y git python3.11 python3.11-dev python3.11-distutils curl g++ libpq-dev &&  \
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
 
