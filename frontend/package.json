@@ -23,7 +23,6 @@
     "change-case": "^4.1.2",
     "chart.js": "^3.9.1",
     "chartjs-adapter-dayjs-3": "^1.2.3",
-    "chartjs-plugin-annotation": "^3.0.1",
     "chartjs-plugin-zoom": "^1.2.1",
     "dayjs": "^1.11.5",
     "deepmerge": "^4.2.2",

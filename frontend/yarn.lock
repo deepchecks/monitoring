@@ -4489,11 +4489,6 @@ chartjs-adapter-dayjs-3@^1.2.3:
   resolved "https://registry.npmjs.org/chartjs-adapter-dayjs-3/-/chartjs-adapter-dayjs-3-1.2.3.tgz"
   integrity sha512-H8m1c2cFi9zdiJ0IfY7txUSSZusnS671sUuE6dbmvcaHmSFTMNoWH5lJvNj+oM1hLRsiP5pSTiB7InAMDJP+rQ==
 
-chartjs-plugin-annotation@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/chartjs-plugin-annotation/-/chartjs-plugin-annotation-3.0.1.tgz#4cf51d9797bf3202788ca0beae8694404621ad19"
-  integrity sha512-hlIrXXKqSDgb+ZjVYHefmlZUXK8KbkCPiynSVrTb/HjTMkT62cOInaT1NTQCKtxKKOm9oHp958DY3RTAFKtkHg==
-
 chartjs-plugin-zoom@^1.2.1:
   version "1.2.1"
   resolved "https://registry.npmjs.org/chartjs-plugin-zoom/-/chartjs-plugin-zoom-1.2.1.tgz"
