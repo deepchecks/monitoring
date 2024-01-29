@@ -30,7 +30,7 @@ ENV PYTHONUNBUFFERED 1
 ENV TZ=Asia/Jerusalem
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt-get -y update &&  upt-get upgrade
+RUN apt-get -y update &&  upt-get -y upgrade
 
 RUN apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa &&  \
     apt install -y git python3.11 python3.11-dev python3.11-distutils curl g++ libpq-dev &&  \
