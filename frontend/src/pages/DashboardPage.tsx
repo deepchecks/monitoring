@@ -140,7 +140,6 @@ export const DashboardPage = () => {
     setCurrentModel(emptyModel);
   };
 
-  console.log(frequency);
   return (
     <>
       <Grid
