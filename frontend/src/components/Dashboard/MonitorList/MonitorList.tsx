@@ -7,7 +7,8 @@ import {
   CheckSchema,
   MonitorCheckConf,
   MonitorCheckConfSchema,
-  ModelManagmentSchema
+  ModelManagmentSchema,
+  Frequency
 } from 'api/generated';
 
 import { Loader } from 'components/base/Loader/Loader';
@@ -22,6 +23,7 @@ interface MonitorsListProps {
   dashboard: DashboardSchema | undefined;
   currentModelId: number | null;
   currentMonitor: MonitorSchema | null;
+  setFrequency: (frequency: Frequency) => void;
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
   handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
@@ -43,6 +45,7 @@ export const MonitorList = ({
   dashboard,
   currentModelId,
   currentMonitor,
+  setFrequency,
   setCurrentMonitor,
   handleOpenMonitorDialog,
   monitorToRefreshId,
@@ -99,6 +102,7 @@ export const MonitorList = ({
             setCurrentMonitor={setCurrentMonitor}
             setIsDeleteMonitorDialogOpen={setIsDeleteMonitorDialogOpen}
             onPointClick={onPointClick}
+            setFrequency={setFrequency}
             setCurrentModel={setCurrentModel}
           />
         ))

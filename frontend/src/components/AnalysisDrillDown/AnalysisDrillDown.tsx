@@ -56,11 +56,11 @@ const AnalysisDrillDownComponent = ({
   timeLabel,
   additionalKwargs,
   onCloseIconClick,
+  frequency: propFrequency,
   type,
   ...props
 }: AnalysisDrillDownProps) => {
-  const { frequency, activeFilters } = useContext(AnalysisContext);
-
+  const { frequency: contextFrequency, activeFilters } = useContext(AnalysisContext);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -74,6 +74,7 @@ const AnalysisDrillDownComponent = ({
   const [featureImportance, setFeatureImportance] = useState<Record<string, number> | null>(null);
   const [sortByFi, setSortByFi] = useState(true);
 
+  const frequency = propFrequency || contextFrequency;
   const propValuesAreNotNull = !!(datasetName && check && modelVersionId && timeLabel);
   const testSuitePropsAreNotNull = !!(selectedFeature && modelVersionId && singleCheckRunOptions);
 
@@ -104,7 +105,10 @@ const AnalysisDrillDownComponent = ({
         setFeatureImportance(featureImportance);
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
-          start_time: dayjs.utc(timeLabel).subtract(1, getDayJsManipulateType(frequency)).toISOString(),
+          start_time: dayjs
+            .utc(timeLabel)
+            .subtract(1, getDayJsManipulateType(Number(propFrequency)))
+            .toISOString(),
           end_time: new Date(timeLabel).toISOString(),
           filter: { filters: activeFilters.length ? activeFilters : [] },
           ...(additionalKwargs && { additional_kwargs: additionalKwargs })
