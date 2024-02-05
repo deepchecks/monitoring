@@ -6,7 +6,8 @@ import {
   MonitorSchema,
   CheckSchema,
   MonitorCheckConf,
-  MonitorCheckConfSchema
+  MonitorCheckConfSchema,
+  Frequency
 } from 'api/generated';
 
 import { Box, Typography, styled, Stack, Grid } from '@mui/material';
@@ -22,6 +23,7 @@ interface MonitorsGroupProps {
   model: ModelManagmentSchema;
   monitors: MonitorSchema[];
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
+  setFrequency: (frequency: Frequency) => void;
   handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
@@ -41,6 +43,7 @@ interface MonitorsGroupProps {
 export const MonitorsGroup = ({
   model,
   monitors,
+  setFrequency,
   setCurrentMonitor,
   handleOpenMonitorDialog,
   monitorToRefreshId,
@@ -81,6 +84,7 @@ export const MonitorsGroup = ({
           <Monitor
             key={mon.id}
             initialMonitor={mon}
+            setFrequency={setFrequency}
             setCurrentMonitor={setCurrentMonitor}
             setIsDeleteMonitorDialogOpen={setIsDeleteMonitorDialogOpen}
             handleOpenMonitorDialog={handleOpenMonitorDialog}

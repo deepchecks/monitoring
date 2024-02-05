@@ -7,7 +7,8 @@ import {
   CheckSchema,
   MonitorCheckConfSchema,
   MonitorCheckConf,
-  ModelManagmentSchema
+  ModelManagmentSchema,
+  Frequency
 } from 'api/generated';
 
 import { Grid, Snackbar, Alert } from '@mui/material';
@@ -27,6 +28,7 @@ import { CheckType } from 'helpers/types/check';
 import { onDrawerOpen } from 'components/AnalysisDrillDown/AnalysisDrillDown.helpers';
 import { DialogNames } from 'components/Dashboard/Dashboard.types';
 import { emptyModel } from 'helpers/hooks/useModels';
+import { FrequencyMap } from 'helpers/utils/frequency';
 
 const constants = { snackbarAlertMessage: 'Initial first load can take a few minutes, we are processing your data' };
 
@@ -56,15 +58,18 @@ export const DashboardPage = () => {
   const [currentTimeLabel, setCurrentTimeLabel] = useState<number | null>(null);
   const [currentType, setCurrentType] = useState<CheckType>(null);
 
-  const [dialogName, setDialogName] = useState(DialogNames.CreateMonitor);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [frequency, setFrequency] = useState<Frequency>(null as unknown as Frequency);
+  const [dialogName, setDialogName] = useState(DialogNames.CreateMonitor);
 
   const handleOpenMonitorDialog = (dialogName: DialogNames, monitor?: MonitorSchema) => {
-    if (monitor) setCurrentMonitor(monitor);
-    setDialogName(dialogName);
-    setIsDialogOpen(true);
+    if (monitor) {
+      setCurrentMonitor(monitor);
+      setDialogName(dialogName);
+      setIsDialogOpen(true);
+    }
   };
 
   const handleCloseMonitorDialog = () => {
@@ -165,6 +170,7 @@ export const DashboardPage = () => {
             setMonitorToRefreshId={setMonitorToRefreshId}
             isLoading={isDashboardLoading}
             onPointClick={handleDrawerOpen}
+            setFrequency={setFrequency}
             setCurrentModel={setCurrentModel}
           />
         </Grid>
@@ -181,6 +187,7 @@ export const DashboardPage = () => {
       <AnalysisDrillDown
         modelName={currentModel.name}
         datasetName={currentDatasetName}
+        frequency={FrequencyMap[frequency]}
         check={currentCheck}
         modelVersionId={currentModelVersionId}
         open={isDrawerOpen}
