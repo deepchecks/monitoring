@@ -9,6 +9,7 @@ export interface ClassOrFeature {
 
 export interface AnalysisDrillDownProps extends DrawerProps {
   modelName: string;
+  frequency?: number;
   datasetName: string | null;
   check: CheckSchema | null;
   modelVersionId: number | null;

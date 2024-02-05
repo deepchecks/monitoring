@@ -6,7 +6,8 @@ import {
   getMonitorApiV1MonitorsMonitorIdGet,
   CheckSchema,
   MonitorCheckConf,
-  MonitorCheckConfSchema
+  MonitorCheckConfSchema,
+  Frequency
 } from 'api/generated';
 
 import { Grid, GridProps } from '@mui/material';
@@ -21,6 +22,7 @@ import { DialogNames } from '../../Dashboard.types';
 interface MonitorProps extends GridProps {
   initialMonitor: MonitorSchema;
   hidden?: boolean;
+  setFrequency: (frequency: Frequency) => void;
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
   setIsDeleteMonitorDialogOpen: SetStateType<boolean>;
   handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
@@ -38,6 +40,7 @@ interface MonitorProps extends GridProps {
 
 const MonitorComponent = ({
   initialMonitor,
+  setFrequency,
   setCurrentMonitor,
   setIsDeleteMonitorDialogOpen,
   handleOpenMonitorDialog,
@@ -99,7 +102,16 @@ const MonitorComponent = ({
   };
 
   return (
-    <Grid ref={observedContainerRef} item md={6} lg={6} xl={4} {...props} width="100%">
+    <Grid
+      ref={observedContainerRef}
+      item
+      md={6}
+      lg={6}
+      xl={4}
+      {...props}
+      width="100%"
+      onClick={() => setFrequency(initialMonitor?.frequency)}
+    >
       <GraphicsSection
         data={data}
         monitor={monitor}
