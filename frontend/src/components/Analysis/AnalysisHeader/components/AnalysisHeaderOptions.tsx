@@ -56,7 +56,31 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
     }
   };
 
-  const handleFrequencyChange = (event: SelectChangeEvent<unknown>) => setFrequency(Number(event.target.value));
+  const handleFrequencyChange = (event: SelectChangeEvent<unknown>) => {
+    const value = Number(event.target.value);
+
+    setFrequency(value);
+
+    // let windows_count = 12;
+
+    // if (value < frequencyValues.DAY) {
+    //   windows_count = 24;
+    // } else if (value < frequencyValues.WEEK) {
+    //   windows_count = 31;
+    // }
+    // if (period) {
+    //   let start_date = dayjs(period[1])
+    //     .subtract(value * windows_count, 'second')
+    //     .toDate();
+    //   if (model.start_time) {
+    //     const model_start_date = dayjs.unix(model.start_time).toDate();
+    //     if (model_start_date > start_date) {
+    //       start_date = model_start_date;
+    //     }
+    //   }
+    //   setPeriod([start_date, period[1]]);
+    // }
+  };
 
   const handleDateChange = (startTime: Date | undefined, endTime: Date | undefined) => {
     if (frequency && dayjs(startTime).isSame(dayjs(endTime))) {
