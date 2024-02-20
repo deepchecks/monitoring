@@ -448,7 +448,7 @@ class DataIngestionBackend(object):
         """Handle messages consumed from kafka."""
         organization_id, entity_id, entity = data_topic_name_to_ids(tp.topic)
         try:
-            topic_offset = (await consumer.end_offsets([tp]))[tp]
+            topic_offset = (await consumer.end_offsets([tp]))[tp] - 1
             async with self.resources_provider.create_async_database_session(organization_id) as session:
                 # If session is none, it means the organization was removed, so no need to do anything
                 if session is None:
