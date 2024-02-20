@@ -14,13 +14,13 @@ import copy
 import json
 import typing as t
 
-from aiokafka import AIOKafkaConsumer, TopicPartition
-from aiokafka.structs import ConsumerRecord
 import asyncpg.exceptions
 import fastjsonschema
 import pandas as pd
 import pendulum as pdl
 import sqlalchemy.exc
+from aiokafka import AIOKafkaConsumer, TopicPartition
+from aiokafka.structs import ConsumerRecord
 from sqlalchemy import Column, select, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import array_agg
