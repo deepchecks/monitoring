@@ -38,7 +38,7 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logg
                 for tp, messages in result.items():
                     tp: TopicPartition
                     if messages:
-                        to_commit = await handle_func(tp, messages)
+                        to_commit = await handle_func(consumer, tp, messages)
                         if to_commit:
                             offset = messages[-1].offset
                             logger.info("Commiting kafka offset %s to topic %s", offset, tp.topic)

@@ -28,7 +28,6 @@ from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
 from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
-from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
 from deepchecks_monitoring.config import DatabaseSettings, RedisSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
@@ -203,7 +202,6 @@ def execute_worker():
 
         workers = [
             ModelVersionTopicDeletionWorker,
-            ModelVersionOffsetUpdate,
             ModelVersionCacheInvalidation,
             ModelDataIngestionAlerter,
             DeleteDbTableTask,

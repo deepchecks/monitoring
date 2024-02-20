@@ -19,6 +19,8 @@ import fastjsonschema
 import pandas as pd
 import pendulum as pdl
 import sqlalchemy.exc
+from aiokafka import AIOKafkaConsumer, TopicPartition
+from aiokafka.structs import ConsumerRecord
 from sqlalchemy import Column, select, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import array_agg
@@ -26,7 +28,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import insert_model_version_cache_invalidation_task
-from deepchecks_monitoring.bgtasks.model_version_offset_update import insert_model_version_offset_update_task
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import insert_model_version_topic_delete_task
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import DATA_TOPIC_PREFIXES, data_topic_name_to_ids, get_data_topic_name
@@ -318,7 +319,7 @@ async def save_failures(session: AsyncSession, errors, logger):
         if not errors:
             return
         for i in range(0, len(errors), 1_000):
-            batch = errors[i : i + 1_000]
+            batch = errors[i: i + 1_000]
             await session.execute(postgresql.insert(IngestionError).values(batch))
             await session.flush()
     except Exception as exception:   # pylint: disable=broad-except
@@ -370,7 +371,6 @@ class DataIngestionBackend(object):
 
         if self.use_kafka:
             entity = "model-version"
-            await insert_model_version_offset_update_task(organization_id, model_version.id, entity, session)
             topic_name = get_data_topic_name(organization_id, model_version.id, entity)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
             # If topic was created, resetting the offsets and adding a task to delete it when data upload is done
@@ -414,7 +414,6 @@ class DataIngestionBackend(object):
 
         if self.use_kafka:
             entity = "model"
-            await insert_model_version_offset_update_task(organization_id, model.id, entity, session)
             topic_name = get_data_topic_name(organization_id, model.id, entity)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
             # If topic was created, resetting the offsets and adding a task to delete it when data upload is done
@@ -442,10 +441,14 @@ class DataIngestionBackend(object):
         await consume_from_kafka(self.resources_provider.kafka_settings, self._handle_data_messages,
                                  regex_pattern, self.logger)
 
-    async def _handle_data_messages(self, tp, messages) -> bool:
+    async def _handle_data_messages(self,
+                                    consumer: AIOKafkaConsumer,
+                                    tp: TopicPartition,
+                                    messages: list[ConsumerRecord]) -> bool:
         """Handle messages consumed from kafka."""
         organization_id, entity_id, entity = data_topic_name_to_ids(tp.topic)
         try:
+            topic_offset = (await consumer.end_offsets([tp]))[tp] - 1
             async with self.resources_provider.create_async_database_session(organization_id) as session:
                 # If session is none, it means the organization was removed, so no need to do anything
                 if session is None:
@@ -459,28 +462,28 @@ class DataIngestionBackend(object):
                     # If model version is none it was deleted, so no need to do anything
                     if model_version is None:
                         return True
-
+                    model_version.topic_end_offset = topic_offset
                     # If kafka commit failed we might rerun on same messages, so using the ingestion offset to forward
                     # already ingested messages
                     messages_data = [json.loads(m.value) for m in messages if m.offset > model_version.ingestion_offset]
-                    model_version.ingestion_offset = messages[-1].offset
                     samples = [m["data"] for m in messages_data]
                     log_times = [pdl.parse(m["log_time"]) for m in messages_data]
                     await log_data(model_version, samples, session, log_times, self.logger, organization_id,
                                    self.resources_provider.cache_functions)
+                    model_version.ingestion_offset = messages[-1].offset
                 if entity == "model":
                     model: Model = (await session.execute(select(Model).where(Model.id == entity_id))).scalar()
                     # If model is none it was deleted, so no need to do anything
                     if model is None:
                         return True
-
+                    model.topic_end_offset = topic_offset
                     # If kafka commit failed we might rerun on same messages, so using the ingestion offset to forward
                     # already ingested messages
                     messages_data = [json.loads(m.value) for m in messages if m.offset > model.ingestion_offset]
-                    model.ingestion_offset = messages[-1].offset
                     samples = [m["data"] for m in messages_data]
                     await log_labels(model, samples, session, organization_id,
                                      self.resources_provider.cache_functions, self.logger)
+                    model.ingestion_offset = messages[-1].offset
 
             return True
         except Exception as exception:  # pylint: disable=broad-except
