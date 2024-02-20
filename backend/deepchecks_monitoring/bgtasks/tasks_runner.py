@@ -12,7 +12,6 @@
 import logging.handlers
 import typing as t
 
-import aiokafka
 import anyio
 import pendulum as pdl
 import uvloop

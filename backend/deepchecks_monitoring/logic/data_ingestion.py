@@ -441,7 +441,7 @@ class DataIngestionBackend(object):
         await consume_from_kafka(self.resources_provider.kafka_settings, self._handle_data_messages,
                                  regex_pattern, self.logger)
 
-    async def _handle_data_messages(self, 
+    async def _handle_data_messages(self,
                                     consumer: AIOKafkaConsumer,
                                     tp: TopicPartition,
                                     messages: list[ConsumerRecord]) -> bool:
