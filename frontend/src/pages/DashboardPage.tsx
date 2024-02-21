@@ -65,11 +65,9 @@ export const DashboardPage = () => {
   const [dialogName, setDialogName] = useState(DialogNames.CreateMonitor);
 
   const handleOpenMonitorDialog = (dialogName: DialogNames, monitor?: MonitorSchema) => {
-    if (monitor) {
-      setCurrentMonitor(monitor);
-      setDialogName(dialogName);
-      setIsDialogOpen(true);
-    }
+    setCurrentMonitor(monitor || null);
+    setDialogName(dialogName);
+    setIsDialogOpen(true);
   };
 
   const handleCloseMonitorDialog = () => {
