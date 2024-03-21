@@ -28,9 +28,12 @@ const { title, dialogListItemSubtitle, searchfieldPlaceholder, submitButtonLabel
 export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) => {
   const { models: initialModels, refetchModels } = useModels('showAll');
 
+  const [fetching, setFetching] = useState(false);
   const [modelsList, setModelsList] = useState<ModelManagmentSchema[]>([]);
   const [selectedModels, setSelectedModels] = useState<readonly number[]>([]);
-  const [fetching, setFetching] = useState(false);
+  const [modelsAndNotifications, setModelsAndNotifications] = useState<
+    DeepchecksMonitoringEeApiV1MembersIdNotifySchema[]
+  >([]);
 
   useEffect(() => {
     initialModels.length && setModelsList(initialModels);
@@ -47,7 +50,9 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
 
     if (member) {
       modelsList.forEach(({ id, members }) => {
-        if (members.includes(member.id)) result.push(id);
+        const memberIds = members.map(m => m.id);
+
+        if (memberIds.includes(member.id)) result.push(id);
       });
     }
 
@@ -59,7 +64,7 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
 
     if (member) {
       await assignModelsToUserApiV1UsersUserIdModelsPost(member.id, {
-        models: [] as DeepchecksMonitoringEeApiV1MembersIdNotifySchema[], // Todo - send data
+        models: modelsAndNotifications,
         replace: true
       });
       refetchModels();
@@ -103,10 +108,11 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
           return (
             <DialogListItem
               key={id}
-              onClick={e => selectMultiple(e, id, selectedModels, setSelectedModels)}
-              selected={isItemSelected}
               title={m.name}
+              selected={isItemSelected}
               subtitle={dialogListItemSubtitle(m.latest_time)}
+              setModelsAndNotifications={setModelsAndNotifications}
+              onClick={e => selectMultiple(e, id, selectedModels, setSelectedModels)}
             />
           );
         })}
