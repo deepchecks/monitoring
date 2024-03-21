@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
-import { MemberSchema, ModelManagmentSchema, assignModelsToUserApiV1UsersUserIdModelsPost } from 'api/generated';
-import { useListSearchField } from 'helpers/hooks/useListSearchField';
-import useModels from 'helpers/hooks/useModels';
-
 import { StyledDialog, StyledHighlightedText, StyledInput } from 'components/lib';
 import { DialogListItem } from 'components/WorkspaceSettings/components/DialogListItem';
 
 import { StyledDialogListContainer } from 'components/WorkspaceSettings/WorkspaceSettings.styles';
+
+import useModels from 'helpers/hooks/useModels';
+import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import { selectMultiple, isSelected } from 'components/WorkspaceSettings/WorkspaceSettings.helpers';
-import { MembersActionDialog } from '../Members.type';
+import {
+  DeepchecksMonitoringEeApiV1MembersIdNotifySchema,
+  MemberSchema,
+  ModelManagmentSchema,
+  assignModelsToUserApiV1UsersUserIdModelsPost
+} from 'api/generated';
+
 import { constants } from '../members.constants';
+import { MembersActionDialog } from '../Members.type';
 
 interface AssignModelsProps extends MembersActionDialog {
   member: MemberSchema | null;
@@ -53,7 +59,7 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
 
     if (member) {
       await assignModelsToUserApiV1UsersUserIdModelsPost(member.id, {
-        model_ids: selectedModels as number[],
+        models: [] as DeepchecksMonitoringEeApiV1MembersIdNotifySchema[], // Todo - send data
         replace: true
       });
       refetchModels();
