@@ -463,6 +463,9 @@ class ModelVersionManagmentSchema(BaseModel):
 
         orm_mode = True
 
+class IdNotifySchema(BaseModel):
+    id: int
+    notify: bool
 
 class ModelManagmentSchema(BaseModel):
     """Model schema for the "Model managment" screen."""
@@ -478,7 +481,7 @@ class ModelManagmentSchema(BaseModel):
     has_data: bool = False
     max_severity: t.Optional[AlertSeverity] = None
     versions: t.List[ModelVersionManagmentSchema]
-    members: t.List[int]
+    members: t.List[IdNotifySchema]
 
     class Config:
         """Schema config."""
@@ -549,7 +552,7 @@ async def retrieve_available_models(
                 for version in record.Model.versions
             ],
             members=[
-                member.user_id for member in record.Model.members
+                IdNotifySchema(id=member.user_id, notify=member.notify) for member in record.Model.members
             ],
         )
         for record in records

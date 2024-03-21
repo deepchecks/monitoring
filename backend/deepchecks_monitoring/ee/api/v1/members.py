@@ -13,6 +13,7 @@ import typing as t
 import sqlalchemy as sa
 from fastapi import Depends
 from pydantic.main import BaseModel
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -39,10 +40,15 @@ class RoleUpdateSchema(BaseModel):
     replace: t.Optional[bool] = True
 
 
+class IdNotifySchema(BaseModel):
+    id: int
+    notify: bool
+
+
 class MemberUpdateSchema(BaseModel):
     """Member update schema."""
 
-    model_ids: t.List[int]
+    models: t.List[IdNotifySchema]
     replace: t.Optional[bool] = True
 
 
@@ -121,8 +127,8 @@ async def assign_models_to_user(
     if user.organization_id != current_user.organization_id:
         raise BadRequest("User doesn't exists in your organization.")
 
-    for model_id in member_schema.model_ids:
-        await exists_or_404(session, Model, id=model_id)
+    for model in member_schema.models:
+        await exists_or_404(session, Model, id=model.id)
 
     model_memebers: t.List[ModelMember] = (
         await session.execute(sa.select(ModelMember)
@@ -131,17 +137,19 @@ async def assign_models_to_user(
     models_to_create = []
     models_to_delete = []
     for model_memeber in model_memebers:
-        if model_memeber.model_id not in member_schema.model_ids:
+        if model_memeber.model_id not in member_schema.models:
             if member_schema.replace:
                 models_to_delete.append(model_memeber.id)
-    existing_models = [member.model_id for member in model_memebers]
-    for model_id in member_schema.model_ids:
-        if model_id not in existing_models:
-            models_to_create.append(ModelMember(user_id=user_id, model_id=model_id))
+    for model in member_schema.models:
+        models_to_create.append(dict(user_id=user_id, model_id=model.id, notify=model.notify))
 
     await session.execute(sa.delete(ModelMember).where(ModelMember.id.in_(models_to_delete)))
-    session.add_all(models_to_create)
-    await session.flush()
+    stmt = insert(ModelMember).values(models_to_create)
+    do_update_stmt = stmt.on_conflict_do_update(
+        index_elements=['user_id', 'model_id'],
+        set_=dict(notify=stmt.excluded.notify)
+    )
+    await session.execute(do_update_stmt)
 
 
 @router.post("/models/{model_id}/members", tags=[Tags.MODELS])
