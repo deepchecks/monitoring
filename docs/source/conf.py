@@ -122,7 +122,7 @@ html_theme_options = {
     # "navigation_depth": 6,
     "navbar_end": ["navbar-icon-links"],
     "external_links": [
-      {"name": "API Docs", "url": "https://staging-v2.deepchecks.com/docs"},
+      {"name": "API Docs", "url": "https://app.deepchecks.com/docs"},
       {"name": "Testing", "url": "https://docs.deepchecks.com/stable"},
       {"name": "CI", "url": "https://docs.deepchecks.com/stable/general/usage/ci_cd.html"}
     ],
