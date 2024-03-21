@@ -171,6 +171,11 @@ export interface DeepchecksMonitoringEeApiV1MembersIdNotifySchema {
   notify: boolean;
 }
 
+export interface DeepchecksMonitoringApiV1ModelIdNotifySchema {
+  id: number;
+  notify: boolean;
+}
+
 /**
  * Schema for organization.
  */
@@ -743,7 +748,7 @@ export interface ModelManagmentSchema {
   has_data?: boolean;
   max_severity?: AlertSeverity;
   versions: ModelVersionManagmentSchema[];
-  members: number[];
+  members: DeepchecksMonitoringApiV1ModelIdNotifySchema[];
 }
 
 export interface ModelDailyIngestion {
