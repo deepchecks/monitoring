@@ -748,7 +748,7 @@ export interface ModelManagmentSchema {
   has_data?: boolean;
   max_severity?: AlertSeverity;
   versions: ModelVersionManagmentSchema[];
-  members: DeepchecksMonitoringApiV1ModelIdNotifySchema[];
+  members: number[];
 }
 
 export interface ModelDailyIngestion {

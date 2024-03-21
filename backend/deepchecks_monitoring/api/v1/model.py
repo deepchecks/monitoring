@@ -346,7 +346,7 @@ async def _retrieve_models_data_ingestion(
                 end_time
             )).distinct()  # TODO why distinct?
             for table in tables)
-        )
+                                  )
         # Join with labels table
         all_models_queries.append(
             sa.select(sa.literal(getattr(model, model_identifier_name)).label("model_id"),
@@ -463,11 +463,9 @@ class ModelVersionManagmentSchema(BaseModel):
 
         orm_mode = True
 
-
 class IdNotifySchema(BaseModel):
     id: int
     notify: bool
-
 
 class ModelManagmentSchema(BaseModel):
     """Model schema for the "Model managment" screen."""
@@ -483,7 +481,7 @@ class ModelManagmentSchema(BaseModel):
     has_data: bool = False
     max_severity: t.Optional[AlertSeverity] = None
     versions: t.List[ModelVersionManagmentSchema]
-    members: t.List[IdNotifySchema]
+    members: t.List[int]
 
     class Config:
         """Schema config."""
@@ -525,7 +523,7 @@ async def retrieve_available_models(
                 ModelVersion.start_time,
                 ModelVersion.end_time,
             )
-    ))
+        ))
 
     if resources_provider.get_features_control(user).model_assignment and \
             not (show_all and auth.is_admin(user)):
@@ -554,7 +552,7 @@ async def retrieve_available_models(
                 for version in record.Model.versions
             ],
             members=[
-                IdNotifySchema(id=member.user_id, notify=member.notify) for member in record.Model.members
+                member.user_id for member in record.Model.members
             ],
         )
         for record in records
@@ -751,9 +749,9 @@ async def retrieve_connected_models(
         ingestion_info.c.n_of_pending_rows,
         ingestion_info.c.n_of_updating_versions
     )
-        .select_from(Model)
-        .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id))
+         .select_from(Model)
+         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
+         .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id))
 
     if resources_provider.get_features_control(user).model_assignment:
         q = q.join(Model.members).where(ModelMember.user_id == user.id)
