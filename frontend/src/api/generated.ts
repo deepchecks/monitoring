@@ -171,11 +171,6 @@ export interface DeepchecksMonitoringEeApiV1MembersIdNotifySchema {
   notify: boolean;
 }
 
-export interface DeepchecksMonitoringApiV1ModelIdNotifySchema {
-  id: number;
-  notify: boolean;
-}
-
 /**
  * Schema for organization.
  */
