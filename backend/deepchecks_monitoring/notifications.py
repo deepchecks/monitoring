@@ -113,7 +113,7 @@ class AlertNotificator:
             )
             return False
 
-        model_members_ids = [member.user_id for member in model.members]
+        model_members_ids = [member.user_id for member in model.members if member.notify]
         members_emails = (await self.session.scalars(
             sa.select(User.email).where(sa.and_(
                 User.organization_id == org.id,
