@@ -146,7 +146,7 @@ async def assign_models_to_user(
     await session.execute(sa.delete(ModelMember).where(ModelMember.id.in_(models_to_delete)))
     stmt = insert(ModelMember).values(models_to_create)
     do_update_stmt = stmt.on_conflict_do_update(
-        index_elements=['user_id', 'model_id'],
+        index_elements=["user_id", "model_id"],
         set_=dict(notify=stmt.excluded.notify)
     )
     await session.execute(do_update_stmt)
