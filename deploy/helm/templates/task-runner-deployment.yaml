@@ -1,0 +1,170 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --chart --controller deployment --out helm --file compose/docker-compose.yml
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: task-runner
+  name: task-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: task-runner
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert --chart --controller deployment --out helm --file compose/docker-compose.yml
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/deepchecks: "true"
+        io.kompose.service: task-runner
+    spec:
+      containers:
+        - args:
+            - /start/start-task-runner.sh
+          env:
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES
+              valueFrom:
+                configMapKeyRef:
+                  key: ACCESS_TOKEN_EXPIRE_MINUTES
+                  name: oss-conf-env
+            - name: ASSETS_FOLDER
+              valueFrom:
+                configMapKeyRef:
+                  key: ASSETS_FOLDER
+                  name: oss-conf-env
+            - name: ASYNC_DATABASE_URI
+              valueFrom:
+                configMapKeyRef:
+                  key: ASYNC_DATABASE_URI
+                  name: oss-conf-env
+            - name: AUTH_JWT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  key: AUTH_JWT_SECRET
+                  name: oss-conf-env
+            - name: DATABASE_URI
+              valueFrom:
+                configMapKeyRef:
+                  key: DATABASE_URI
+                  name: oss-conf-env
+            - name: DEBUG_MODE
+              valueFrom:
+                configMapKeyRef:
+                  key: DEBUG_MODE
+                  name: oss-conf-env
+            - name: DEPLOYMENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: DEPLOYMENT_URL
+                  name: oss-conf-env
+            - name: INIT_LOCAL_RAY_INSTANCE
+              valueFrom:
+                configMapKeyRef:
+                  key: INIT_LOCAL_RAY_INSTANCE
+                  name: oss-conf-env
+            - name: IS_ON_PREM
+              valueFrom:
+                configMapKeyRef:
+                  key: IS_ON_PREM
+                  name: oss-conf-env
+            - name: SECRET_KEY
+            - name: TOTAL_NUMBER_OF_CHECK_EXECUTOR_ACTORS
+              valueFrom:
+                configMapKeyRef:
+                  key: TOTAL_NUMBER_OF_CHECK_EXECUTOR_ACTORS
+                  name: oss-conf-env
+            - name: email_smtp_host
+              valueFrom:
+                configMapKeyRef:
+                  key: email_smtp_host
+                  name: oss-conf-env
+            - name: email_smtp_password
+              valueFrom:
+                configMapKeyRef:
+                  key: email_smtp_password
+                  name: oss-conf-env
+            - name: email_smtp_port
+              valueFrom:
+                configMapKeyRef:
+                  key: email_smtp_port
+                  name: oss-conf-env
+            - name: email_smtp_username
+              valueFrom:
+                configMapKeyRef:
+                  key: email_smtp_username
+                  name: oss-conf-env
+            - name: kafka_host
+              valueFrom:
+                configMapKeyRef:
+                  key: kafka_host
+                  name: oss-conf-env
+            - name: kafka_max_metadata_age
+              valueFrom:
+                configMapKeyRef:
+                  key: kafka_max_metadata_age
+                  name: oss-conf-env
+            - name: kafka_password
+              valueFrom:
+                configMapKeyRef:
+                  key: kafka_password
+                  name: oss-conf-env
+            - name: kafka_replication_factor
+              valueFrom:
+                configMapKeyRef:
+                  key: kafka_replication_factor
+                  name: oss-conf-env
+            - name: kafka_sasl_mechanism
+              valueFrom:
+                configMapKeyRef:
+                  key: kafka_sasl_mechanism
+                  name: oss-conf-env
+            - name: kafka_security_protocol
+              valueFrom:
+                configMapKeyRef:
+                  key: kafka_security_protocol
+                  name: oss-conf-env
+            - name: kafka_username
+              valueFrom:
+                configMapKeyRef:
+                  key: kafka_username
+                  name: oss-conf-env
+            - name: oauth_client_id
+              valueFrom:
+                configMapKeyRef:
+                  key: oauth_client_id
+                  name: oss-conf-env
+            - name: oauth_client_secret
+              valueFrom:
+                configMapKeyRef:
+                  key: oauth_client_secret
+                  name: oss-conf-env
+            - name: oauth_url
+              valueFrom:
+                configMapKeyRef:
+                  key: oauth_url
+                  name: oss-conf-env
+            - name: parallel_enabled
+              valueFrom:
+                configMapKeyRef:
+                  key: parallel_enabled
+                  name: oss-conf-env
+            - name: redis_uri
+              valueFrom:
+                configMapKeyRef:
+                  key: redis_uri
+                  name: oss-conf-env
+          image: 'public.ecr.aws/deepchecks/monitoring:'
+          name: task-runner
+          volumeMounts:
+            - mountPath: /start
+              name: task-runner-claim0
+      restartPolicy: Always
+      volumes:
+        - name: task-runner-claim0
+          persistentVolumeClaim:
+            claimName: task-runner-claim0
