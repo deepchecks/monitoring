@@ -35,29 +35,11 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
     DeepchecksMonitoringEeApiV1MembersIdNotifySchema[]
   >([]);
 
-  useEffect(() => {
-    initialModels.length && setModelsList(initialModels);
-  }, [initialModels]);
-
   const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useListSearchField<ModelManagmentSchema>(
     initialModels,
     setModelsList,
     'name'
   );
-
-  useEffect(() => {
-    const result: number[] = [];
-
-    if (member) {
-      modelsList.forEach(({ id, members }) => {
-        const memberIds = members.map(m => m.id);
-
-        if (memberIds.includes(member.id)) result.push(id);
-      });
-    }
-
-    setSelectedModels(result);
-  }, [member, modelsList]);
 
   const handleAssignModelsToMember = async () => {
     setFetching(true);
@@ -73,6 +55,36 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
     closeDialog();
     setFetching(false);
   };
+
+  const handleChangeNotify = (id: number, isNotified: boolean) => {
+    const updatedList = modelsAndNotifications.map(model =>
+      model.id === id ? { ...model, notify: !isNotified } : model
+    );
+
+    setModelsAndNotifications(updatedList);
+  };
+
+  useEffect(() => {
+    initialModels.length && setModelsList(initialModels);
+  }, [initialModels]);
+
+  useEffect(() => {
+    const result: number[] = [];
+
+    if (member) {
+      modelsList.forEach(({ id, members }) => {
+        const memberIds = members.map(m => m.id);
+
+        if (memberIds.includes(member.id)) result.push(id);
+      });
+    }
+
+    setSelectedModels(result);
+  }, [member, modelsList]);
+
+  useEffect(() => {
+    setModelsAndNotifications(selectedModels.map(id => ({ id, notify: true })));
+  }, [selectedModels?.length]);
 
   return (
     <StyledDialog
@@ -104,16 +116,7 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
         {modelsList.map(m => {
           const id = m.id;
           const isItemSelected = isSelected(id, selectedModels);
-
           const isNotified = modelsAndNotifications?.filter(m => m.id === id)[0]?.notify;
-
-          const handleChangeNotify = () => {
-            const updatedList = modelsAndNotifications.map(model =>
-              model.id === id ? { ...model, notify: !isNotified } : model
-            );
-
-            setModelsAndNotifications(updatedList);
-          };
 
           return (
             <DialogListItem
@@ -121,7 +124,7 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
               title={m.name}
               isNotified={isNotified}
               selected={isItemSelected}
-              handleChangeNotify={handleChangeNotify}
+              handleChangeNotify={() => handleChangeNotify(id, isNotified)}
               subtitle={dialogListItemSubtitle(m.latest_time)}
               onClick={e => selectMultiple(e, id, selectedModels, setSelectedModels)}
             />

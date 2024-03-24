@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Stack, Checkbox, alpha, styled, StackProps } from '@mui/material';
+import { Stack, Checkbox, styled, StackProps } from '@mui/material';
 import { NotificationsActiveRounded, NotificationsOffRounded } from '@mui/icons-material';
 
 import { StyledText } from 'components/lib';
@@ -13,15 +13,11 @@ interface DialogListItemProps extends StackProps {
   handleChangeNotify?: () => void;
 }
 
-export const StyledContainer = styled(Stack)(({ theme }) => ({
+export const StyledContainer = styled(Stack)({
   padding: '12px 0',
   borderRadius: '5px',
-  flexDirection: 'row',
-
-  '&:hover': {
-    backgroundColor: alpha(theme.palette.primary.main, 0.1)
-  }
-}));
+  flexDirection: 'row'
+});
 
 export const DialogListItem = (props: DialogListItemProps) => {
   const { title, subtitle, selected, isNotified, handleChangeNotify, ...otherProps } = props;
@@ -35,7 +31,7 @@ export const DialogListItem = (props: DialogListItemProps) => {
         <StyledText type="h3" text={title} sx={{ fontWeight: 700, marginBottom: '3px' }} />
         <StyledText type="small" text={subtitle} />
       </Stack>
-      <StyledContainer marginLeft="auto">
+      <StyledContainer sx={{ cursor: 'pointer', marginLeft: 'auto', ':hover': { opacity: 0.6 } }}>
         {handleChangeNotify && selected && (
           <Stack onClick={() => handleChangeNotify()}>
             {isNotified ? <NotificationsActiveRounded color="primary" /> : <NotificationsOffRounded color="primary" />}
