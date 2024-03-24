@@ -102,12 +102,12 @@ async def test_user_model_update(client: TestClient,
     available_models = test_api.fetch_available_models()
     assert available_models[0]["members"] == [{"id": user.id, "notify": True}]
 
-    response = client.post(f"/api/v1/users/{user.id}/models", json={"model_ids": []})
+    response = client.post(f"/api/v1/users/{user.id}/models", json={"models": []})
     assert response.status_code == 200, response.content
     available_models = test_api.fetch_available_models()
     assert len(available_models) == 0
 
-    response = client.post(f"/api/v1/users/{user.id}/models", json={"model_ids": [classification_model["id"]]})
+    response = client.post(f"/api/v1/users/{user.id}/models", json={"models": [classification_model["id"]]})
     assert response.status_code == 200, response.content
     available_models = test_api.fetch_available_models()
     assert available_models[0]["members"] == [{"id": user.id, "notify": True}]
