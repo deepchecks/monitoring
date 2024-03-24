@@ -36,7 +36,7 @@ export const DialogListItem = (props: DialogListItemProps) => {
         <StyledText type="small" text={subtitle} />
       </Stack>
       <StyledContainer marginLeft="auto">
-        {handleChangeNotify && (
+        {handleChangeNotify && selected && (
           <Stack onClick={() => handleChangeNotify()}>
             {isNotified ? <NotificationsActiveRounded color="primary" /> : <NotificationsOffRounded color="primary" />}
           </Stack>
