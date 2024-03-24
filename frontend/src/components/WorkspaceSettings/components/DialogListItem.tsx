@@ -5,13 +5,12 @@ import { NotificationsActiveRounded, NotificationsOffRounded } from '@mui/icons-
 
 import { StyledText } from 'components/lib';
 
-import { DeepchecksMonitoringEeApiV1MembersIdNotifySchema } from 'api/generated';
-
 interface DialogListItemProps extends StackProps {
   title: string;
   subtitle: string;
   selected: boolean;
-  setModelsAndNotifications?: React.Dispatch<React.SetStateAction<DeepchecksMonitoringEeApiV1MembersIdNotifySchema[]>>;
+  isNotified?: boolean;
+  handleChangeNotify?: () => void;
 }
 
 export const StyledContainer = styled(Stack)(({ theme }) => ({
@@ -25,7 +24,8 @@ export const StyledContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export const DialogListItem = (props: DialogListItemProps) => {
-  const { title, subtitle, selected, setModelsAndNotifications, ...otherProps } = props;
+  const { title, subtitle, selected, isNotified, handleChangeNotify, ...otherProps } = props;
+
   return (
     <StyledContainer>
       <Stack {...otherProps}>
@@ -36,8 +36,10 @@ export const DialogListItem = (props: DialogListItemProps) => {
         <StyledText type="small" text={subtitle} />
       </Stack>
       <StyledContainer marginLeft="auto">
-        {setModelsAndNotifications && (
-          <>{selected ? <NotificationsActiveRounded color="primary" /> : <NotificationsOffRounded color="primary" />}</>
+        {handleChangeNotify && (
+          <Stack onClick={() => handleChangeNotify()}>
+            {isNotified ? <NotificationsActiveRounded color="primary" /> : <NotificationsOffRounded color="primary" />}
+          </Stack>
         )}
       </StyledContainer>
     </StyledContainer>

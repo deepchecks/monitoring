@@ -105,13 +105,25 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
           const id = m.id;
           const isItemSelected = isSelected(id, selectedModels);
 
+          const isNotified = false;
+          const handleChangeNotify = () => {
+            if (isNotified) {
+              setModelsAndNotifications([]);
+              console.log('not notify');
+            } else {
+              setModelsAndNotifications([]);
+              console.log('notify');
+            }
+          };
+
           return (
             <DialogListItem
               key={id}
               title={m.name}
+              isNotified={isNotified}
               selected={isItemSelected}
+              handleChangeNotify={handleChangeNotify}
               subtitle={dialogListItemSubtitle(m.latest_time)}
-              setModelsAndNotifications={setModelsAndNotifications}
               onClick={e => selectMultiple(e, id, selectedModels, setSelectedModels)}
             />
           );
