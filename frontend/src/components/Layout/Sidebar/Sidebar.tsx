@@ -76,14 +76,14 @@ export const Sidebar = () => {
           <Box>
             <Box
               sx={{
-                position: 'sticky',
                 zIndex: 3,
-                padding: '26px'
+                padding: '20px',
+                position: 'sticky'
               }}
             >
-              <StyledLogo withLabel margin="8px 0 8px -8px" />
+              <StyledLogo withLabel margin="32px 0 0 0" />
             </Box>
-            <Box sx={{ mt: '40px', pl: '14px' }}>
+            <Box sx={{ mt: '20px', pl: '14px' }}>
               {pathsInfo.map((info: PathInfo) =>
                 info.ignoreLink ? (
                   <React.Fragment key={info.link}></React.Fragment>
