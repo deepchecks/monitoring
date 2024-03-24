@@ -86,7 +86,9 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
     setModelsAndNotifications(
       selectedModels.map(id => ({
         id,
-        notify: modelsList?.filter(m => m.id === id)[0]?.members?.filter(m => m.id === member?.id)[0]?.notify
+        notify: modelsAndNotifications?.filter(m => m?.id === id)[0]?.id
+          ? modelsAndNotifications?.filter(m => m?.id === id)[0]?.notify
+          : modelsList?.filter(m => m.id === id)[0]?.members?.filter(m => m.id === member?.id)[0]?.notify
       }))
     );
   }, [selectedModels?.length]);
