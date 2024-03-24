@@ -380,7 +380,7 @@ async def test_user_model_update(client: TestClient,
     model_id = classification_model["id"]
 
     available_models = test_api.fetch_available_models()
-    assert available_models[0]["members"] == [{'id': user.id, 'notify': True}]
+    assert available_models[0]["members"] == [{"id": user.id, "notify": True}]
 
     response = client.post(f"/api/v1/models/{model_id}/members", json={"user_ids": []})
     assert response.status_code == 200, response.content
@@ -390,4 +390,4 @@ async def test_user_model_update(client: TestClient,
     response = client.post(f"/api/v1/models/{model_id}/members", json={"user_ids": [user.id]})
     assert response.status_code == 200, response.content
     available_models = test_api.fetch_available_models()
-    assert available_models[0]["members"] == [{'id': user.id, 'notify': True}]
+    assert available_models[0]["members"] == [{"id": user.id, "notify": True}]
