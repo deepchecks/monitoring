@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
+
 import { Outlet } from 'react-router-dom';
 
 import { Box } from '@mui/system';
+import Drawer from '@mui/material/Drawer';
 import { Menu } from '@mui/icons-material';
 import { useMediaQuery } from '@mui/material';
-import Drawer from '@mui/material/Drawer';
 
 import useUser from 'helpers/hooks/useUser';
 
+import { theme } from 'components/lib/theme';
 import { Sidebar } from 'components/Layout/Sidebar';
 import { StyledContainer, StyledLogo } from 'components/lib';
-import { theme } from 'components/lib/theme';
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
   const [mobileBarOpen, setMobileBarOpen] = useState(false);
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   if (!isUserDetailsComplete) return null;
 
