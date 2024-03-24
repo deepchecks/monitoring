@@ -105,15 +105,14 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
           const id = m.id;
           const isItemSelected = isSelected(id, selectedModels);
 
-          const isNotified = false;
+          const isNotified = modelsAndNotifications?.filter(m => m.id === id)[0]?.notify;
+
           const handleChangeNotify = () => {
-            if (isNotified) {
-              setModelsAndNotifications([]);
-              console.log('not notify');
-            } else {
-              setModelsAndNotifications([]);
-              console.log('notify');
-            }
+            const updatedList = modelsAndNotifications.map(model =>
+              model.id === id ? { ...model, notify: !isNotified } : model
+            );
+
+            setModelsAndNotifications(updatedList);
           };
 
           return (
