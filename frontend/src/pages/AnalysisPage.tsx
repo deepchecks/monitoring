@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useContext } from 'react';
+
 import { useLocation } from 'react-router-dom';
+
 import { Box, Stack } from '@mui/material';
 
 import {
@@ -18,8 +20,8 @@ import { AnalysisDrillDown } from 'components/AnalysisDrillDown';
 import AnalysisItem from 'components/Analysis/AnalysisItem/AnalysisItem';
 import NoResults from 'components/NoResults';
 
-import { getParams } from 'helpers/utils/getParams';
 import { CheckType } from 'helpers/types/check';
+import { getParams } from 'helpers/utils/getParams';
 import { onDrawerOpen } from 'components/AnalysisDrillDown/AnalysisDrillDown.helpers';
 import useOnboarding from 'helpers/hooks/useOnboarding';
 
@@ -134,16 +136,17 @@ const AnalysisPage = () => {
         </Stack>
       </Box>
       <AnalysisDrillDown
+        type={currentType}
+        open={isDrawerOpen}
+        check={currentCheck}
+        onClose={handleDrawerClose}
+        timeLabel={currentTimeLabel}
         modelName={currentModel.name}
         datasetName={currentDatasetName}
-        check={currentCheck}
-        modelVersionId={currentModelVersionId}
-        open={isDrawerOpen}
-        onClose={handleDrawerClose}
         onCloseIconClick={handleDrawerClose}
-        timeLabel={currentTimeLabel}
+        modelVersionId={currentModelVersionId}
         additionalKwargs={currentAdditionalKwargs}
-        type={currentType}
+        frequency={(frequency as number) || undefined}
       />
     </>
   );

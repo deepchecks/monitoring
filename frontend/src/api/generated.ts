@@ -166,6 +166,16 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
 
 export type CountAlertsApiV1AlertsCountActiveGet200 = { [key: string]: number };
 
+export interface DeepchecksMonitoringEeApiV1MembersIdNotifySchema {
+  id: number;
+  notify: boolean;
+}
+
+export interface DeepchecksMonitoringApiV1ModelIdNotifySchema {
+  id: number;
+  notify: boolean;
+}
+
 /**
  * Schema for organization.
  */
@@ -738,7 +748,7 @@ export interface ModelManagmentSchema {
   has_data?: boolean;
   max_severity?: AlertSeverity;
   versions: ModelVersionManagmentSchema[];
-  members: number[];
+  members: DeepchecksMonitoringApiV1ModelIdNotifySchema[];
 }
 
 export interface ModelDailyIngestion {
@@ -764,7 +774,7 @@ export interface ModelCreationSchema {
  * Member update schema.
  */
 export interface MemberUpdateSchema {
-  model_ids: number[];
+  models: DeepchecksMonitoringEeApiV1MembersIdNotifySchema[];
   replace?: boolean;
 }
 

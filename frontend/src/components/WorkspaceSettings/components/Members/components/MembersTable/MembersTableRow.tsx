@@ -43,7 +43,9 @@ function calculateButtonLabel(memberId: number, models: ModelManagmentSchema[]) 
   let count = 0;
 
   models.forEach(m => {
-    if (m.members.includes(memberId)) count++;
+    const memberIds = m.members.map(m => m.id);
+
+    if (memberIds?.includes(memberId)) count++;
   });
 
   if (count === models.length) return allModels;
