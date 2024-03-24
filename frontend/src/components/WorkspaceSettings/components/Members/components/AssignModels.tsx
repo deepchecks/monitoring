@@ -83,7 +83,12 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
   }, [member, modelsList]);
 
   useEffect(() => {
-    setModelsAndNotifications(selectedModels.map(id => ({ id, notify: true })));
+    setModelsAndNotifications(
+      selectedModels.map(id => ({
+        id,
+        notify: modelsList?.filter(m => m.id === id)[0]?.members?.filter(m => m.id === member?.id)[0]?.notify
+      }))
+    );
   }, [selectedModels?.length]);
 
   return (
