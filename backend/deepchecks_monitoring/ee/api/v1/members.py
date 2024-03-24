@@ -144,12 +144,13 @@ async def assign_models_to_user(
         models_to_create.append(dict(user_id=user_id, model_id=model.id, notify=model.notify))
 
     await session.execute(sa.delete(ModelMember).where(ModelMember.id.in_(models_to_delete)))
-    stmt = insert(ModelMember).values(models_to_create)
-    do_update_stmt = stmt.on_conflict_do_update(
-        index_elements=["user_id", "model_id"],
-        set_=dict(notify=stmt.excluded.notify)
-    )
-    await session.execute(do_update_stmt)
+    if models_to_create:
+        stmt = insert(ModelMember).values(models_to_create)
+        do_update_stmt = stmt.on_conflict_do_update(
+            index_elements=["user_id", "model_id"],
+            set_=dict(notify=stmt.excluded.notify)
+        )
+        await session.execute(do_update_stmt)
 
 
 @router.post("/models/{model_id}/members", tags=[Tags.MODELS])
