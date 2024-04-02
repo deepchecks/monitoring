@@ -30,6 +30,7 @@ ENV PYTHONUNBUFFERED 1
 ENV TZ=Asia/Jerusalem
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+RUN echo "Updated on 2 Apr 2024" # Change to force apt to update the cache
 RUN apt-get -y update &&  apt-get -y upgrade
 
 RUN apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa &&  \
