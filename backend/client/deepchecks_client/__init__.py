@@ -165,7 +165,9 @@ class DeepchecksClient:
             msg = f'Model {name} was successfully created!.'
 
             if create_model_defaults:
-                model_client._add_defaults(monitoring_frequency, min_samples_for_drift)  # pylint: disable=protected-access
+                model_client._add_defaults(  # pylint: disable=protected-access
+                    monitoring_frequency, min_samples_for_drift
+                )
                 msg += ' Default checks, monitors and alerts added.'
 
             pretty_print(msg)
