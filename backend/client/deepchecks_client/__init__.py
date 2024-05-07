@@ -78,6 +78,7 @@ class DeepchecksClient:
         model_notes: t.Optional[t.List[t.Dict[str, str]]] = None,
         monitoring_frequency: str = 'day',
         obj_store_path: t.Optional[str] = None,
+        min_samples_for_drift: int = 100
     ) -> DeepchecksModelClient:
         """Retrieve a model client based on its name if exists, or creates a new model with the provided parameters.
 
@@ -110,6 +111,8 @@ class DeepchecksClient:
         obj_store_path : str, default None
             The path to the model data in the object store. The authentication info should be provided inside the
             system.
+        min_samples_for_drift : int , default 100
+            For new models, sets the default drift checks min_samples value.
 
         Returns
         -------
@@ -162,7 +165,7 @@ class DeepchecksClient:
             msg = f'Model {name} was successfully created!.'
 
             if create_model_defaults:
-                model_client._add_defaults(monitoring_frequency)  # pylint: disable=protected-access
+                model_client._add_defaults(monitoring_frequency, min_samples_for_drift)  # pylint: disable=protected-access
                 msg += ' Default checks, monitors and alerts added.'
 
             pretty_print(msg)

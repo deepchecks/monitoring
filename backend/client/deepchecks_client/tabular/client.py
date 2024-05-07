@@ -564,15 +564,15 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             self._model_version_clients[model_version_id] = version_client
         return self._model_version_clients[model_version_id]
 
-    def _add_defaults(self, monitoring_frequency: str):
+    def _add_defaults(self, monitoring_frequency: str, min_samples_for_drift: int):
         """Add default checks, monitors and alerts to a tabular model."""
         task_type = TaskType(self.model['task_type'])
         frequency = validate_frequency(monitoring_frequency)
 
         checks = {
-            'Feature Drift': FeatureDrift(min_samples=100),
-            'Prediction Drift': PredictionDrift(min_samples=100),
-            'Label Drift': LabelDrift(ignore_na=True, min_samples=100),
+            'Feature Drift': FeatureDrift(min_samples=min_samples_for_drift),
+            'Prediction Drift': PredictionDrift(min_samples=min_samples_for_drift),
+            'Label Drift': LabelDrift(ignore_na=True, min_samples=min_samples_for_drift),
             'Percent Of Nulls': PercentOfNulls(),
             'New Category Train-Test': NewCategoryTrainTest(),
             'Mixed Nulls': MixedNulls(),
