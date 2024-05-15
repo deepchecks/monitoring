@@ -484,6 +484,7 @@ class ModelManagmentSchema(BaseModel):
     max_severity: t.Optional[AlertSeverity] = None
     versions: t.List[ModelVersionManagmentSchema]
     members: t.List[IdNotifySchema]
+    severities_count: t.Dict[AlertSeverity, int]
 
     class Config:
         """Schema config."""
@@ -504,17 +505,45 @@ async def retrieve_available_models(
         resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[ModelManagmentSchema]:
     """Retrieve list of models for the "Models management" screen."""
-    alerts_count = AlertsCountPerModel.cte()
     monitors_count = MonitorsCountPerModel.cte()
+
+    alerts_per_type_count = (
+        sa.select(
+            Check.model_id,
+            sa.func.count(Alert.id),
+            sa.func.max(AlertRule.alert_severity_index),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.LOW, 1)
+            ], else_=0)).label("low_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.MEDIUM, 1)
+            ], else_=0)).label("medium_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.HIGH, 1)
+            ], else_=0)).label("high_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.CRITICAL, 1)
+            ], else_=0)).label("critical_count")
+        )
+        .join(Check.monitors)
+        .join(Monitor.alert_rules)
+        .join(AlertRule.alerts)
+        .where(Alert.resolved.is_(False))
+        .group_by(Check.model_id)
+    ).cte()
 
     query = (sa.select(
         Model,
-        alerts_count.c.count.label("n_of_alerts"),
-        alerts_count.c.max.label("max_severity"),
+        alerts_per_type_count.c.low_count,
+        alerts_per_type_count.c.medium_count,
+        alerts_per_type_count.c.high_count,
+        alerts_per_type_count.c.critical_count,
+        alerts_per_type_count.c.count.label("n_of_alerts"),
+        alerts_per_type_count.c.max.label("max_severity"),
         monitors_count.c.count.label("n_of_monitors"),
     )
         .select_from(Model)
-        .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
+        .outerjoin(alerts_per_type_count, alerts_per_type_count.c.model_id == Model.id)
         .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
         .options(
             joinedload(Model.members),
@@ -556,6 +585,12 @@ async def retrieve_available_models(
             members=[
                 IdNotifySchema(id=member.user_id, notify=member.notify) for member in record.Model.members
             ],
+            severities_count={
+                AlertSeverity.LOW: record.low_count or 0,
+                AlertSeverity.MEDIUM: record.medium_count or 0,
+                AlertSeverity.HIGH: record.high_count or 0,
+                AlertSeverity.CRITICAL: record.critical_count or 0,
+            }
         )
         for record in records
     ]
