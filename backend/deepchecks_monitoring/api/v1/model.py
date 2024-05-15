@@ -485,6 +485,7 @@ class ModelManagmentSchema(BaseModel):
     versions: t.List[ModelVersionManagmentSchema]
     members: t.List[IdNotifySchema]
     severities_count: t.Dict[AlertSeverity, int]
+
     class Config:
         """Schema config."""
 
@@ -509,12 +510,20 @@ async def retrieve_available_models(
     alerts_per_type_count = (
         sa.select(
             Check.model_id,
-            sa.func.count(Alert.id), 
+            sa.func.count(Alert.id),
             sa.func.max(AlertRule.alert_severity_index),
-            sa.func.sum(sa.case([(AlertRule.alert_severity == AlertSeverity.LOW, 1)], else_=0)).label('low_count'),
-            sa.func.sum(sa.case([(AlertRule.alert_severity == AlertSeverity.MEDIUM, 1)], else_=0)).label('medium_count'),
-            sa.func.sum(sa.case([(AlertRule.alert_severity == AlertSeverity.HIGH, 1)], else_=0)).label('high_count'),
-            sa.func.sum(sa.case([(AlertRule.alert_severity == AlertSeverity.CRITICAL, 1)], else_=0)).label('critical_count')
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.LOW, 1)
+            ], else_=0)).label("low_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.MEDIUM, 1)
+            ], else_=0)).label("medium_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.HIGH, 1)
+            ], else_=0)).label("high_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.CRITICAL, 1)
+            ], else_=0)).label("critical_count")
         )
         .join(Check.monitors)
         .join(Monitor.alert_rules)
