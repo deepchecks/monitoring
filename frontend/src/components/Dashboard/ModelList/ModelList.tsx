@@ -36,7 +36,6 @@ interface ModelListProps {
   selectedModelId: number | null;
 }
 
-const ZERO_ALERTS = { low: 0, medium: 0, high: 0, critical: 0 };
 const { heading, reset, searchFieldPlaceholder } = constants.modelList;
 
 export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProps) {
@@ -54,8 +53,26 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
     return map;
   }, [connectedModels]);
 
+  const total_alerts = useMemo(() => {
+    const tot = {
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0
+    };
+
+    models.forEach(obj => {
+      tot.low += obj.severities_count.low || 0;
+      tot.medium += obj.severities_count.medium || 0;
+      tot.high += obj.severities_count.high || 0;
+      tot.critical += obj.severities_count.critical || 0;
+    });
+
+    return tot
+  }, [models]);
+
   const [modelName, setModelName] = useState('');
-  const [selectedModelAlerts, setSelectedModelAlerts] = useState<SelectedModelAlerts | null>(null);
+  const [selectedModelAlerts, setSelectedModelAlerts] = useState<SelectedModelAlerts>(total_alerts);
 
   const filteredModels = useMemo(() => {
     if (!modelName) return models;
@@ -67,7 +84,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
     event.stopPropagation();
     setSelectedModelId(null);
     handleSetParams('modelId');
-    setSelectedModelAlerts(null);
+    setSelectedModelAlerts(total_alerts);
   };
 
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +101,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
     setSelectedModelId(model.id);
     handleSetParams('modelId', model.id);
     setSelectedModelAlerts(
-      model.max_severity ? { ...ZERO_ALERTS, [model.max_severity]: model.alerts_count } : ZERO_ALERTS
+      { ...model.severities_count as SelectedModelAlerts }
     );
   };
 

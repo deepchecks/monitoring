@@ -25,13 +25,6 @@ AlertsCountPerModel = (
 )
 
 
-MonitorsCountPerModel = (
-    select(Check.model_id, func.count(Monitor.id))
-    .join(Check.monitors)
-    .group_by(Check.model_id)
-)
-
-
 def floor_window_for_time(time: datetime, frequency: int) -> pdl.DateTime:
     """Return the closest round window for the given time. if the time is round return itself, else returns \
     the closest window from the bottom.

@@ -583,8 +583,6 @@ export interface MonitorNotebookSchema {
   as_script?: boolean;
 }
 
-export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
-
 export type MonitorCreationSchemaDataFilters = DataFilterList | null;
 
 /**
@@ -610,6 +608,8 @@ export interface MonitorCheckConfSchema {
   check_conf: MonitorCheckConfSchemaCheckConf;
   res_conf?: string[];
 }
+
+export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
 
 /**
  * List of data filters.
@@ -733,6 +733,8 @@ export interface ModelNoteCreationSchema {
   text?: string;
 }
 
+export type ModelManagmentSchemaSeveritiesCount = { [key: string]: number };
+
 /**
  * Model schema for the "Model managment" screen.
  */
@@ -749,6 +751,7 @@ export interface ModelManagmentSchema {
   max_severity?: AlertSeverity;
   versions: ModelVersionManagmentSchema[];
   members: DeepchecksMonitoringApiV1ModelIdNotifySchema[];
+  severities_count: ModelManagmentSchemaSeveritiesCount;
 }
 
 export interface ModelDailyIngestion {
