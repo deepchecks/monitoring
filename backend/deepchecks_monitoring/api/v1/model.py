@@ -33,7 +33,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProvide
 from deepchecks_monitoring.exceptions import BadRequest, PaymentRequired
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
-from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel, MonitorsCountPerModel
+from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
                                                     field_length)
@@ -505,13 +505,13 @@ async def retrieve_available_models(
         resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[ModelManagmentSchema]:
     """Retrieve list of models for the "Models management" screen."""
-    monitors_count = MonitorsCountPerModel.cte()
 
     alerts_per_type_count = (
         sa.select(
             Check.model_id,
-            sa.func.count(Alert.id),
-            sa.func.max(AlertRule.alert_severity_index),
+            sa.func.count(Monitor.id).label("n_of_monitors"),
+            sa.func.count(Alert.id).label("n_of_alerts"),
+            sa.func.max(AlertRule.alert_severity_index).label("max_severity"),
             sa.func.sum(sa.case([
                 (AlertRule.alert_severity == AlertSeverity.LOW, 1)
             ], else_=0)).label("low_count"),
@@ -538,13 +538,12 @@ async def retrieve_available_models(
         alerts_per_type_count.c.medium_count,
         alerts_per_type_count.c.high_count,
         alerts_per_type_count.c.critical_count,
-        alerts_per_type_count.c.count.label("n_of_alerts"),
-        alerts_per_type_count.c.max.label("max_severity"),
-        monitors_count.c.count.label("n_of_monitors"),
+        alerts_per_type_count.c.n_of_alerts,
+        alerts_per_type_count.c.max_severity,
+        alerts_per_type_count.c.n_of_monitors,
     )
         .select_from(Model)
         .outerjoin(alerts_per_type_count, alerts_per_type_count.c.model_id == Model.id)
-        .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
         .options(
             joinedload(Model.members),
             joinedload(Model.versions).load_only(
