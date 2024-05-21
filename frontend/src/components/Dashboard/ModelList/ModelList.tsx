@@ -11,6 +11,7 @@ import { Loader } from 'components/base/Loader/Loader';
 import { ModelItem } from './components/ModelItem';
 import { AlertsCountWidget } from './components/AlertsCountWidget';
 
+import { StyledText } from 'components/lib';
 import {
   StyledModelListContainer,
   StyledHeadingContainer,
@@ -22,12 +23,11 @@ import {
 } from './ModelList.style';
 import { StyledTextInput } from 'components/base/Input/Input.styles';
 
-import { CloseIcon, Rotate, SearchIcon } from 'assets/icon/icon';
-
-import { handleSetParams } from 'helpers/utils/getParams';
 import useModels from 'helpers/hooks/useModels';
+import { handleSetParams } from 'helpers/utils/getParams';
+
 import { constants } from '../dashboard.constants';
-import { StyledText } from 'components/lib';
+import { CloseIcon, Rotate, SearchIcon } from 'assets/icon/icon';
 
 export type SelectedModelAlerts = { [key in AlertSeverity]: number };
 
