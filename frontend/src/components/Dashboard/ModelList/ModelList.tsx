@@ -68,8 +68,8 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
       tot.critical += obj.severities_count.critical || 0;
     });
 
-    return tot
-  }, [models]);
+    return tot;
+  }, [models?.length]);
 
   const [modelName, setModelName] = useState('');
   const [selectedModelAlerts, setSelectedModelAlerts] = useState<SelectedModelAlerts>(total_alerts);
@@ -100,9 +100,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
   const handleModelClick = (model: ModelManagmentSchema) => {
     setSelectedModelId(model.id);
     handleSetParams('modelId', model.id);
-    setSelectedModelAlerts(
-      { ...model.severities_count as SelectedModelAlerts }
-    );
+    setSelectedModelAlerts({ ...(model.severities_count as SelectedModelAlerts) });
   };
 
   return (

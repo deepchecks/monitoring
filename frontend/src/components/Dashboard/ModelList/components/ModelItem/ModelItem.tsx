@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -48,6 +48,10 @@ export function ModelItem({ activeModel, onModelClick, model, connectedModelsMap
   const handleModelClick = () => {
     onModelClick(model);
   };
+
+  useEffect(() => {
+    activeModel && handleModelClick();
+  }, [activeModel]);
 
   return (
     <StyledContainer active={activeModel} onClick={handleModelClick} autoFocus={activeModel}>
