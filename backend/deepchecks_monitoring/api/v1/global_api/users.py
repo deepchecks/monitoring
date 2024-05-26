@@ -59,6 +59,7 @@ class CompleteDetailsUpdateSchema(BaseModel):
     new_organization_name: t.Optional[str]
     user_full_name: t.Optional[str]
     accept_invite: t.Optional[bool]
+    add_models_to_user: bool = False
 
 
 @router.get("/users/complete-details", tags=[Tags.USERS], response_model=CompleteDetailsSchema)
@@ -134,9 +135,10 @@ async def update_complete_details(
             schema_search_path=[organization.schema_name, "public"]
         )
 
-        model_ids = await session.scalars(select(Model.id))
-        model_members = [ModelMember(user_id=user.id, model_id=model_id) for model_id in model_ids]
-        session.add_all(model_members)
+        if body.add_models_to_user:
+            model_ids = await session.scalars(select(Model.id))
+            model_members = [ModelMember(user_id=user.id, model_id=model_id) for model_id in model_ids]
+            session.add_all(model_members)
 
     await session.flush()
     # Redirect carries over the POST verb, in order to change it to GET we need to set 302 code instead of 307
