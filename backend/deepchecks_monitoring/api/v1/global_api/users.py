@@ -122,17 +122,11 @@ async def update_complete_details(
     elif body.accept_invite:
         invite: Invitation = await fetch_or_404(session, Invitation, email=user.email)
         # Check organization exists
-        organization = await fetch_or_404(session, Organization, id=invite.organization_id)
+        _ = await fetch_or_404(session, Organization, id=invite.organization_id)
         # Update user in database
         user.organization_id = invite.organization_id
         # delete the invite
         await session.delete(invite)
-
-        # Attach the organization schema to the session in order to query the models
-        await database.attach_schema_switcher_listener(
-            session=session,
-            schema_search_path=[organization.schema_name, "public"]
-        )
 
     await session.flush()
     # Redirect carries over the POST verb, in order to change it to GET we need to set 302 code instead of 307
