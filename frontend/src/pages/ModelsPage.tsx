@@ -47,7 +47,7 @@ const filterModels = (models: ConnectedModelSchema[], searchInputValue: string, 
 
 const sortModels = (models: ConnectedModelSchema[], sortMethod: sortOptionsVariants) =>
   [...models].sort((a, b) =>
-    sortMethod === sortOptionsVariants.AZ ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+    sortMethod === sortOptionsVariants.AZ ? a.name?.localeCompare(b.name) : b.name?.localeCompare(a.name)
   );
 
 export const ModelsPage = () => {

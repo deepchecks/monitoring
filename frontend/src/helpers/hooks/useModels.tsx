@@ -13,7 +13,7 @@ export const useModels = (showAll?: 'showAll') => {
     refetch: refetchModels
   } = useRetrieveAvailableModelsApiV1AvailableModelsGet({ show_all: !!showAll });
 
-  const sortedModels = useMemo(() => [...models].sort((a, b) => a.name.localeCompare(b.name)), [models]);
+  const sortedModels = useMemo(() => [...models].sort((a, b) => a.name?.localeCompare(b.name)), [models]);
 
   const modelsMap = useMemo(() => {
     const map: Record<string, ModelManagmentSchema> = {};
