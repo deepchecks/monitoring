@@ -6,10 +6,29 @@ if [[ -v INIT_LOCAL_RAY_INSTANCE ]]; then
   RAY_memory_monitor_refresh_ms=0 ray start --port=6399 --head
 fi
 
+# A function that will get executed when a SIGTERM is sent to the script
+term_handler(){
+  if [ -n "$(jobs -p)" ]; then
+    # sends SIGTERM to child processes, which includes uvicorn
+    kill $(jobs -p)
+  fi
+  exit 143; # 128 + 15 -- SIGTERM
+}
+
+# Trap SIGTERM
+trap 'kill ${!}; term_handler' SIGTERM
+
 STARTAPP="uvicorn --factory deepchecks_monitoring.app:create_application --host 0.0.0.0 --workers 4 --log-level debug --proxy-headers --forwarded-allow-ips '*'"
 
 if [[ -v DD_ENV ]]; then
   STARTAPP="ddtrace-run ${STARTAPP}"
 fi
 
-eval "${STARTAPP}"
+# Start uvicorn in the background, whether it's with tracing or without
+eval "${STARTAPP} &"
+
+# Wait indefinitely
+while :
+do
+  sleep infinity & wait ${!}
+done
