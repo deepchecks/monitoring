@@ -17,7 +17,7 @@ export async function getAvailableFeaturesNames(modelVersionId: number) {
   if (feature_importance != null && Object.keys(feature_importance).length) {
     // Sort first by importance, then by name
     featuresNames = Object.keys(feature_importance).sort(
-      (a, b) => feature_importance[b] - feature_importance[a] || a.localeCompare(b)
+      (a, b) => feature_importance[b] - feature_importance[a] || a?.localeCompare(b)
     );
   } else {
     featuresNames = Object.keys(features).sort();

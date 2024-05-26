@@ -60,7 +60,7 @@ export const MonitorList = ({
   const dashboardMonitors = useMemo(
     () =>
       (dashboard?.monitors || []).sort((a, b) =>
-        getCurrentModel(a.check.model_id).name.localeCompare(getCurrentModel(b.check.model_id).name)
+        getCurrentModel(a.check.model_id).name?.localeCompare(getCurrentModel(b.check.model_id).name)
       ),
     [dashboard?.monitors, getCurrentModel]
   );
