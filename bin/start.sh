@@ -8,11 +8,7 @@ fi
 
 # A function that will get executed when a SIGTERM is sent to the script
 term_handler(){
-  echo 'propagating SIGTERM'
-  if [ -n "$(jobs -p)" ]; then
-    # sends SIGTERM to child processes, which includes uvicorn
-    kill $(jobs -p)
-  fi
+  kill -- -$$
   exit 143; # 128 + 15 -- SIGTERM
 }
 
