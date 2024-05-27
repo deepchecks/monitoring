@@ -8,15 +8,12 @@ fi
 
 # A function that will get executed when a SIGTERM is sent to the script
 term_handler(){
-  if [ -n "$(jobs -p)" ]; then
-    # sends SIGTERM to child processes, which includes uvicorn
-    kill $(jobs -p)
-  fi
+  kill -- -$$
   exit 143; # 128 + 15 -- SIGTERM
 }
 
 # Trap SIGTERM
-trap 'kill ${!}; term_handler' SIGTERM
+trap 'term_handler' SIGTERM
 
 STARTAPP="uvicorn --factory deepchecks_monitoring.app:create_application --host 0.0.0.0 --workers 4 --log-level debug --proxy-headers --forwarded-allow-ips '*'"
 
@@ -28,7 +25,4 @@ fi
 eval "${STARTAPP} &"
 
 # Wait indefinitely
-while :
-do
-  sleep infinity & wait ${!}
-done
+wait ${!}
