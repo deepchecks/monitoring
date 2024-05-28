@@ -694,7 +694,7 @@ async def get_model_columns(
         column_dict[col_name] = ColumnMetadata(type=latest_version.features_columns[col_name],
                                                stats=latest_version.statistics.get(col_name, {}))
     for (col_name, col_type) in latest_version.additional_data_columns.items():
-        column_dict[col_name] = ColumnMetadata(type=col_type, stats={})
+        column_dict[col_name] = ColumnMetadata(type=col_type, stats=latest_version.statistics.get(col_name, {}))
     return column_dict
 
 
