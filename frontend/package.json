@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "http://deepchecks.github.io/",
   "dependencies": {
+    "@datadog/browser-rum": "^5.19.0",
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
     "@mui/icons-material": "^5.10.3",
