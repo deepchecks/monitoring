@@ -85,15 +85,20 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
   useEffect(() => {
     setModelsAndNotifications(
       selectedModels.map(id => {
-        const isAssigned = modelsList?.filter(m => m.id === id)[0]?.members?.filter(m => m.id === member?.id)[0]?.notify;
+        const isAssigned = modelsList
+          ?.filter(m => m.id === id)[0]
+          ?.members?.filter(m => m.id === member?.id)[0]?.notify;
 
         return {
-        id,
-        notify: modelsAndNotifications?.filter(m => m?.id === id)[0]?.id
-          ? modelsAndNotifications?.filter(m => m?.id === id)[0]?.notify
-          : typeof isAssigned !== "undefined" ? isAssigned : true
-      }
-    }));
+          id,
+          notify: modelsAndNotifications?.filter(m => m?.id === id)[0]?.id
+            ? modelsAndNotifications?.filter(m => m?.id === id)[0]?.notify
+            : typeof isAssigned !== 'undefined'
+            ? isAssigned
+            : true
+        };
+      })
+    );
   }, [selectedModels?.length]);
 
   return (

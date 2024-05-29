@@ -26,7 +26,7 @@ export const Image = (props: ImageProps) => {
     background = 'transparent',
     padding = '0',
     boxShadow = 'none',
-    id='',
+    id = '',
     onClick,
     style
   } = props;

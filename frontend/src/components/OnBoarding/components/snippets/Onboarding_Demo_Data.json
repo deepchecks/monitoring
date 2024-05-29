@@ -28,10 +28,7 @@
     },
     {
       "cell_type": "code",
-      "source": [
-        "import sys \n",
-        "!{sys.executable} -m pip install -U deepchecks-client"
-      ],
+      "source": ["import sys \n", "!{sys.executable} -m pip install -U deepchecks-client"],
       "metadata": {
         "id": "NvC7hrUCX8Qi"
       },
@@ -78,9 +75,7 @@
     },
     {
       "cell_type": "markdown",
-      "source": [
-        "## **Defining Data Schema**"
-      ],
+      "source": ["## **Defining Data Schema**"],
       "metadata": {
         "id": "ckfyIlmXtrG-"
       }
