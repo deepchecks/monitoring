@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 
 import { useRetrieveOrganizationMembersApiV1OrganizationMembersGet } from 'api/generated';
 
-
 export const useOrganizationMembers = () => {
   const {
     data: organizationMembers = [],

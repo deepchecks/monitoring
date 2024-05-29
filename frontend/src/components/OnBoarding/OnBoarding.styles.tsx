@@ -40,7 +40,7 @@ const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
 
   '& .MuiStepContent-root, .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
   '& .MuiStepConnector-root, .MuiStepContent-root': { marginLeft: 16 },
-  '& .MuiStepLabel-label': { fontWeight: 700, color: theme.palette.grey[500], fontSize:  15 },
+  '& .MuiStepLabel-label': { fontWeight: 700, color: theme.palette.grey[500], fontSize: 15 },
   '& .Mui-disabled': { fontWeight: 500 },
   '& .MuiSvgIcon-root': {
     width: '32px',
