@@ -18,10 +18,11 @@ const InitializationProvider = ({ children }: { children: ReactNode | ReactNode[
   // DataDog
   const dataDogId = data_dog_id;
   const dataDogToken = data_dog_token;
+  const isTrackable = `${process.env.REACT_APP_NODE_ENV}` === 'production';
   const userName = getStorageItem(storageKeys?.user)?.u_name ?? '';
   const userEmail = getStorageItem(storageKeys?.user)?.u_email ?? '';
 
-  if (dataDogToken && dataDogId) {
+  if (dataDogToken && dataDogId && isTrackable) {
     datadogRum.init({
       env: environment,
       trackResources: true,
