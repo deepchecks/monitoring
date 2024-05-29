@@ -8,26 +8,36 @@ import mixpanel from 'mixpanel-browser';
 
 import useConfig from '../hooks/useConfig';
 
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
+
 const InitializationProvider = ({ children }: { children: ReactNode | ReactNode[] }) => {
-  const { hotjar_sv, hotjar_id, data_dog_id, data_dog_token, mixpanel_id } = useConfig() as { [key: string]: string };
+  const { hotjar_sv, hotjar_id, data_dog_id, data_dog_token, mixpanel_id, environment } = useConfig() as {
+    [key: string]: string;
+  };
 
   // DataDog
-  const isTrackable = true;
+  const dataDogId = data_dog_id;
+  const dataDogToken = data_dog_token;
+  const userName = getStorageItem(storageKeys?.user)?.u_name ?? '';
+  const userEmail = getStorageItem(storageKeys?.user)?.u_email ?? '';
 
-  if (data_dog_token && data_dog_id && isTrackable) {
+  if (dataDogToken && dataDogId) {
     datadogRum.init({
+      env: environment,
       trackResources: true,
       trackLongTasks: true,
       site: 'datadoghq.com',
       service: 'mon-client',
-      applicationId: data_dog_id,
-      clientToken: data_dog_token,
+      applicationId: dataDogId,
+      clientToken: dataDogToken,
       trackUserInteractions: true,
       defaultPrivacyLevel: 'allow',
       sessionReplaySampleRate: 100,
-      startSessionReplayRecordingManually: true,
-      version: 'N/A'
+      startSessionReplayRecordingManually: true
     });
+
+    datadogRum?.setUser({ name: userName, email: userEmail });
+    datadogRum?.startSessionReplayRecording();
   }
 
   // HotJar
