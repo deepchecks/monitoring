@@ -7,7 +7,6 @@ import { applicationConfigurationsApiV1ConfigurationsGet } from 'api/generated';
 import { resError } from 'helpers/types/resError';
 
 const initialVars = {
-  sentryDsn: `${process.env.REACT_APP_SENTRY_DSN}`,
   environment: `${process.env.REACT_APP_BASE_API}`,
   mixpanel_id: `${process.env.REACT_APP_MIXPANEL_ID}`
 };
