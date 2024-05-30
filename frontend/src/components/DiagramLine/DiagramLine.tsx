@@ -62,7 +62,7 @@ function DiagramLine({
     }
 
     if (alert_rules.length) {
-      alert_rules.forEach(alert_rule => currentPlugins.push(setAlertLine(alert_rule as any)));
+      alert_rules.forEach(alert_rule => currentPlugins.push(setAlertLine(alert_rule)));
     }
 
     return currentPlugins;

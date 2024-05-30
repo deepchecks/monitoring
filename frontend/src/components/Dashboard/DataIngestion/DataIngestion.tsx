@@ -43,7 +43,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   const [timeValue, setTimeValue] = useState(frequencyValues.DAY);
 
   const { graphData, isLoading } = useDataIngestion(modelId, selectedPointType, timeValue);
-  const { data } = useGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet(Number(12));
+  const { data } = useGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet(Number(10)); // Todo - replace with real alert rule id
 
   const handleMinTimeUnit = (value: number) => {
     if (value <= frequencyValues.HOUR) {
