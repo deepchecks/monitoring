@@ -39,7 +39,7 @@ export const setAlertLine = (alert_rule: AlertRuleSchema | DataIngestionAlertRul
 
     if (!x || !y) return;
 
-    const startTime = (alert_rule as any)?.start_time ?? '';
+    const startTime = (alert_rule as any)?.start_time;
     const minTime = x.min;
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
 

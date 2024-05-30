@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { TimeUnit } from 'chart.js';
 
-import useStatsTime from 'helpers/hooks/useStatsTime';
-import useDataIngestion from 'helpers/hooks/useDataIngestion';
-import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
+import { TimeUnit } from 'chart.js';
 
 import { MenuItem } from '@mui/material';
 
-import { frequencyValues } from 'helpers/utils/frequency';
-
-import DiagramLine from 'components/DiagramLine/DiagramLine';
-import DiagramTutorialTooltip from 'components/DiagramLine/DiagramTutorialTooltip/DiagramTutorialTooltip';
 import { Loader } from 'components/base/Loader/Loader';
+import DiagramLine from 'components/DiagramLine/DiagramLine';
 import { CustomStyledSelect } from 'components/Select/CustomStyledSelect';
+import DiagramTutorialTooltip from 'components/DiagramLine/DiagramTutorialTooltip/DiagramTutorialTooltip';
 
 import {
   StyledDataIngestionContainer,
@@ -21,6 +16,11 @@ import {
   StyledLoaderBox,
   StyledTitle
 } from './DataIngestion.style';
+
+import useStatsTime from 'helpers/hooks/useStatsTime';
+import { frequencyValues } from 'helpers/utils/frequency';
+import useDataIngestion from 'helpers/hooks/useDataIngestion';
+import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 import { useGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet } from 'api/generated';
 
 interface DataIngestionProps {
@@ -43,9 +43,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   const [timeValue, setTimeValue] = useState(frequencyValues.DAY);
 
   const { graphData, isLoading } = useDataIngestion(modelId, selectedPointType, timeValue);
-  const { data: dataAlerts } = useGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet(
-    Number(modelId)
-  );
+  const { data } = useGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet(Number(10));
 
   const handleMinTimeUnit = (value: number) => {
     if (value <= frequencyValues.HOUR) {
@@ -81,6 +79,8 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   }, []);
 
   useEffect(() => setStorageItem(storageKeys.dataIngestionTimeFilter, JSON.stringify(currentTime)), [currentTime]);
+
+  const dataAlerts = Array?.isArray(data) ? data : [];
 
   return (
     <StyledDataIngestionContainer type="card" minWidth="410px">
@@ -118,11 +118,11 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
       ) : (
         <DiagramTutorialTooltip>
           <DiagramLine
+            data={graphData}
             timeFreq={timeValue}
+            alert_rules={dataAlerts}
             minTimeUnit={minTimeUnit}
             height={{ lg: 259, xl: 362 }}
-            data={graphData}
-            alert_rules={dataAlerts}
           />
         </DiagramTutorialTooltip>
       )}
