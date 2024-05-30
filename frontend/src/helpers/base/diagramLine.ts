@@ -3,7 +3,7 @@ import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 import { Chart, ChartEvent, ChartMeta } from 'chart.js';
 import dayjs from 'dayjs';
 
-import { AlertRuleSchema, AlertSchema, DataIngestionAlertRuleSchema } from 'api/generated';
+import { AlertRuleSchema, AlertSchema, DataIngestionAlertSchema } from 'api/generated';
 
 import { ACTIVE_BAR_BG_COLOR } from '../../components/SegmentsDrillDown/SegmentsDrillDown.helpers';
 
@@ -28,47 +28,68 @@ export const zoomOptions: ZoomPluginOptions = {
   }
 };
 
-export const setAlertLine = (alert_rule: AlertRuleSchema | DataIngestionAlertRuleSchema) => ({
-  id: 'setAlertLine',
-  beforeDatasetsDraw(chart: Chart<'line', number[], string>) {
-    const {
-      ctx,
-      chartArea: { left, right },
-      scales: { x, y }
-    } = chart;
+const isDataIngestionAlertSchema = (alert: any): alert is DataIngestionAlertSchema => {
+  return (alert as DataIngestionAlertSchema).value !== undefined;
+};
 
-    if (!x || !y) return;
+const isAlertRuleSchema = (alert: any): alert is AlertRuleSchema => {
+  return (alert as AlertRuleSchema).condition !== undefined;
+};
 
-    const startTime = (alert_rule as any)?.start_time;
-    const minTime = x.min;
-    const yOffset = y.getPixelForValue(alert_rule.condition.value);
+export const setAlertLine = (alert_rule: AlertRuleSchema | DataIngestionAlertSchema) => {
+  const alertValue = isDataIngestionAlertSchema(alert_rule)
+    ? alert_rule.value
+    : isAlertRuleSchema(alert_rule)
+    ? alert_rule.condition?.value
+    : undefined;
 
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = theme.palette.text.primary;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
+  return {
+    id: 'setAlertLine',
+    beforeDatasetsDraw(chart: Chart<'line', number[], string>) {
+      const {
+        ctx,
+        chartArea: { left, right },
+        scales: { x, y }
+      } = chart;
 
-    if (startTime) {
-      const alertRuleStartTime = new Date(startTime).getTime();
-      const alertRuleStartTimeOnTheGraph = alertRuleStartTime < minTime ? minTime : alertRuleStartTime;
-      const xOffset = x.getPixelForValue(alertRuleStartTimeOnTheGraph);
+      if (!x || !y || alertValue === undefined) return;
 
-      ctx.moveTo(left, yOffset);
-      ctx.lineTo(xOffset, yOffset);
-      ctx.stroke();
+      const startTime = isDataIngestionAlertSchema(alert_rule)
+        ? alert_rule.start_time
+        : isAlertRuleSchema(alert_rule)
+        ? alert_rule.start_time
+        : undefined;
 
-      ctx.strokeStyle = theme.palette.error.main;
+      const minTime = x.min;
+      const yOffset = y.getPixelForValue(alertValue);
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = theme.palette.text.primary;
+      ctx.setLineDash([5, 5]);
       ctx.beginPath();
-      ctx.moveTo(xOffset, yOffset);
-      ctx.lineTo(right, yOffset);
-    } else {
-      ctx.moveTo(left, yOffset);
-      ctx.lineTo(right, yOffset);
-    }
 
-    ctx.stroke();
-  }
-});
+      if (startTime) {
+        const alertRuleStartTime = new Date(startTime).getTime();
+        const alertRuleStartTimeOnTheGraph = alertRuleStartTime < minTime ? minTime : alertRuleStartTime;
+        const xOffset = x.getPixelForValue(alertRuleStartTimeOnTheGraph);
+
+        ctx.moveTo(left, yOffset);
+        ctx.lineTo(xOffset, yOffset);
+        ctx.stroke();
+
+        ctx.strokeStyle = theme.palette.error.main;
+        ctx.beginPath();
+        ctx.moveTo(xOffset, yOffset);
+        ctx.lineTo(right, yOffset);
+      } else {
+        ctx.moveTo(left, yOffset);
+        ctx.lineTo(right, yOffset);
+      }
+
+      ctx.stroke();
+    }
+  };
+};
 
 interface Tooltip {
   tooltip: {
