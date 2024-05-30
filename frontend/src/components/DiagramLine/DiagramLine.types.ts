@@ -2,7 +2,7 @@ import { ChartData, TimeUnit, TooltipCallbacks, TooltipItem, TooltipModel } from
 import { DistributiveArray, _DeepPartialObject } from 'chart.js/types/utils';
 import 'chartjs-adapter-dayjs-3';
 
-import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
+import { AlertRuleSchema, AlertSchema, AlertSeverity, DataIngestionAlertSchema } from 'api/generated';
 
 import { GraphData, SetStateType } from 'helpers/types';
 
@@ -52,7 +52,7 @@ interface DiagramLineHeight {
 }
 
 export interface DiagramLineProps {
-  alert_rules?: Array<AlertRuleSchema>;
+  alert_rules?: Array<AlertRuleSchema | DataIngestionAlertSchema>;
   data: ChartData<'line', GraphData>;
   height: DiagramLineHeight;
   minTimeUnit?: TimeUnit;

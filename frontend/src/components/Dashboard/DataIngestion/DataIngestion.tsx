@@ -21,6 +21,7 @@ import {
   StyledLoaderBox,
   StyledTitle
 } from './DataIngestion.style';
+import { useGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet } from 'api/generated';
 
 interface DataIngestionProps {
   modelId: number | null;
@@ -42,6 +43,9 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   const [timeValue, setTimeValue] = useState(frequencyValues.DAY);
 
   const { graphData, isLoading } = useDataIngestion(modelId, selectedPointType, timeValue);
+  const { data: dataAlerts } = useGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet(
+    Number(modelId)
+  );
 
   const handleMinTimeUnit = (value: number) => {
     if (value <= frequencyValues.HOUR) {
@@ -84,8 +88,8 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
         <StyledTitle>Samples status</StyledTitle>
         <StyledFiltersContainer>
           <CustomStyledSelect
-            value={selectedPointType}
             size="small"
+            value={selectedPointType}
             onChange={e => setSelectedPointType(e.target.value as SelectLabels)}
           >
             {LABELS_ARR.map((val, i) => (
@@ -113,7 +117,13 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
         </StyledLoaderBox>
       ) : (
         <DiagramTutorialTooltip>
-          <DiagramLine data={graphData} minTimeUnit={minTimeUnit} timeFreq={timeValue} height={{ lg: 259, xl: 362 }} />
+          <DiagramLine
+            timeFreq={timeValue}
+            minTimeUnit={minTimeUnit}
+            height={{ lg: 259, xl: 362 }}
+            data={graphData}
+            alert_rules={dataAlerts}
+          />
         </DiagramTutorialTooltip>
       )}
     </StyledDataIngestionContainer>

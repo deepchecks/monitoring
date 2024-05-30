@@ -3,7 +3,7 @@ import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 import { Chart, ChartEvent, ChartMeta } from 'chart.js';
 import dayjs from 'dayjs';
 
-import { AlertRuleSchema, AlertSchema } from 'api/generated';
+import { AlertRuleSchema, AlertSchema, DataIngestionAlertRuleSchema } from 'api/generated';
 
 import { ACTIVE_BAR_BG_COLOR } from '../../components/SegmentsDrillDown/SegmentsDrillDown.helpers';
 
@@ -28,7 +28,7 @@ export const zoomOptions: ZoomPluginOptions = {
   }
 };
 
-export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
+export const setAlertLine = (alert_rule: AlertRuleSchema | DataIngestionAlertRuleSchema) => ({
   id: 'setAlertLine',
   beforeDatasetsDraw(chart: Chart<'line', number[], string>) {
     const {
@@ -39,7 +39,7 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
 
     if (!x || !y) return;
 
-    const startTime = alert_rule.start_time;
+    const startTime = (alert_rule as any)?.start_time ?? '';
     const minTime = x.min;
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
 
