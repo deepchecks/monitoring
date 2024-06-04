@@ -217,10 +217,6 @@ def create_application(
             sentry_sdk.integrations.logging.ignore_logger("aiokafka.cluster")
             ee.utils.telemetry.collect_telemetry(DataIngestionBackend)
 
-        if settings.stripe_secret_api_key:
-            import stripe
-            stripe.api_key = settings.stripe_secret_api_key
-
         if settings.debug_mode:
             app.add_middleware(ee.middlewares.ProfilingMiddleware)
 

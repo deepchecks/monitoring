@@ -32,7 +32,6 @@ bcrypt==4.0.1
 pyinstrument==4.6.1
 watchtower==3.0.0
 sentry-sdk[fastapi]~=1.14.0
-stripe==5.2.0
 jupytext>=1.14.5
 uvicorn~=0.21.1
 ddtrace>=1.0,<2
