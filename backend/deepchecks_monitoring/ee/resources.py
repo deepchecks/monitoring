@@ -18,7 +18,7 @@ from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
 
 from deepchecks_monitoring.ee import utils
-from deepchecks_monitoring.ee.config import Settings, SlackSettings, StripeSettings, TelemetrySettings
+from deepchecks_monitoring.ee.config import Settings, SlackSettings, TelemetrySettings
 from deepchecks_monitoring.ee.features_control_cloud import CloudFeaturesControl
 from deepchecks_monitoring.ee.features_control_on_prem import OnPremFeaturesControl
 from deepchecks_monitoring.ee.notifications import AlertNotificator as EEAlertNotificator
@@ -63,17 +63,6 @@ class ResourcesProvider(OpenSourceResourcesProvider):
                 "Provided settings instance type is not a subclass of "
                 "the 'SlackSettings', you need to provide instance "
                 "of 'SlackSettings' to the 'ResourcesProvider' constructor"
-            )
-        return self._settings
-
-    @property
-    def stripe_settings(self) -> StripeSettings:
-        """Get the telemetry settings."""
-        if not isinstance(self._settings, StripeSettings):
-            raise AssertionError(
-                "Provided settings instance type is not a subclass of "
-                "the 'StripeSettings', you need to provide instance "
-                "of 'StripeSettings' to the 'ResourcesProvider' constructor"
             )
         return self._settings
 
@@ -150,7 +139,6 @@ class ResourcesProvider(OpenSourceResourcesProvider):
             settings = cast(Settings, self.settings)
             return {
                 "sentryDsn": settings.sentry_dsn,
-                "stripeApiKey": settings.stripe_public_api_key,
                 "lauchdarklySdkKey": settings.lauchdarkly_sdk_key,
                 "environment": settings.enviroment,
                 "mixpanel_id": settings.mixpanel_id,

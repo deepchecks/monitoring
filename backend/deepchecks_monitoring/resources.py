@@ -489,7 +489,6 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return configuration to be used in client side."""
         return {
             "sentryDsn": None,
-            "stripeApiKey": None,
             "lauchdarklySdkKey": None,
             "environment": None,
             "mixpanel_id": None,

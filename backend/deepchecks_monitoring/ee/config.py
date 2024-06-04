@@ -19,7 +19,6 @@ from deepchecks_monitoring.config import Settings as OpenSourceSettings
 __all__ = [
     'Settings',
     'TelemetrySettings',
-    'StripeSettings',
     'SlackSettings'
 ]
 
@@ -33,14 +32,6 @@ class TelemetrySettings(BaseDeepchecksSettings):
     instrument_telemetry: bool = False
     sentry_dsn: t.Optional[str] = None
     sentry_env: str = 'dev'
-
-
-class StripeSettings(BaseDeepchecksSettings):
-    """Stripe settings."""
-
-    stripe_secret_api_key: str = ''
-    stripe_public_api_key: str = ''
-    stripe_webhook_secret: str = ''
 
 
 class SlackSettings(BaseDeepchecksSettings):
@@ -63,7 +54,6 @@ class Settings(
     OpenSourceSettings,
     SlackSettings,
     TelemetrySettings,
-    StripeSettings
 ):
     """Settings for the deepchecks_monitoring package."""
 
