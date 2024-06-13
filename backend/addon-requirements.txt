@@ -1,1 +1,1 @@
-deepchecks_addons@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-custom-addon.git@b5cca63ea3016d60d6f5dfdaab9c4b3f53cb6e3e
+deepchecks_addons@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-custom-addon.git@7f4c4d5467293bed6201cfe8abbd47400af5020e
