@@ -165,10 +165,6 @@ async def add_checks(
     for check_creation_schema in checks:
         if check_creation_schema.name in existing_check_names:
             raise BadRequest(f'Model already contains a check named {check_creation_schema.name}')
-        module_name = str(check_creation_schema.config['module_name'])
-        is_tabular = module_name.startswith('deepchecks.tabular') or module_name.startswith('deepchecks_addons')
-        if not is_tabular:
-            raise BadRequest(f'Check {check_creation_schema.name} is not compatible with the model task type')
         dp_check = BaseCheck.from_config(check_creation_schema.config)
         if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
             raise BadRequest('incompatible check type')
