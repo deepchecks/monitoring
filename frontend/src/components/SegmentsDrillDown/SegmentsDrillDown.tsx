@@ -47,13 +47,13 @@ const SegmentsDrillDownComponent = ({
 }: SegmentsDrillDownProps) => {
   const dataSet: Array<number | null> = useMemo(
     () =>
-      data.length && datasetName
+      Array?.isArray(data) && datasetName
         ? data.map(d => (d.value ? d.value[getKeyByDatasetName(d.value, '' + datasetName) || ''] : null))
         : [],
     [data, datasetName]
   );
 
-  const labels = useMemo(() => (data.length ? data.map(d => d.name || JSON.stringify(d.name)) : []), [data]);
+  const labels = useMemo(() => (Array?.isArray(data) ? data.map(d => d.name || JSON.stringify(d.name)) : []), [data]);
   const yTitle = useMemo(
     () => (classOrFeature?.type === 'Feature' ? `${check.name} - ${datasetName}` : `${datasetName}`),
     [check, datasetName, classOrFeature]
@@ -76,7 +76,7 @@ const SegmentsDrillDownComponent = ({
       setPlots(resp);
     }
 
-    if (setActiveBarFilters && data && data[activeBarIndex] && data[activeBarIndex].filters) {
+    if (setActiveBarFilters && data && data[activeBarIndex] && data[activeBarIndex]?.filters) {
       setActiveBarFilters(data[activeBarIndex].filters.filters);
     }
 
