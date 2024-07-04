@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --chart --controller deployment --out helm --file compose/docker-compose.yml
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: redis
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: redis
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert --chart --controller deployment --out helm --file compose/docker-compose.yml
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/deepchecks: "true"
+        io.kompose.service: redis
+    spec:
+      containers:
+        - args:
+            - redis-server
+            - --maxmemory-policy
+            - allkeys-lru
+            - --maxmemory
+            - 200mb
+          image: redis:6.2.7-alpine
+          name: redis
+      restartPolicy: OnFailure
