@@ -11,18 +11,17 @@ import useConfig from '../hooks/useConfig';
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 const InitializationProvider = ({ children }: { children: ReactNode | ReactNode[] }) => {
-  const { hotjar_sv, hotjar_id, data_dog_id, data_dog_token, mixpanel_id, environment } = useConfig() as {
+  const { hotjar_sv, hotjar_id, data_dog_id, mixpanel_id, environment, datadog_fe_token } = useConfig() as {
     [key: string]: string;
   };
 
   // DataDog
   const dataDogId = data_dog_id;
-  const dataDogToken = data_dog_token;
   const isTrackable = `${process.env.REACT_APP_NODE_ENV}` === 'production';
   const userName = getStorageItem(storageKeys?.user)?.u_name ?? '';
   const userEmail = getStorageItem(storageKeys?.user)?.u_email ?? '';
 
-  if (dataDogToken && dataDogId && isTrackable) {
+  if (datadog_fe_token && dataDogId && isTrackable) {
     datadogRum.init({
       env: environment,
       trackResources: true,
@@ -30,7 +29,7 @@ const InitializationProvider = ({ children }: { children: ReactNode | ReactNode[
       site: 'datadoghq.com',
       service: 'mon-client',
       applicationId: dataDogId,
-      clientToken: dataDogToken,
+      clientToken: datadog_fe_token,
       trackUserInteractions: true,
       defaultPrivacyLevel: 'allow',
       sessionReplaySampleRate: 100,

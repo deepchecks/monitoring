@@ -494,5 +494,6 @@ class ResourcesProvider(BaseResourcesProvider):
             "mixpanel_id": None,
             "is_cloud": False,
             "hotjar_id": None,
-            "hotjar_sv": None
+            "hotjar_sv": None,
+            "datadog_fe_token": None,
         }

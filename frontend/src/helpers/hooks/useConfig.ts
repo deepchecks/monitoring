@@ -8,7 +8,7 @@ import { resError } from 'helpers/types/resError';
 
 const initialVars = {
   data_dog_id: `${process.env.REACT_APP_DATADOG_ID}`,
-  data_dog_token: `${process.env.REACT_APP_DATADOG_TOKEN}`,
+  datadog_fe_token: `${process.env.REACT_APP_DATADOG_TOKEN}`,
   environment: `${process.env.REACT_APP_BASE_API}`,
   mixpanel_id: `${process.env.REACT_APP_MIXPANEL_ID}`
 };

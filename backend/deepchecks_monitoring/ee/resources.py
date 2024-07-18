@@ -144,7 +144,8 @@ class ResourcesProvider(OpenSourceResourcesProvider):
                 "mixpanel_id": settings.mixpanel_id,
                 "is_cloud": True,
                 "hotjar_id": settings.hotjar_id,
-                "hotjar_sv": settings.hotjar_sv
+                "hotjar_sv": settings.hotjar_sv,
+                "datadog_fe_token": settings.datadog_fe_token,
             }
         return super().get_client_configuration()
 
