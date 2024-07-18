@@ -63,3 +63,5 @@ class Settings(
     access_audit: bool = False
     hotjar_sv: str = ''
     hotjar_id: str = ''
+    datadog_fe_token: str = ''
+    
