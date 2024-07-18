@@ -64,4 +64,3 @@ class Settings(
     hotjar_sv: str = ''
     hotjar_id: str = ''
     datadog_fe_token: str = ''
-    
