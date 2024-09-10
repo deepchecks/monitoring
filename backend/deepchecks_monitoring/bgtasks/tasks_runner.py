@@ -220,6 +220,7 @@ def execute_worker():
                 kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
                 await kafka_admin.start()
 
+                # flake8: noqa: SC100
                 # workers.append(ModelVersionTopicDeletionWorker(kafka_admin))
 
             # Adding ee workers
