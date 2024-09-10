@@ -192,7 +192,7 @@ jobs:
       #   run: make cypress
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: cypress-artifacts
           path: |
