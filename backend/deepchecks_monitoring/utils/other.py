@@ -3,8 +3,8 @@ import typing as t
 from ssl import SSLContext
 
 import pendulum as pdl
+from aiokafka import __version__ as aiokafka_version
 from aiokafka.admin import AIOKafkaAdminClient
-from aiokafka.admin import __version__ as aiokafka_version
 from aiokafka.client import AIOKafkaClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
