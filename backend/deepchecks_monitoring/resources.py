@@ -89,7 +89,6 @@ class ResourcesProvider(BaseResourcesProvider):
         self._oauth_client: t.Optional[OAuth] = None
         self._parallel_check_executors = None
         self._mixpanel_event_reporter: MixpanelEventReporter | None = None
-        self._topics = set()
 
     @property
     def email_settings(self) -> config.EmailSettings:
@@ -292,6 +291,7 @@ class ResourcesProvider(BaseResourcesProvider):
             return
         if self._kafka_admin is None:
             self._kafka_admin = KafkaAdminClient(**settings.kafka_params)
+            self._kafka_admin
         return self._kafka_admin
 
     @property
@@ -401,12 +401,9 @@ class ResourcesProvider(BaseResourcesProvider):
         bool
             True if topic existed, False if was created
         """
-        if topic_name in self._topics:
-            return True
         # Refresh the topics list from the server
         kafka_admin: KafkaAdminClient = self.kafka_admin
-        self._topics = set(kafka_admin.list_topics())
-        if topic_name in self._topics:
+        if topic_name in set(kafka_admin.list_topics()):
             return True
 
         # If still doesn't exist try to create
@@ -418,7 +415,6 @@ class ResourcesProvider(BaseResourcesProvider):
                     replication_factor=self.kafka_settings.kafka_replication_factor
                 )
             ])
-            self._topics.add(topic_name)
             return False
         # 2 workers might try to create topic at the same time so ignoring if already exists
         except TopicAlreadyExistsError:
