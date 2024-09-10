@@ -321,7 +321,6 @@ class CurrentActiveUser(CurrentUser):
 
             request.state.is_schema_changed = True
 
-        session.expunge(user)
         return user
 
 
