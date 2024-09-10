@@ -93,8 +93,7 @@ async def get_user(
             or not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode())
         ):
             raise Unauthorized("Received invalid secret")
-        await session.commit()
-        session.expunge_all()
+
         return user
 
 
