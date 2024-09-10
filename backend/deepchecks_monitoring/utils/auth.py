@@ -22,7 +22,6 @@ from deepchecks_monitoring import public_models as models
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import (AccessForbidden, BadRequest, InvalidConfigurationException,
                                               UnacceptedEULA, Unauthorized)
-from deepchecks_monitoring.utils import database
 
 __all__ = ["CurrentUser", "CurrentActiveUser", "AdminUser", "create_api_token"]
 
