@@ -291,7 +291,6 @@ class ResourcesProvider(BaseResourcesProvider):
             return
         if self._kafka_admin is None:
             self._kafka_admin = KafkaAdminClient(**settings.kafka_params)
-            self._kafka_admin
         return self._kafka_admin
 
     @property
