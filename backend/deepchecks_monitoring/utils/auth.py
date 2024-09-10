@@ -41,7 +41,7 @@ class APIAccessToken(BaseModel):
     api_token: str
 
 
-AccessToken = t.Type[t.Union[UserAccessToken, APIAccessToken]]
+AccessToken = t.Union[UserAccessToken, APIAccessToken]
 
 
 async def get_user(
@@ -93,7 +93,8 @@ async def get_user(
             or not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode())
         ):
             raise Unauthorized("Received invalid secret")
-
+        await session.commit()
+        session.expunge_all()
         return user
 
 
@@ -308,17 +309,6 @@ class CurrentActiveUser(CurrentUser):
         is_cloud = request.app.state.settings.is_cloud
         if is_cloud and request.url != request.url_for("eula-acceptance") and user.eula is False:
             raise UnacceptedEULA()
-
-        is_schema_changed: bool = getattr(request.state, "is_schema_changed", False)
-
-        if self.change_schema is True and not is_schema_changed:
-            organization_schema = t.cast(str, request.state.user.organization.schema_name)
-            await database.attach_schema_switcher_listener(
-                session=session,
-                schema_search_path=[organization_schema, "public"]
-            )
-
-            request.state.is_schema_changed = True
 
         return user
 
