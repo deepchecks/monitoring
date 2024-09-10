@@ -213,7 +213,7 @@ jobs:
       - name: Install pandoc
         run: |
           sudo apt-get update
-          sudo apt-get install pandoc dvisvgm texlive texlive-latex-extra postgresql-client
+          sudo apt-get install pandoc dvisvgm texlive texlive-latex-extra postgresql-client docker-compose
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Download artifact
