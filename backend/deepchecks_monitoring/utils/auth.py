@@ -41,7 +41,7 @@ class APIAccessToken(BaseModel):
     api_token: str
 
 
-AccessToken = t.Type[t.Union[UserAccessToken, APIAccessToken]]
+AccessToken = t.Union[UserAccessToken, APIAccessToken]
 
 
 async def get_user(
