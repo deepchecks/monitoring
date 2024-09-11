@@ -16,7 +16,6 @@ import typing as t
 from collections import defaultdict
 from datetime import datetime
 
-from deepchecks_monitoring.public_models.role import Role, RoleEnum
 import pandas as pd
 import pendulum as pdl
 import pytz
@@ -38,6 +37,7 @@ from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
                                                     field_length)
+from deepchecks_monitoring.public_models.role import Role, RoleEnum
 from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
