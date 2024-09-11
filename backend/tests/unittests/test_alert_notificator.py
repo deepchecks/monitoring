@@ -154,28 +154,30 @@ async def test_that_emails_are_send_to_all_members_of_organization(
     settings = t.cast(Settings, resources_provider.settings)
     now = datetime.now(timezone.utc)
 
-    users = [
-        await generate_user(async_session, settings.auth_jwt_secret, switch_schema=True),
-    ]
+    user = await generate_user(async_session, settings.auth_jwt_secret, switch_schema=True)
+    async_session.add(user)
+    await async_session.flush()
+
+    with test_api.reauthorize(t.cast(str, user.access_token)):
+        model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+        check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+        monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
+        alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
 
     # need this to not add them to the members manually
-    users += [
+    users = [
         await generate_user(async_session, settings.auth_jwt_secret,
-                            organization_id=users[0].organization_id, switch_schema=False),
+                            organization_id=user.organization_id, switch_schema=False),
         await generate_user(async_session, settings.auth_jwt_secret,
-                            organization_id=users[0].organization_id, switch_schema=False),
+                            organization_id=user.organization_id, switch_schema=False),
         await generate_user(async_session, settings.auth_jwt_secret,
-                            organization_id=users[0].organization_id, switch_schema=False),
+                            organization_id=user.organization_id, switch_schema=False),
     ]
 
     async_session.add_all(users)
     await async_session.flush()
 
-    with test_api.reauthorize(t.cast(str, users[0].access_token)):
-        model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
-        check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
-        monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
-        alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
+    users.append(user)  # so testing is easier
 
     alert = (await async_session.execute(sa.insert(Alert).values(
         failed_values={"1": ["accuracy"], "2": ["accuracy"]},
@@ -185,7 +187,7 @@ async def test_that_emails_are_send_to_all_members_of_organization(
     ).returning(Alert))).first()
 
     notificator = await AlertNotificator.instantiate(
-        organization_id=t.cast(int, users[0].organization_id),
+        organization_id=t.cast(int, user.organization_id),
         alert=alert,
         session=async_session,
         resources_provider=resources_provider
