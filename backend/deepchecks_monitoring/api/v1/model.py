@@ -16,6 +16,7 @@ import typing as t
 from collections import defaultdict
 from datetime import datetime
 
+from deepchecks_monitoring.public_models.role import Role, RoleEnum
 import pandas as pd
 import pendulum as pdl
 import pytz
@@ -193,9 +194,15 @@ async def get_create_model(
         model = Model(notes=notes, created_by=user.id, updated_by=user.id, **data)
         session.add(model)
 
-        org_users: t.List[User] = await session.scalars(sa.select(User.id)
-                                                        .where(User.organization_id == user.organization_id))
-        model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in org_users]
+        allowed_org_users = ((
+            await session.scalars(
+                sa.select(User.id)
+                .where(User.organization_id == user.organization_id)
+                .where(Role.role.in_([RoleEnum.ADMIN, RoleEnum.OWNER]))
+                .join(Role, Role.user_id == User.id)
+            )
+        ) or []) + [user.id]
+        model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in allowed_org_users]
         session.add_all(model_members)
 
         await session.flush()
