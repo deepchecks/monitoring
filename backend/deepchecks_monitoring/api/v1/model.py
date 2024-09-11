@@ -194,17 +194,15 @@ async def get_create_model(
         model = Model(notes=notes, created_by=user.id, updated_by=user.id, **data)
         session.add(model)
 
-        allowed_org_users = ((
-            await session.scalars(
+        allowed_org_users = await session.scalars(
                 sa.select(User.id)
                 .where(User.organization_id == user.organization_id)
                 .where(Role.role.in_([RoleEnum.ADMIN, RoleEnum.OWNER]))
                 .join(Role, Role.user_id == User.id)
             )
-        ) or []) + [user.id]
         model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in allowed_org_users]
         session.add_all(model_members)
-
+        session.add(ModelMember(user_id=user.id, model_id=model.id))
         await session.flush()
 
         # Create model tables
