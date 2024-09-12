@@ -81,7 +81,6 @@ class ResourcesProvider(BaseResourcesProvider):
         self._session_factory: t.Optional[sessionmaker] = None
         self._async_database_engine: t.Optional[AsyncEngine] = None
         self._async_session_factory: t.Optional[sessionmaker] = None
-        self._kafka_producer: t.Optional[AIOKafkaProducer] = None
         self._kafka_admin: t.Optional[KafkaAdminClient] = None
         self._redis_client: t.Optional[Redis] = None
         self._cache_funcs: t.Optional[CacheFunctions] = None
@@ -272,16 +271,18 @@ class ResourcesProvider(BaseResourcesProvider):
             finally:
                 await session.close()
 
-    @property
-    async def kafka_producer(self) -> t.Optional[AIOKafkaProducer]:
+    @asynccontextmanager
+    async def get_kafka_producer(self) -> t.AsyncGenerator[AIOKafkaProducer, None]:
         """Return kafka producer."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            return
-        if self._kafka_producer is None:
-            self._kafka_producer = AIOKafkaProducer(**settings.kafka_params)
-            await self._kafka_producer.start()
-        return self._kafka_producer
+            raise ValueError("No kafka host configured")
+        kafka_producer = AIOKafkaProducer(**settings.kafka_params)
+        try:
+            await kafka_producer.start()
+            yield kafka_producer
+        finally:
+            await kafka_producer.stop()
 
     @property
     def kafka_admin(self) -> t.Optional[KafkaAdminClient]:
