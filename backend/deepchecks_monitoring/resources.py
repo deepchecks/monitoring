@@ -11,7 +11,6 @@
 """Module with resources instantiation logic."""
 import logging
 import typing as t
-from typing_extensions import AsyncGenerator
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
@@ -27,6 +26,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from typing_extensions import AsyncGenerator
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
