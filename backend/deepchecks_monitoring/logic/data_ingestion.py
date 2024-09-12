@@ -346,7 +346,6 @@ class DataIngestionBackend(object):
         self.resources_provider: ResourcesProvider = resources_provider
         self.logger = logger or configure_logger(name="data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
-        self._producer = None
 
     async def log_samples(
             self,
@@ -379,15 +378,15 @@ class DataIngestionBackend(object):
                 model_version.topic_end_offset = -1
                 await insert_model_version_topic_delete_task(organization_id, model_version.id, entity, session)
 
-            if self._producer is None:
-                self._producer = await self.resources_provider.kafka_producer
+            producer = await self.resources_provider.get_kafka_producer()
 
             send_futures = []
             for sample in data:
                 key = sample.get(SAMPLE_ID_COL, "").encode()
                 message = json.dumps({"data": sample, "log_time": log_time.to_iso8601_string()}).encode("utf-8")
-                send_futures.append(await self._producer.send(topic_name, value=message, key=key))
+                send_futures.append(await producer.send(topic_name, value=message, key=key))
             await asyncio.gather(*send_futures)
+            await producer.stop()
         else:
             await log_data(model_version, data, session, [log_time] * len(data), self.logger,
                            organization_id, self.resources_provider.cache_functions)
@@ -421,15 +420,15 @@ class DataIngestionBackend(object):
                 model.topic_end_offset = -1
                 await insert_model_version_topic_delete_task(organization_id, model.id, entity, session)
 
-            if self._producer is None:
-                self._producer = await self.resources_provider.kafka_producer
+            producer = await self.resources_provider.get_kafka_producer()
 
             send_futures = []
             for sample in data:
                 key = sample.get(SAMPLE_ID_COL, "").encode()
                 message = json.dumps({"data": sample}).encode("utf-8")
-                send_futures.append(await self._producer.send(topic_name, value=message, key=key))
+                send_futures.append(await producer.send(topic_name, value=message, key=key))
             await asyncio.gather(*send_futures)
+            await producer.stop()
         else:
             await log_labels(model, data, session, organization_id,
                              self.resources_provider.cache_functions, self.logger)
