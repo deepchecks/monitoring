@@ -11,6 +11,7 @@
 """Module with resources instantiation logic."""
 import logging
 import typing as t
+from typing_extensions import AsyncGenerator
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
@@ -271,14 +272,18 @@ class ResourcesProvider(BaseResourcesProvider):
             finally:
                 await session.close()
 
-    async def get_kafka_producer(self) -> t.Optional[AIOKafkaProducer]:
+    @asynccontextmanager
+    async def get_kafka_producer(self) -> AsyncGenerator[AIOKafkaProducer]:
         """Return kafka producer."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            return None
+            raise ValueError('No kafka host configured')
         kafka_producer = AIOKafkaProducer(**settings.kafka_params)
-        await kafka_producer.start()
-        return kafka_producer
+        try:
+            await kafka_producer.start()
+            yield kafka_producer
+        finally:
+            await kafka_producer.stop()
 
     @property
     def kafka_admin(self) -> t.Optional[KafkaAdminClient]:
