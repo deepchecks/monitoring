@@ -273,7 +273,7 @@ class ResourcesProvider(BaseResourcesProvider):
                 await session.close()
 
     @asynccontextmanager
-    async def get_kafka_producer(self) -> AsyncGenerator[AIOKafkaProducer]:
+    async def get_kafka_producer(self) -> AsyncGenerator[AIOKafkaProducer, None]:
         """Return kafka producer."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
