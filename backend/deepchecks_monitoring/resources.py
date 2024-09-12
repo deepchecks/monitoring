@@ -277,7 +277,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return kafka producer."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            raise ValueError('No kafka host configured')
+            raise ValueError("No kafka host configured")
         kafka_producer = AIOKafkaProducer(**settings.kafka_params)
         try:
             await kafka_producer.start()
