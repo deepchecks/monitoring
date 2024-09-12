@@ -26,7 +26,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
-from typing_extensions import AsyncGenerator
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
@@ -273,7 +272,7 @@ class ResourcesProvider(BaseResourcesProvider):
                 await session.close()
 
     @asynccontextmanager
-    async def get_kafka_producer(self) -> AsyncGenerator[AIOKafkaProducer, None]:
+    async def get_kafka_producer(self) -> t.AsyncGenerator[AIOKafkaProducer, None]:
         """Return kafka producer."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
