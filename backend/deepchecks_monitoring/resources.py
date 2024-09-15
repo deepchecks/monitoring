@@ -396,6 +396,12 @@ class ResourcesProvider(BaseResourcesProvider):
         import ray  # noqa
         ray.shutdown()
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        wait=tenacity.wait_incrementing(start=1, increment=2),
+        retry=tenacity.retry_if_exception_type(KafkaError),
+        reraise=True
+    )
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.
 
@@ -404,22 +410,11 @@ class ResourcesProvider(BaseResourcesProvider):
         bool
             True if topic existed, False if was created
         """
-        @tenacity.retry(
-        stop=tenacity.stop_after_attempt(3),
-        wait=tenacity.wait_incrementing(start=1, increment=2),
-        retry=tenacity.retry_if_exception_type(KafkaError),
-        reraise=True
-        )
-        def list_topics(kafka_admin: KafkaAdminClient):
-            return kafka_admin.list_topics()
+        with self.get_kafka_admin() as kafka_admin:
+            # Refresh the topics list from the server
+            if topic_name in set(kafka_admin.list_topics()):
+                return True
 
-        @tenacity.retry(
-        stop=tenacity.stop_after_attempt(3),
-        wait=tenacity.wait_incrementing(start=1, increment=2),
-        retry=tenacity.retry_if_exception_type(KafkaError),
-        reraise=True
-        )
-        def create_topics(kafka_admin: KafkaAdminClient):
             # If still doesn't exist try to create
             try:
                 kafka_admin.create_topics([
@@ -433,13 +428,6 @@ class ResourcesProvider(BaseResourcesProvider):
             # 2 workers might try to create topic at the same time so ignoring if already exists
             except TopicAlreadyExistsError:
                 return True
-
-        with self.get_kafka_admin() as kafka_admin:
-            # Refresh the topics list from the server
-            if topic_name in set(list_topics(kafka_admin)):
-                return True
-
-            return create_topics(kafka_admin)
 
     async def lazy_report_mixpanel_event(
         self,
