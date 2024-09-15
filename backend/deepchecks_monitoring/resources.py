@@ -14,11 +14,12 @@ import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
+import tenacity
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
-from kafka.errors import TopicAlreadyExistsError, KafkaError
+from kafka.errors import KafkaError, TopicAlreadyExistsError
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -26,7 +27,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
-import tenacity
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
