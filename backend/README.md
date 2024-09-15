@@ -123,7 +123,11 @@ alembic --name org -x schema=<org-schema-name> upgrade heads
 alembic --name org -x schema=<org-schema-name> current
 ```
 
-## Running pylint
+## Running pylint / flake8
 ```bash
 cd .. && pylint -j 0 --rcfile=./backend/.pylintrc ./backend/deepchecks_monitoring
+```
+
+```bash
+flake8 --whitelist spelling-allowlist.txt deepchecks_monitoring client/deepchecks_client --per-file-ignores="deepchecks_monitoring/utils/notebook_resources/*:E999 "
 ```
