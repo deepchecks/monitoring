@@ -384,7 +384,6 @@ class DataIngestionBackend(object):
         organization_id: int,
         log_time: "pdl.DateTime",
     ):
-        """Log new data with asynchronous retry logic for failed messages."""
         if isinstance(data, pd.DataFrame):
             data = data.to_dict(orient="records")
 
@@ -418,7 +417,6 @@ class DataIngestionBackend(object):
         session: AsyncSession,
         organization_id: int,
     ):
-        """Log new data with asynchronous retry logic for failed messages."""
         if isinstance(data, pd.DataFrame):
             data = data.to_dict(orient="records")
 
