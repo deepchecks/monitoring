@@ -398,7 +398,7 @@ class ResourcesProvider(BaseResourcesProvider):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(3),
-        wait=tenacity.wait_incrementing(start=1, increment=2),
+        wait=tenacity.wait_fixed(1),
         retry=tenacity.retry_if_exception_type(KafkaError),
         reraise=True
     )
