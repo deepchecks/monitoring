@@ -377,7 +377,7 @@ class DataIngestionBackend(object):
                 for ((key, _), result) in failed_messages:
                     self.logger.warning(
                         f"Failed message key: {key.decode() if key else 'None'} with error: {str(result)}"
-                )
+                    )
 
             if failed_messages:
                 self.logger.warning(f"Retry {retry_count + 1}: {len(failed_messages)} messages failed to send.")
