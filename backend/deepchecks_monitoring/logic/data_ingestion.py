@@ -381,7 +381,10 @@ class DataIngestionBackend(object):
                 break
 
         if failed_messages:
-            self.logger.error(f"Failed to send {len(failed_messages)} messages after {max_retries} retries out of original {total_msgs}.")
+            self.logger.error(
+                f"Failed to send {len(failed_messages)} "
+                f"messages after {max_retries} retries out of original {total_msgs}."
+            )
             for key, _ in failed_messages:
                 self.logger.error(f"Failed message key: {key.decode() if key else 'None'}")
 
