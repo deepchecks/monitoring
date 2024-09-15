@@ -366,13 +366,16 @@ class DataIngestionBackend(object):
             results = await asyncio.gather(*send_futures, return_exceptions=True)
 
             failed_messages = [
-                (key, message) for ((key, message), result) in zip(messages, results)
+                ((key, message), result) for ((key, message), result) in zip(messages, results)
                 if isinstance(result, Exception)
             ]
 
+            for ((key, _), result)  in failed_messages:
+                self.logger.warning(f"Failed message key: {key.decode() if key else 'None'} with error {str(result)}")
+
             if failed_messages:
                 self.logger.warning(f"Retry {retry_count + 1}: {len(failed_messages)} messages failed to send.")
-                messages = failed_messages
+                messages = [msg for msg, _ in failed_messages]
                 retry_count += 1
 
                 if retry_count < max_retries:
@@ -385,8 +388,6 @@ class DataIngestionBackend(object):
                 f"Failed to send {len(failed_messages)} "
                 f"messages after {max_retries} retries out of original {total_msgs}."
             )
-            for key, _ in failed_messages:
-                self.logger.error(f"Failed message key: {key.decode() if key else 'None'}")
 
     async def log_samples(
         self,
