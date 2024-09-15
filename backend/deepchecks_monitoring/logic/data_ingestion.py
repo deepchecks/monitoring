@@ -19,7 +19,7 @@ import fastjsonschema
 import pandas as pd
 import pendulum as pdl
 import sqlalchemy.exc
-from aiokafka import AIOKafkaConsumer, TopicPartition
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer, TopicPartition
 from aiokafka.structs import ConsumerRecord
 from sqlalchemy import Column, select, text
 from sqlalchemy.dialects import postgresql
@@ -347,24 +347,55 @@ class DataIngestionBackend(object):
         self.logger = logger or configure_logger(name="data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
 
-    async def log_samples(
+    async def _send_with_retry(
             self,
-            model_version: ModelVersion,
-            data: t.List[t.Dict[str, t.Any]] | pd.DataFrame,
-            session: AsyncSession,
-            organization_id: int,
-            log_time: "pdl.DateTime",
+            producer: AIOKafkaProducer,
+            topic_name: str,
+            messages: list[tuple],
+            total_msgs: int,
+            max_retries=3
     ):
-        """Log new data.
+        """Send messages to Kafka with asynchronous retry logic."""
+        retry_count = 0
+        while messages and retry_count < max_retries:
+            send_futures = [
+                producer.send(topic_name, value=message, key=key)
+                for key, message in messages
+            ]
 
-        Parameters
-        ----------
-        model_version: ModelVersion
-        data: t.List[t.Dict[str, t.Any]
-        session: AsyncSession
-        organization_id: int
-        log_time
-        """
+            results = await asyncio.gather(*send_futures, return_exceptions=True)
+
+            failed_messages = [
+                (key, message) for ((key, message), result) in zip(messages, results)
+                if isinstance(result, Exception)
+            ]
+
+            if failed_messages:
+                self.logger.warning(f"Retry {retry_count + 1}: {len(failed_messages)} messages failed to send.")
+                messages = failed_messages
+                retry_count += 1
+
+                if retry_count < max_retries:
+                    await asyncio.sleep(retry_count)
+            else:
+                break
+
+        if failed_messages:
+            self.logger.error(
+                f"Failed to send {len(failed_messages)} "
+                f"messages after {max_retries} retries out of original {total_msgs}."
+            )
+            for key, _ in failed_messages:
+                self.logger.error(f"Failed message key: {key.decode() if key else 'None'}")
+
+    async def log_samples(
+        self,
+        model_version: ModelVersion,
+        data: t.List[t.Dict[str, t.Any]] | pd.DataFrame,
+        session: AsyncSession,
+        organization_id: int,
+        log_time: "pdl.DateTime",
+    ):
         if isinstance(data, pd.DataFrame):
             data = data.to_dict(orient="records")
 
@@ -372,6 +403,7 @@ class DataIngestionBackend(object):
             entity = "model-version"
             topic_name = get_data_topic_name(organization_id, model_version.id, entity)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
+
             # If topic was created, resetting the offsets and adding a task to delete it when data upload is done
             if not topic_existed:
                 model_version.ingestion_offset = -1
@@ -379,32 +411,24 @@ class DataIngestionBackend(object):
                 await insert_model_version_topic_delete_task(organization_id, model_version.id, entity, session)
 
             async with self.resources_provider.get_kafka_producer() as producer:
-                send_futures = []
-                for sample in data:
-                    key = sample.get(SAMPLE_ID_COL, "").encode()
-                    message = json.dumps({"data": sample, "log_time": log_time.to_iso8601_string()}).encode("utf-8")
-                    send_futures.append(await producer.send(topic_name, value=message, key=key))
-                await asyncio.gather(*send_futures)
+                messages = [
+                    (sample.get(SAMPLE_ID_COL, "").encode(),
+                     json.dumps({"data": sample, "log_time": log_time.to_iso8601_string()}).encode("utf-8"))
+                    for sample in data
+                ]
+
+                await self._send_with_retry(producer, topic_name, messages, len(messages))
         else:
             await log_data(model_version, data, session, [log_time] * len(data), self.logger,
                            organization_id, self.resources_provider.cache_functions)
 
     async def log_labels(
-            self,
-            model: Model,
-            data: t.List[t.Dict[str, t.Any]] | pd.DataFrame,
-            session: AsyncSession,
-            organization_id: int,
+        self,
+        model: Model,
+        data: t.List[t.Dict[str, t.Any]] | pd.DataFrame,
+        session: AsyncSession,
+        organization_id: int,
     ):
-        """Log new data.
-
-        Parameters
-        ----------
-        model: Model
-        data: t.List[t.Dict[str, t.Any]
-        session: AsyncSession
-        organization_id: int
-        """
         if isinstance(data, pd.DataFrame):
             data = data.to_dict(orient="records")
 
@@ -412,6 +436,7 @@ class DataIngestionBackend(object):
             entity = "model"
             topic_name = get_data_topic_name(organization_id, model.id, entity)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
+
             # If topic was created, resetting the offsets and adding a task to delete it when data upload is done
             if not topic_existed:
                 model.ingestion_offset = -1
@@ -419,12 +444,13 @@ class DataIngestionBackend(object):
                 await insert_model_version_topic_delete_task(organization_id, model.id, entity, session)
 
             async with self.resources_provider.get_kafka_producer() as producer:
-                send_futures = []
-                for sample in data:
-                    key = sample.get(SAMPLE_ID_COL, "").encode()
-                    message = json.dumps({"data": sample}).encode("utf-8")
-                    send_futures.append(await producer.send(topic_name, value=message, key=key))
-                await asyncio.gather(*send_futures)
+                messages = [
+                    (sample.get(SAMPLE_ID_COL, "").encode(),
+                     json.dumps({"data": sample}).encode("utf-8"))
+                    for sample in data
+                ]
+
+                await self._send_with_retry(producer, topic_name, messages, len(messages))
         else:
             await log_labels(model, data, session, organization_id,
                              self.resources_provider.cache_functions, self.logger)

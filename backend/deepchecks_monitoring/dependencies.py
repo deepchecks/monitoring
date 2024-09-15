@@ -14,7 +14,6 @@ import typing as t
 import authlib.integrations.starlette_client
 import fastapi
 from fastapi import Request
-from kafka import KafkaAdminClient
 from pydantic import BaseSettings
 
 from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
@@ -27,7 +26,6 @@ if t.TYPE_CHECKING:
 __all__ = [
     "AsyncSessionDep",
     "limit_request_size",
-    "KafkaAdminDep",
     "SettingsDep",
     "DataIngestionDep",
     "CacheFunctionsDep",
@@ -51,11 +49,6 @@ async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["Extend
     resources_provider = t.cast("ResourcesProvider", request.app.state.resources_provider)
     async with resources_provider.create_async_database_session() as session:
         yield session
-
-
-def get_kafka_admin(request: fastapi.Request) -> t.Optional[KafkaAdminClient]:
-    resources_provider = t.cast("ResourcesProvider", request.app.state.resources_provider)
-    return resources_provider.kafka_admin
 
 
 def get_settings(request: fastapi.Request) -> BaseSettings:
@@ -83,27 +76,10 @@ def get_resources_provider(request: fastapi.Request) -> "ResourcesProvider":
 
 
 AsyncSessionDep = fastapi.Depends(get_async_session)
-KafkaAdminDep = fastapi.Depends(get_kafka_admin)
 SettingsDep = fastapi.Depends(get_settings)
 DataIngestionDep = fastapi.Depends(get_data_ingestion_backend)
 CacheFunctionsDep = fastapi.Depends(get_cache_functions)
 ResourcesProviderDep = fastapi.Depends(get_resources_provider)
-
-# Examples of how to use those dependencies:
-#
-# >>> class PersonCreationSchema(pydantic.BaseModel):
-# ...    name: str
-# ...    age: int
-# ...    last_name: str = ""
-#
-# >>> @router.post("/person", status_code=http_status.HTTP_201_CREATED)
-# ... async def create_person_entity(
-# ...    person: PersonCreationSchema,
-# ...    session: AsyncSession = AsyncSessionDep  # < Session dependency
-# ... ):
-# ...     statement = Person.insert().returning(Person.id)
-# ...     result = await session.execute(statement, person.dict())
-# ...     await session.commit()
 
 
 def limit_request_size(size: int) -> t.Callable[[Request], None]:

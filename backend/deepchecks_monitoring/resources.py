@@ -14,11 +14,12 @@ import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
+import tenacity
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
-from kafka.errors import TopicAlreadyExistsError
+from kafka.errors import KafkaError, TopicAlreadyExistsError
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -284,15 +285,17 @@ class ResourcesProvider(BaseResourcesProvider):
         finally:
             await kafka_producer.stop()
 
-    @property
-    def kafka_admin(self) -> t.Optional[KafkaAdminClient]:
-        """Return kafka admin client. Used to manage kafka cluser."""
+    @contextmanager
+    def get_kafka_admin(self) -> t.Generator[KafkaAdminClient, None, None]:
+        """Return kafka admin."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            return
-        if self._kafka_admin is None:
-            self._kafka_admin = KafkaAdminClient(**settings.kafka_params)
-        return self._kafka_admin
+            raise ValueError("No kafka host configured")
+        kafka_admin = KafkaAdminClient(**settings.kafka_params)
+        try:
+            yield kafka_admin
+        finally:
+            kafka_admin.close()
 
     @property
     def redis_client(self) -> t.Optional[Redis]:
@@ -393,6 +396,13 @@ class ResourcesProvider(BaseResourcesProvider):
         import ray  # noqa
         ray.shutdown()
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        wait=tenacity.wait_fixed(1),
+        retry=tenacity.retry_if_exception_type(KafkaError),
+        reraise=True,
+        before_sleep=tenacity.before_sleep_log(logging.getLogger("server"), logging.WARNING),
+    )
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.
 
@@ -401,24 +411,24 @@ class ResourcesProvider(BaseResourcesProvider):
         bool
             True if topic existed, False if was created
         """
-        # Refresh the topics list from the server
-        kafka_admin: KafkaAdminClient = self.kafka_admin
-        if topic_name in set(kafka_admin.list_topics()):
-            return True
+        with self.get_kafka_admin() as kafka_admin:
+            # Refresh the topics list from the server
+            if topic_name in set(kafka_admin.list_topics()):
+                return True
 
-        # If still doesn't exist try to create
-        try:
-            kafka_admin.create_topics([
-                NewTopic(
-                    name=topic_name,
-                    num_partitions=num_partitions,
-                    replication_factor=self.kafka_settings.kafka_replication_factor
-                )
-            ])
-            return False
-        # 2 workers might try to create topic at the same time so ignoring if already exists
-        except TopicAlreadyExistsError:
-            return True
+            # If still doesn't exist try to create
+            try:
+                kafka_admin.create_topics([
+                    NewTopic(
+                        name=topic_name,
+                        num_partitions=num_partitions,
+                        replication_factor=self.kafka_settings.kafka_replication_factor
+                    )
+                ])
+                return False
+            # 2 workers might try to create topic at the same time so ignoring if already exists
+            except TopicAlreadyExistsError:
+                return True
 
     async def lazy_report_mixpanel_event(
         self,
