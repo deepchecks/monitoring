@@ -41,10 +41,7 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logg
                         to_commit = await handle_func(consumer, tp, messages)
                         if to_commit:
                             offset = messages[-1].offset
-                            logger.info("Commiting kafka offset %s to topic %s", offset, tp.topic)
                             await consumer.commit({tp: offset + 1})
-                        else:
-                            logger.info("Did not commit kafka offset %s to topic %s", offset, tp.topic)
         except KafkaError as e:  # pylint: disable=broad-except
             logger.exception(e)
         finally:
