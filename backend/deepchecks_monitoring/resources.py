@@ -401,7 +401,7 @@ class ResourcesProvider(BaseResourcesProvider):
         wait=tenacity.wait_fixed(1),
         retry=tenacity.retry_if_exception_type(KafkaError),
         reraise=True,
-        before_sleep=tenacity.before_sleep_log(logging.getLogger("server"), logging.DEBUG),
+        before_sleep=tenacity.before_sleep_log(logging.getLogger("server"), logging.WARNING),
     )
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.
