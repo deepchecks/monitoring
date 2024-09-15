@@ -359,7 +359,7 @@ class DataIngestionBackend(object):
         retry_count = 0
         while messages and retry_count < max_retries:
             send_futures = [
-                producer.send(topic_name, value=message, key=key)
+                await producer.send(topic_name, value=message, key=key)
                 for key, message in messages
             ]
 
