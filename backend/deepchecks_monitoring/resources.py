@@ -287,7 +287,7 @@ class ResourcesProvider(BaseResourcesProvider):
 
     @contextmanager
     def get_kafka_admin(self) -> t.Generator[KafkaAdminClient, None]:
-        """Return kafka producer."""
+        """Return kafka admin."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
             raise ValueError("No kafka host configured")
