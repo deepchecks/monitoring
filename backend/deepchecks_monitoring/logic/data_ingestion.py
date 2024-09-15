@@ -393,6 +393,7 @@ class DataIngestionBackend(object):
             topic_name = get_data_topic_name(organization_id, model_version.id, entity)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
 
+            # If topic was created, resetting the offsets and adding a task to delete it when data upload is done
             if not topic_existed:
                 model_version.ingestion_offset = -1
                 model_version.topic_end_offset = -1
