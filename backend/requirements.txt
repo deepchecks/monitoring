@@ -21,7 +21,6 @@ nbformat>=5.4.0,<6
 deepchecks@git+https://github.com/deepchecks/deepchecks.git@main
 redis[hiredis]~=4.6.0
 pandas~=2.1.0
-#deepchecks-metrics@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-metrics.git@main
 launchdarkly-server-sdk~=9.1.0
 pyjwt[crypto]==2.4.0
 Authlib~=1.0.1
@@ -40,4 +39,5 @@ ddtrace>=1.0,<2
 python-json-logger~=2.0.7
 mixpanel==4.10.0
 typing_extensions~=4.12.0
+tenacity~=8.5.0
 pyarrow==14.0.2

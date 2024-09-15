@@ -18,7 +18,7 @@ from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
-from kafka.errors import TopicAlreadyExistsError
+from kafka.errors import TopicAlreadyExistsError, KafkaError
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -26,6 +26,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
+import tenacity
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
@@ -284,15 +285,17 @@ class ResourcesProvider(BaseResourcesProvider):
         finally:
             await kafka_producer.stop()
 
-    @property
-    def kafka_admin(self) -> t.Optional[KafkaAdminClient]:
-        """Return kafka admin client. Used to manage kafka cluser."""
+    @contextmanager
+    def get_kafka_admin(self) -> t.Generator[KafkaAdminClient, None]:
+        """Return kafka producer."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            return
-        if self._kafka_admin is None:
-            self._kafka_admin = KafkaAdminClient(**settings.kafka_params)
-        return self._kafka_admin
+            raise ValueError("No kafka host configured")
+        kafka_admin = KafkaAdminClient(**settings.kafka_params)
+        try:
+            yield kafka_admin
+        finally:
+            kafka_admin.close()
 
     @property
     def redis_client(self) -> t.Optional[Redis]:
@@ -401,24 +404,42 @@ class ResourcesProvider(BaseResourcesProvider):
         bool
             True if topic existed, False if was created
         """
-        # Refresh the topics list from the server
-        kafka_admin: KafkaAdminClient = self.kafka_admin
-        if topic_name in set(kafka_admin.list_topics()):
-            return True
+        @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        wait=tenacity.wait_incrementing(start=1, increment=2),
+        retry=tenacity.retry_if_exception_type(KafkaError),
+        reraise=True
+        )
+        def list_topics(kafka_admin: KafkaAdminClient):
+            return kafka_admin.list_topics()
 
-        # If still doesn't exist try to create
-        try:
-            kafka_admin.create_topics([
-                NewTopic(
-                    name=topic_name,
-                    num_partitions=num_partitions,
-                    replication_factor=self.kafka_settings.kafka_replication_factor
-                )
-            ])
-            return False
-        # 2 workers might try to create topic at the same time so ignoring if already exists
-        except TopicAlreadyExistsError:
-            return True
+        @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        wait=tenacity.wait_incrementing(start=1, increment=2),
+        retry=tenacity.retry_if_exception_type(KafkaError),
+        reraise=True
+        )
+        def create_topics(kafka_admin: KafkaAdminClient):
+            # If still doesn't exist try to create
+            try:
+                kafka_admin.create_topics([
+                    NewTopic(
+                        name=topic_name,
+                        num_partitions=num_partitions,
+                        replication_factor=self.kafka_settings.kafka_replication_factor
+                    )
+                ])
+                return False
+            # 2 workers might try to create topic at the same time so ignoring if already exists
+            except TopicAlreadyExistsError:
+                return True
+
+        with self.get_kafka_admin() as kafka_admin:
+            # Refresh the topics list from the server
+            if topic_name in set(list_topics(kafka_admin)):
+                return True
+
+            return create_topics(kafka_admin)
 
     async def lazy_report_mixpanel_event(
         self,
