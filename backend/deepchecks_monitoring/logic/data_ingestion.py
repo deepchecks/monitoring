@@ -370,8 +370,12 @@ class DataIngestionBackend(object):
                 if isinstance(result, Exception)
             ]
 
-            for ((key, _), result)  in failed_messages:
-                self.logger.warning(f"Failed message key: {key.decode() if key else 'None'} with error {str(result)}")
+            exception_types = {result for _, result in failed_messages}
+            if len(exception_types) == 1:
+                self.logger.warning(f"All messages failed with the same error {str(result)}")
+            else:
+                for ((key, _), result)  in failed_messages:
+                    self.logger.warning(f"Failed message key: {key.decode() if key else 'None'} with error {str(result)}")
 
             if failed_messages:
                 self.logger.warning(f"Retry {retry_count + 1}: {len(failed_messages)} messages failed to send.")
