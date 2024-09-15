@@ -347,7 +347,14 @@ class DataIngestionBackend(object):
         self.logger = logger or configure_logger(name="data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
 
-    async def _send_with_retry(self, producer: AIOKafkaProducer, topic_name: str, messages: list, max_retries=3):
+    async def _send_with_retry(
+            self,
+            producer: AIOKafkaProducer,
+            topic_name: str,
+            messages: list[tuple],
+            total_msgs: int,
+            max_retries=3
+    ):
         """Send messages to Kafka with asynchronous retry logic."""
         retry_count = 0
         while messages and retry_count < max_retries:
@@ -374,7 +381,7 @@ class DataIngestionBackend(object):
                 break
 
         if failed_messages:
-            self.logger.error(f"Failed to send {len(failed_messages)} messages after {max_retries} retries.")
+            self.logger.error(f"Failed to send {len(failed_messages)} messages after {max_retries} retries out of original {total_msgs}.")
             for key, _ in failed_messages:
                 self.logger.error(f"Failed message key: {key.decode() if key else 'None'}")
 
@@ -407,7 +414,7 @@ class DataIngestionBackend(object):
                     for sample in data
                 ]
 
-                await self._send_with_retry(producer, topic_name, messages)
+                await self._send_with_retry(producer, topic_name, messages, len(messages))
         else:
             await log_data(model_version, data, session, [log_time] * len(data), self.logger,
                            organization_id, self.resources_provider.cache_functions)
@@ -440,7 +447,7 @@ class DataIngestionBackend(object):
                     for sample in data
                 ]
 
-                await self._send_with_retry(producer, topic_name, messages)
+                await self._send_with_retry(producer, topic_name, messages, len(messages))
         else:
             await log_labels(model, data, session, organization_id,
                              self.resources_provider.cache_functions, self.logger)
