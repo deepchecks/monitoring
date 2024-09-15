@@ -367,7 +367,9 @@ class DataIngestionBackend(object):
                 self.logger.warning(f"Retry {retry_count + 1}: {len(failed_messages)} messages failed to send.")
                 messages = failed_messages
                 retry_count += 1
-                await asyncio.sleep(retry_count)
+
+                if retry_count < max_retries:
+                    await asyncio.sleep(retry_count)
             else:
                 break
 
