@@ -96,27 +96,16 @@ class AlertsScheduler:
 
         for org in organizations:
             try:
-                start = perf_counter()
                 await self.run_organization(org)
-                duration = perf_counter() - start
-                self.logger.info({'duration': duration, 'task': 'run_organization', 'org_id': org.id})
             except:  # noqa: E722
                 self.logger.exception({'task': 'run_organization', 'org_id': org.id})
             try:
-                start = perf_counter()
                 await self.run_organization_data_ingestion_alert(org)
-                duration = perf_counter() - start
-                self.logger.info({'duration': duration, 'task': 'run_organization_data_ingestion_alert',
-                                  'org_id': org.id})
             except:  # noqa: E722
                 self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
             if with_ee:
                 try:
-                    start = perf_counter()
                     await self.run_object_storage_ingestion(org)
-                    duration = perf_counter() - start
-                    self.logger.info({'duration': duration, 'task': 'run_object_storage_ingestion',
-                                      'org_id': org.id})
                 except:  # noqa: E722
                     self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 

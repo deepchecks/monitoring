@@ -232,4 +232,6 @@ def create_application(
     # AIOKafka is spamming our logs, disable it for errors and warnings
     logging.getLogger("aiokafka.cluster").setLevel(logging.CRITICAL)
 
+    logger.info("FastAPI Application created")
+
     return app

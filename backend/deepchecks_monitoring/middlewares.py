@@ -101,5 +101,5 @@ class LoggingMiddleware:
             info["status"] = response_status_code
             if response_status_code >= 500:
                 self.logger.error(info)
-            else:
+            elif info["path"] != '/api/v1/health-check':
                 self.logger.info(info)
