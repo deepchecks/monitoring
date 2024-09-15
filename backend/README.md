@@ -122,3 +122,8 @@ alembic --name org -x schema=<org-schema-name> upgrade heads
 # print current revision used by organization schema
 alembic --name org -x schema=<org-schema-name> current
 ```
+
+## Running pylint
+```bash
+cd .. && pylint -j 0 --rcfile=./backend/.pylintrc ./backend/deepchecks_monitoring
+```
