@@ -129,8 +129,8 @@ class ObjectStorageIngestor(BackgroundWorker):
 
         try:
             s3_url = urlparse(model.obj_store_path)
-            model_path = s3_url.path[1:] # get rid of leading slash
-            if len(model_path) > 0 and model_path[-1] == '/': # remove trailing slash
+            model_path = s3_url.path[1:]  # get rid of leading slash
+            if len(model_path) > 0 and model_path[-1] == '/':  # remove trailing slash
                 model_path = model_path[:-1]
             if len(model_path) == 0:
                 self._handle_error(errors,
