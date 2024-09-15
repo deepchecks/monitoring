@@ -78,7 +78,6 @@ class TaskRunner:
             raise
 
     async def wait_for_task(self, timeout=120):
-        self.logger.info('Checking for tasks')
         task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
 
         # If timeout is not 0 we might get return value of None
@@ -130,7 +129,7 @@ class TaskRunner:
                 delay = start.int_timestamp - queued_timestamp
                 self.logger.info({'duration': duration, 'task': bg_worker_task, 'delay': delay})
             else:
-                self.logger.info({'message': f'Unknown task type: {bg_worker_task}'})
+                self.logger.error({'message': f'Unknown task type: {bg_worker_task}'})
         except Exception:  # pylint: disable=broad-except
             self.logger.exception({'message': 'Exception running task', 'task': bg_worker_task})
             await session.rollback()

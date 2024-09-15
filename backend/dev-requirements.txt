@@ -7,7 +7,6 @@ flake8-spellcheck==0.28.0
 isort==5.10.1
 pydocstyle==6.1.1
 pyhamcrest==2.0.4
-pyinstrument==4.3.0
 pylint==2.13.5
 pytest==7.1.2
 pytest-asyncio==0.18.3
