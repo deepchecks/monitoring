@@ -129,9 +129,15 @@ class ObjectStorageIngestor(BackgroundWorker):
 
         try:
             s3_url = urlparse(model.obj_store_path)
-            model_path = s3_url.path[1:]
-            if model_path[-1] == '/':
+            model_path = s3_url.path[1:]  # get rid of leading slash
+            if len(model_path) > 0 and model_path[-1] == '/':  # remove trailing slash
                 model_path = model_path[:-1]
+            if len(model_path) == 0:
+                self._handle_error(errors,
+                                   f'Model object store path is invalid. Empty model path - {model.obj_store_path}',
+                                   model_id)
+                return
+
             bucket = s3_url.netloc
             new_scan_time = pdl.now()
             # First ever scan of model - will scan all files
