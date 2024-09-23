@@ -37,7 +37,7 @@ Deploy a hobby instance in one line on Linux/MacOS (Windows is WIP!) with Docker
 
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/monitoring/main/deploy-oss.sh)"
-``
+```
 (or follow the instructions in https://docs.deepchecks.com/monitoring)`
 
 This will automatically download the necessary dependencies and start the application locally.
