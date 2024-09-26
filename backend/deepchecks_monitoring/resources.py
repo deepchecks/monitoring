@@ -172,6 +172,7 @@ class ResourcesProvider(BaseResourcesProvider):
             echo=settings.echo_sql,
             json_serializer=json_dumps,
             future=True,
+            pool_pre_ping=True,
             pool_recycle=3600,
             pool_size=10,
             max_overflow=20
@@ -186,7 +187,9 @@ class ResourcesProvider(BaseResourcesProvider):
             self._session_factory = sessionmaker(
                 self.database_engine,
                 # class_=ExtendedAsyncSession,  # TODO:
-                expire_on_commit=False
+                autoflush=False,
+                expire_on_commit=False,
+                autocommit=False,
             )
         return self._session_factory
 
@@ -215,6 +218,7 @@ class ResourcesProvider(BaseResourcesProvider):
             str(settings.async_database_uri),
             echo=settings.echo_sql,
             json_serializer=json_dumps,
+            pool_pre_ping=True,
             pool_recycle=3600,
             pool_size=10,
             max_overflow=20
@@ -228,7 +232,9 @@ class ResourcesProvider(BaseResourcesProvider):
             self._async_session_factory = sessionmaker(
                 self.async_database_engine,
                 class_=ExtendedAsyncSession,
-                expire_on_commit=False
+                autoflush=False,
+                expire_on_commit=False,
+                autocommit=False,
             )
         return self._async_session_factory
 
