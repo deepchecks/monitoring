@@ -187,7 +187,9 @@ class ResourcesProvider(BaseResourcesProvider):
             self._session_factory = sessionmaker(
                 self.database_engine,
                 # class_=ExtendedAsyncSession,  # TODO:
-                expire_on_commit=False
+                autoflush=False,
+                expire_on_commit=False,
+                autocommit=False,
             )
         return self._session_factory
 
@@ -230,7 +232,9 @@ class ResourcesProvider(BaseResourcesProvider):
             self._async_session_factory = sessionmaker(
                 self.async_database_engine,
                 class_=ExtendedAsyncSession,
-                expire_on_commit=False
+                autoflush=False,
+                expire_on_commit=False,
+                autocommit=False,
             )
         return self._async_session_factory
 
