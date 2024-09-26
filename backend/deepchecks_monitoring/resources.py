@@ -23,7 +23,6 @@ from kafka.errors import KafkaError, TopicAlreadyExistsError
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
-from sqlalchemy.pool import NullPool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
