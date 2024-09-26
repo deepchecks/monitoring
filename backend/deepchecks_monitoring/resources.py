@@ -172,6 +172,7 @@ class ResourcesProvider(BaseResourcesProvider):
             echo=settings.echo_sql,
             json_serializer=json_dumps,
             future=True,
+            pool_pre_ping=True,
             pool_recycle=3600,
             pool_size=10,
             max_overflow=20
@@ -215,6 +216,7 @@ class ResourcesProvider(BaseResourcesProvider):
             str(settings.async_database_uri),
             echo=settings.echo_sql,
             json_serializer=json_dumps,
+            pool_pre_ping=True,
             pool_recycle=3600,
             pool_size=10,
             max_overflow=20
