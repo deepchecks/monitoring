@@ -193,6 +193,8 @@ async def get_create_model(
         notes = [ModelNote(created_by=user.id, updated_by=user.id, **it) for it in data.pop("notes", [])]
         model = Model(notes=notes, created_by=user.id, updated_by=user.id, **data)
         session.add(model)
+        await session.flush()
+        await session.refresh(model)
 
         allowed_org_users = set(await session.scalars(
                 sa.select(User.id)
