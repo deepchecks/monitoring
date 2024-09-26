@@ -23,6 +23,7 @@ from kafka.errors import KafkaError, TopicAlreadyExistsError
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
+from sqlalchemy.pool import NullPool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
@@ -172,7 +173,9 @@ class ResourcesProvider(BaseResourcesProvider):
             echo=settings.echo_sql,
             json_serializer=json_dumps,
             future=True,
-            pool_pre_ping=True
+            pool_recycle=3600,
+            pool_size=10,
+            max_overflow=20
         )
 
         return self._database_engine
@@ -213,7 +216,9 @@ class ResourcesProvider(BaseResourcesProvider):
             str(settings.async_database_uri),
             echo=settings.echo_sql,
             json_serializer=json_dumps,
-            pool_pre_ping=True
+            pool_recycle=3600,
+            pool_size=10,
+            max_overflow=20
         )
         return self._async_database_engine
 
@@ -251,6 +256,7 @@ class ResourcesProvider(BaseResourcesProvider):
     ) -> t.AsyncIterator[t.Optional[ExtendedAsyncSession]]:
         """Create async sqlalchemy database session."""
         async with self.async_session_factory() as session:  # pylint: disable=not-callable
+            session: ExtendedAsyncSession
             try:
                 if organization_id:
                     organization_schema = await session.scalar(
