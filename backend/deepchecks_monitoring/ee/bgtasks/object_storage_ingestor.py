@@ -111,7 +111,6 @@ class ObjectStorageIngestor(BackgroundWorker):
             )
             sts.get_caller_identity()
         except (ClientError, EndpointConnectionError):
-            self.logger.exception({'message': 'Invalid credentials to AWS'})
             self._handle_error(errors, 'Invalid credentials to AWS', model_id)
             await self._finalize_before_exit(session, errors)
             return
