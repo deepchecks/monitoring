@@ -258,7 +258,9 @@ class ObjectStorageIngestor(BackgroundWorker):
         except Exception:  # pylint: disable=broad-except
             self.logger.exception({'message': 'General Error when ingesting data',
                                    'task': task_id, 'model_id': model_id, 'org_id': organization_id})
-            self._handle_error(errors, 'General Error when ingesting data', model_id, organization_schema=organization_schema)
+            self._handle_error(
+                errors, 'General Error when ingesting data', model_id, organization_schema=organization_schema
+            )
         finally:
             await self._finalize_before_exit(session, errors)
             s3.close()
@@ -333,12 +335,20 @@ class ObjectStorageIngestor(BackgroundWorker):
                 df = df.sort_values(by=[SAMPLE_TS_COL])
             yield df, file['time'], file_with_extension
 
-    def _handle_error(self, errors, error_message, model_id=None, model_version_id=None, set_warning_in_logs=True, organization_schema=None):
+    def _handle_error(
+            self,
+            errors,
+            error_message,
+            model_id=None,
+            model_version_id=None,
+            set_warning_in_logs=True,
+            organization_schema=None
+    ):
 
         error_message = f'S3 integration - {error_message}'
 
         log_message = {'message': f'{error_message}'}
-        extra =  {'model_id': model_id, 'version_id': model_version_id, 'organization_schema': organization_schema}
+        extra = {'model_id': model_id, 'version_id': model_version_id, 'organization_schema': organization_schema}
         if set_warning_in_logs:
             self.logger.warning(log_message, extra=extra)
         else:
