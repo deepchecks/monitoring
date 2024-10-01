@@ -125,7 +125,8 @@ async def execute_monitor(
     ))
 
     if monitor is None:
-        raise ValueError(f'Did not find monitor with the id {monitor_id}')
+        logger.info('Did not find monitor with the id: %s', monitor_id)
+        return []
 
     check = monitor.check
     alert_rules = monitor.alert_rules
