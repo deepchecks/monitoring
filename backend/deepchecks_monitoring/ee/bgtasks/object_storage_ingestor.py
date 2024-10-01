@@ -111,7 +111,7 @@ class ObjectStorageIngestor(BackgroundWorker):
             )
             sts.get_caller_identity()
         except (ClientError, EndpointConnectionError):
-            self._handle_error(errors, 'Invalid credentials to AWS', model_id)
+            self._handle_error(errors, 'Invalid credentials to AWS', model_id, organization_schema=organization_schema)
             await self._finalize_before_exit(session, errors)
             return
 
@@ -246,7 +246,8 @@ class ObjectStorageIngestor(BackgroundWorker):
                             errors,
                             f'Error while processing labels file {file_name}',
                             model_id=model_id,
-                            model_version_id=version_id
+                            model_version_id=version_id,
+                            organization_schema=organization_schema
                         )
                         self.logger.exception({'message': f'Error while processing labels file {file_name}',
                                                'task': task_id, 'model_id': model_id, 'org_id': organization_id})
@@ -257,7 +258,7 @@ class ObjectStorageIngestor(BackgroundWorker):
         except Exception:  # pylint: disable=broad-except
             self.logger.exception({'message': 'General Error when ingesting data',
                                    'task': task_id, 'model_id': model_id, 'org_id': organization_id})
-            self._handle_error(errors, 'General Error when ingesting data', model_id)
+            self._handle_error(errors, 'General Error when ingesting data', model_id, organization_schema=organization_schema)
         finally:
             await self._finalize_before_exit(session, errors)
             s3.close()
@@ -273,7 +274,9 @@ class ObjectStorageIngestor(BackgroundWorker):
         resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
         files = []
         if 'Contents' not in resp:
-            self._handle_error(errors, f'No files found for bucket {bucket} and prefix {prefix}', model_id, version_id)
+            self._handle_error(
+                errors, f'No files found for bucket {bucket} and prefix {prefix}', model_id, version_id
+            )
             return
 
         # Iterate over files in prefix
@@ -330,15 +333,16 @@ class ObjectStorageIngestor(BackgroundWorker):
                 df = df.sort_values(by=[SAMPLE_TS_COL])
             yield df, file['time'], file_with_extension
 
-    def _handle_error(self, errors, error_message, model_id=None, model_version_id=None, set_warning_in_logs=True):
+    def _handle_error(self, errors, error_message, model_id=None, model_version_id=None, set_warning_in_logs=True, organization_schema=None):
 
         error_message = f'S3 integration - {error_message}'
 
-        log_message = {'message': f'{error_message}, model_id: {model_id}, version_id: {model_version_id}'}
+        log_message = {'message': f'{error_message}'}
+        extra =  {'model_id': model_id, 'version_id': model_version_id, 'organization_schema': organization_schema}
         if set_warning_in_logs:
-            self.logger.warning(log_message)
+            self.logger.warning(log_message, extra=extra)
         else:
-            self.logger.error(log_message)
+            self.logger.error(log_message, extra=extra)
 
         errors.append(dict(sample=None,
                            sample_id=None,
