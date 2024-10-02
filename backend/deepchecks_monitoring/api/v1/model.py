@@ -819,8 +819,7 @@ async def retrieve_connected_models(
             labels_table = model.get_sample_labels_table(session)
             data_query = sa.union_all(
                 *(sa.select(_sample_id(table.c).label("sample_id")) for table in tables)
-            )
-            data_query = sa.select(data_query.c.sample_id.distinct().label("sample_id")).cte("data_query")
+            ).cte("data_query")
             joined_query = (
                 sa.select(
                     sa.func.count().label("count"),
