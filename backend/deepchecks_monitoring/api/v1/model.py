@@ -197,11 +197,11 @@ async def get_create_model(
         await session.refresh(model)
 
         allowed_org_users = set(await session.scalars(
-                sa.select(User.id)
-                .where(User.organization_id == user.organization_id)
-                .where(Role.role.in_([RoleEnum.ADMIN, RoleEnum.OWNER]))
-                .join(Role, Role.user_id == User.id)
-            ))
+            sa.select(User.id)
+            .where(User.organization_id == user.organization_id)
+            .where(Role.role.in_([RoleEnum.ADMIN, RoleEnum.OWNER]))
+            .join(Role, Role.user_id == User.id)
+        ))
         allowed_org_users.add(user.id)
         model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in allowed_org_users]
         session.add_all(model_members)
@@ -822,22 +822,15 @@ async def retrieve_connected_models(
                             .label("sample_id"))
                   .distinct()
                   for table in tables))
-            joined_query = (sa.select(data_query.c.sample_id,
-                                      sa.func.cast(_sample_label(labels_table.c),
-                                                   sa.String)
-                                      .label("label"))
-                            .join(labels_table,
-                                  onclause=data_query.c.sample_id == _sample_id(labels_table.c),
-                                  isouter=True))
-            row = (await session.execute(
+            joined_query = (
                 sa.select(
-                    sa.func.count(joined_query.c.sample_id)
-                    .label("count"),
-                    sa.func.count(
-                        sa.func.cast(joined_query.c.label,
-                                     sa.String))
-                    .label("label_count"))
-            )).first()
+                    sa.func.count(data_query.c.sample_id).label("count"),
+                    sa.func.count(_sample_id(labels_table.c)).label("label_count"))
+                .join(labels_table,
+                      onclause=data_query.c.sample_id == _sample_id(labels_table.c),
+                      isouter=True)
+            )
+            row = (await session.execute(joined_query)).first()
             sample_count = row.count
             label_count = row.label_count
             label_ratio = sample_count and label_count / sample_count
