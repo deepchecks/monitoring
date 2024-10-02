@@ -818,17 +818,19 @@ async def retrieve_connected_models(
         else:
             labels_table = model.get_sample_labels_table(session)
             data_query = sa.union_all(
-                *(sa.select(_sample_id(table.c)
-                            .label("sample_id"))
-                  .distinct()
-                  for table in tables))
+                *(sa.select(_sample_id(table.c).label("sample_id")) for table in tables)
+            )
+            data_query = sa.select(data_query.c.sample_id.distinct().label("sample_id")).cte("data_query")
             joined_query = (
                 sa.select(
-                    sa.func.count(data_query.c.sample_id).label("count"),
+                    sa.func.count().label("count"),
                     sa.func.count(_sample_id(labels_table.c)).label("label_count"))
-                .join(labels_table,
-                      onclause=data_query.c.sample_id == _sample_id(labels_table.c),
-                      isouter=True)
+                .select_from(data_query)
+                .join(
+                    labels_table,
+                    onclause=data_query.c.sample_id == _sample_id(labels_table.c),
+                    isouter=True
+                )
             )
             row = (await session.execute(joined_query)).first()
             sample_count = row.count
