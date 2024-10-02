@@ -795,7 +795,6 @@ async def retrieve_connected_models(
         .options(selectinload(Model.versions))
     )
 
-
     if resources_provider.get_features_control(user).model_assignment:
         q = q.join(Model.members).where(ModelMember.user_id == user.id)
     records = (await session.execute(q)).all()
