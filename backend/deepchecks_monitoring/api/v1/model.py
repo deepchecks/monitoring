@@ -783,10 +783,7 @@ async def retrieve_connected_models(
         .cte()
     )
     q = (sa.select(
-        Model.id,
-        Model.name,
-        Model.task_type,
-        Model.description,
+        Model,
         alerts_count.c.count.label("n_of_alerts"),
         ingestion_info.c.latest_update,
         ingestion_info.c.n_of_pending_rows,
@@ -794,7 +791,10 @@ async def retrieve_connected_models(
     )
         .select_from(Model)
         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id))
+        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id)
+        .options(selectinload(Model.versions))
+    )
+    
 
     if resources_provider.get_features_control(user).model_assignment:
         q = q.join(Model.members).where(ModelMember.user_id == user.id)
@@ -803,43 +803,39 @@ async def retrieve_connected_models(
     connected_models: t.List[ConnectedModelSchema] = []
 
     for record in records:
-        model_id = record.id
-
-        model: Model = (
-            await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
-        ).scalar()
+        model = record[0]
 
         tables = [version.get_monitor_table(session) for version in model.versions]
 
-        if len(tables) == 0:
-            sample_count = 0
-            label_count = 0
-            label_ratio = 0
-        else:
+        sample_count = 0
+        label_count = 0
+        label_ratio = 0
+
+        if len(tables) > 0:
             labels_table = model.get_sample_labels_table(session)
-            data_query = sa.union_all(
-                *(sa.select(_sample_id(table.c).label("sample_id")) for table in tables)
-            ).cte("data_query")
-            joined_query = (
-                sa.select(
-                    sa.func.count().label("count"),
-                    sa.func.count(_sample_id(labels_table.c)).label("label_count"))
-                .select_from(data_query)
-                .join(
-                    labels_table,
-                    onclause=data_query.c.sample_id == _sample_id(labels_table.c),
-                    isouter=True
+
+            for table in tables:
+                query = (
+                    sa.select(
+                        sa.func.count().label("count"),
+                        sa.func.count(_sample_id(labels_table.c)).label("label_count"))
+                    .select_from(table)
+                    .join(
+                        labels_table,
+                        onclause=_sample_id(table.c) == _sample_id(labels_table.c),
+                        isouter=True
+                    )
                 )
-            )
-            row = (await session.execute(joined_query)).first()
-            sample_count = row.count
-            label_count = row.label_count
-            label_ratio = sample_count and label_count / sample_count
+                row = (await session.execute(query)).first()
+                sample_count += row.count
+                label_count += row.label_count
+
+        label_ratio = sample_count and label_count / sample_count
 
         connected_models.append(
             ConnectedModelSchema(
-                id=record.id, name=record.name, description=record.description,
-                task_type=record.task_type, n_of_alerts=record.n_of_alerts,
+                id=model.id, name=model.name, description=model.description,
+                task_type=model.task_type, n_of_alerts=record.n_of_alerts,
                 n_of_pending_rows=record.n_of_pending_rows,
                 n_of_updating_versions=record.n_of_updating_versions,
                 sample_count=sample_count, label_count=label_count, label_ratio=label_ratio,
