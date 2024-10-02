@@ -794,7 +794,7 @@ async def retrieve_connected_models(
         .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id)
         .options(selectinload(Model.versions))
     )
-    
+
 
     if resources_provider.get_features_control(user).model_assignment:
         q = q.join(Model.members).where(ModelMember.user_id == user.id)
