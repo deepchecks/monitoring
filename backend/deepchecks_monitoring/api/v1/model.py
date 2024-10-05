@@ -318,6 +318,8 @@ async def _retrieve_models_data_ingestion(
     else:
         if feature_control.model_assignment:
             models_query = models_query.join(Model.members).where(ModelMember.user_id == user.id)
+        if end_time:
+            models_query = models_query.where(is_within_dateframe(Model.end_time, end_time))
         result = await session.execute(models_query)
         models = t.cast(t.List[Model], result.scalars().all())
 
