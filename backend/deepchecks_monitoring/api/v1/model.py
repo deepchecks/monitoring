@@ -334,7 +334,7 @@ async def _retrieve_models_data_ingestion(
     end_time = pdl.parse(end_time) if end_time else max((m.end_time for m in models))
 
     result = defaultdict(list)
-
+    model_queries = []
     for model in models:
         tables = [version.get_monitor_table(session) for version in model.versions]
         if not tables:
@@ -345,33 +345,39 @@ async def _retrieve_models_data_ingestion(
         data_query = sa.union_all(
             *(
                 sa.select(
-                    _sample_id(table.c).label("sample_id"),
+                    sa.func.count().label("count"),
+                    sa.func.count(_sample_id(labels_table.c)).label("label_count"),
                     truncate_date(_sample_timestamp(table.c), agg_time_unit).label("timestamp"),
                 )
                 .where(is_within_dateframe(
                     _sample_timestamp(table.c),
                     end_time
                 ))
+                .join(labels_table, onclause=_sample_id(table.c) == _sample_id(labels_table.c), isouter=True)
+                .group_by(_sample_timestamp(table.c))
                 for table in tables
             )
         )
+        q = sa.select(
+            sa.literal(int(model.id)).label("model_id"),
+            data_query.c.timestamp,
+            sa.func.sum(data_query.c.count).label("count"),
+            sa.func.sum(data_query.c.label_count).label("label_count")
+        ).group_by(data_query.c.timestamp)
+        model_queries.append(q)
 
-        rows = (await session.execute(
-            sa.select(
-                data_query.c.timestamp,
-                sa.func.count().label("count"),
-                sa.func.count(_sample_id(labels_table.c)).label("label_count")
-            )
-            .join(labels_table, onclause=data_query.c.sample_id == _sample_id(labels_table.c), isouter=True)
-            .group_by(data_query.c.timestamp)
-        )).fetchall()
+    union_q = sa.union_all(*model_queries)
 
-        for row in rows:
-            result[model.id].append(ModelDailyIngestion(
-                count=row.count,
-                label_count=row.label_count,
-                timestamp=row.timestamp
-            ))
+    rows = (await session.execute(
+        sa.select(union_q.c.model_id, union_q.c.timestamp, union_q.c.count, union_q.c.label_count)
+    )).fetchall()
+
+    for row in rows:
+        result[row.model_id].append(ModelDailyIngestion(
+            count=row.count,
+            label_count=row.label_count,
+            timestamp=row.timestamp
+        ))
 
     return result
 
