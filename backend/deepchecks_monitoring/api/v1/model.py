@@ -333,7 +333,6 @@ async def _retrieve_models_data_ingestion(
 
     end_time = pdl.parse(end_time) if end_time else max((m.end_time for m in models))
 
-    result = defaultdict(list)
     model_queries = []
     for model in models:
         tables = [version.get_monitor_table(session) for version in model.versions]
@@ -371,6 +370,8 @@ async def _retrieve_models_data_ingestion(
     rows = (await session.execute(
         sa.select(union_q.c.model_id, union_q.c.timestamp, union_q.c.count, union_q.c.label_count)
     )).fetchall()
+
+    result = defaultdict(list)
 
     for row in rows:
         result[row.model_id].append(ModelDailyIngestion(
