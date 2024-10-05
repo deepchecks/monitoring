@@ -288,7 +288,7 @@ def _sample_label(columns):
 async def _retrieve_models_data_ingestion(
         *,
         model_identifier: t.Optional[ModelIdentifier] = None,
-        time_filter: int = TimeUnit.HOUR * 24,
+        time_filter: int = TimeUnit.DAY,
         end_time: t.Optional[str] = None,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
