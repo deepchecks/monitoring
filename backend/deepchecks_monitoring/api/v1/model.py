@@ -197,11 +197,11 @@ async def get_create_model(
         await session.refresh(model)
 
         allowed_org_users = set(await session.scalars(
-                sa.select(User.id)
-                .where(User.organization_id == user.organization_id)
-                .where(Role.role.in_([RoleEnum.ADMIN, RoleEnum.OWNER]))
-                .join(Role, Role.user_id == User.id)
-            ))
+            sa.select(User.id)
+            .where(User.organization_id == user.organization_id)
+            .where(Role.role.in_([RoleEnum.ADMIN, RoleEnum.OWNER]))
+            .join(Role, Role.user_id == User.id)
+        ))
         allowed_org_users.add(user.id)
         model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in allowed_org_users]
         session.add_all(model_members)
@@ -306,7 +306,6 @@ async def _retrieve_models_data_ingestion(
     feature_control = resources_provider.get_features_control(user)
 
     if model_identifier is not None:
-        model_identifier_name = model_identifier.column_name
         model = t.cast(Model, await session.fetchone_or_404(
             models_query.where(model_identifier.as_expression),
             message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
@@ -317,7 +316,6 @@ async def _retrieve_models_data_ingestion(
             model
         ]
     else:
-        model_identifier_name = "id"
         if feature_control.model_assignment:
             models_query = models_query.join(Model.members).where(ModelMember.user_id == user.id)
         result = await session.execute(models_query)
@@ -335,7 +333,7 @@ async def _retrieve_models_data_ingestion(
 
     end_time = pdl.parse(end_time) if end_time else max((m.end_time for m in models))
 
-    all_models_queries = []
+    result = defaultdict(list)
 
     for model in models:
         tables = [version.get_monitor_table(session) for version in model.versions]
@@ -344,48 +342,36 @@ async def _retrieve_models_data_ingestion(
 
         labels_table = model.get_sample_labels_table(session)
         # Get all samples within time window from all the versions
-        data_query = sa.union_all(*(
+        data_query = sa.union_all(
+            *(
+                sa.select(
+                    _sample_id(table.c).label("sample_id"),
+                    truncate_date(_sample_timestamp(table.c), agg_time_unit).label("timestamp"),
+                )
+                .where(is_within_dateframe(
+                    _sample_timestamp(table.c),
+                    end_time
+                ))
+                for table in tables
+            )
+        )
+
+        rows = (await session.execute(
             sa.select(
-                _sample_id(table.c).label("sample_id"),
-                truncate_date(_sample_timestamp(table.c), agg_time_unit).label("timestamp")
-            ).where(is_within_dateframe(
-                _sample_timestamp(table.c),
-                end_time
-            )).distinct()  # TODO why distinct?
-            for table in tables)
-        )
-        # Join with labels table
-        all_models_queries.append(
-            sa.select(sa.literal(getattr(model, model_identifier_name)).label("model_id"),
-                      data_query.c.sample_id,
-                      data_query.c.timestamp,
-                      sa.func.cast(_sample_label(labels_table.c), sa.String).label("label"))
+                data_query.c.timestamp,
+                sa.func.count().label("count"),
+                sa.func.count(_sample_id(labels_table.c)).label("label_count")
+            )
             .join(labels_table, onclause=data_query.c.sample_id == _sample_id(labels_table.c), isouter=True)
-        )
+            .group_by(data_query.c.timestamp)
+        )).fetchall()
 
-    if not all_models_queries:
-        return {}
-
-    union = sa.union_all(*all_models_queries)
-
-    rows = (await session.execute(
-        sa.select(
-            union.c.model_id,
-            union.c.timestamp,
-            sa.func.count(union.c.sample_id).label("count"),
-            sa.func.count(sa.func.cast(union.c.label, sa.String)).label("label_count"))
-        .group_by(union.c.model_id, union.c.timestamp)
-        .order_by(union.c.model_id, union.c.timestamp, "count"),
-    )).fetchall()
-
-    result = defaultdict(list)
-
-    for row in rows:
-        result[row.model_id].append(ModelDailyIngestion(
-            count=row.count,
-            label_count=row.label_count,
-            timestamp=row.timestamp
-        ))
+        for row in rows:
+            result[model.id].append(ModelDailyIngestion(
+                count=row.count,
+                label_count=row.label_count,
+                timestamp=row.timestamp
+            ))
 
     return result
 
@@ -608,7 +594,6 @@ async def retrieve_available_models(
     description="Delete model"
 )
 async def delete_model(
-        background_tasks: BackgroundTasks,
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         resources_provider: ResourcesProvider = ResourcesProviderDep,
@@ -645,18 +630,6 @@ async def delete_model(
     await session.execute(sa.delete(Model).where(model_identifier.as_expression))
     await session.commit()
     report_mixpanel_event()
-
-
-async def drop_tables(
-        resources_provider: ResourcesProvider,
-        tables: t.List[str]
-):
-    """Drop specified tables."""
-    if not tables:
-        return
-    async with resources_provider.async_database_engine.begin() as connection:
-        for name in tables:
-            await connection.execute(sa.text(f"DROP TABLE IF EXISTS {name}"))
 
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])
