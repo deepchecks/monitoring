@@ -20,7 +20,7 @@ import pandas as pd
 import pendulum as pdl
 import pytz
 import sqlalchemy as sa
-from fastapi import BackgroundTasks, Depends, Path, Query
+from fastapi import Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.cimmutabledict import immutabledict
