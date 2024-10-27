@@ -330,7 +330,8 @@ def rules_pass(
             # Test the rules. If both rules don't pass, return False.
             if (
                     labels_percent < model.alerts_delay_labels_ratio
-                    and max_timestamp and pdl.instance(max_timestamp).add(seconds=model.alerts_delay_seconds) > pdl.now()
+                    and max_timestamp
+                    and pdl.instance(max_timestamp).add(seconds=model.alerts_delay_seconds) > pdl.now()
             ):
                 return False
     # In all versions at least one of the rules passed, return True
