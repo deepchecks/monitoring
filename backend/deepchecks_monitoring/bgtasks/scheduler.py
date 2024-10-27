@@ -377,9 +377,9 @@ def is_serialization_error(error: DBAPIError):
     orig = getattr(error, 'orig', None)
     orig_code = getattr(orig, 'pgcode', -1)
     return (
-            isinstance(orig, SerializationError)
-            or error.code == '40001'
-            or orig_code == '40001'
+        isinstance(orig, SerializationError)
+        or error.code == '40001'
+        or orig_code == '40001'
     )
 
 
@@ -398,13 +398,11 @@ try:
 
     with_ee = True
 
-
     class SchedulerSettings(BaseSchedulerSettings, ee.config.TelemetrySettings):
         """Set of worker settings."""
         pass
 except ImportError:
     with_ee = False
-
 
     class SchedulerSettings(BaseSchedulerSettings):
         """Set of worker settings."""
