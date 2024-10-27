@@ -160,7 +160,6 @@ class AlertsScheduler:
 
                 # For each monitor enqueue schedules
                 for monitor in monitors:
-                   # session.expunge(monitor)
                     schedules = []
                     frequency = monitor.frequency.to_pendulum_duration()
                     schedule_time = monitor.next_schedule
