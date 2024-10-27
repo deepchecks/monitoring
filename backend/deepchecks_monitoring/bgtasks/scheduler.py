@@ -139,7 +139,7 @@ class AlertsScheduler:
             monitors_per_model = defaultdict(list)
             for monitor in monitors:
                 session.expunge(monitor)
-                monitors_per_model[monitor.check.model].append(m)
+                monitors_per_model[monitor.check.model].append(monitor)
 
             for model, monitors in monitors_per_model.items():
                 # Get the minimal time needed to query windows data for. Doing it together for all monitors in order to
