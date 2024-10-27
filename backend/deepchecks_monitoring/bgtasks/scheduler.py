@@ -122,7 +122,7 @@ class AlertsScheduler:
                 session=session,
                 schema_search_path=[organization.schema_name, 'public']
             )
-            monitors = await session.scalars(
+            monitor_scalars = await session.scalars(
                 select(Monitor)
                 .options(
                     joinedload(Monitor.check)
@@ -134,10 +134,10 @@ class AlertsScheduler:
                     (Monitor.latest_schedule + Monitor.frequency_as_interval) < Model.end_time
                 )
             )
-            monitors: list[Monitor] = list(monitors)
+            list_monitor_scalars: list[Monitor] = list(monitor_scalars)
             # Aggregate the monitors per model in order to query the versions windows data only once per model
             monitors_per_model = defaultdict(list)
-            for monitor in monitors:
+            for monitor in list_monitor_scalars:
                 session.expunge(monitor)
                 monitors_per_model[monitor.check.model].append(monitor)
 
