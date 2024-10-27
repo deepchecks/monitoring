@@ -134,11 +134,12 @@ class AlertsScheduler:
                     (Monitor.latest_schedule + Monitor.frequency_as_interval) < Model.end_time
                 )
             )
-
+            monitors = list(monitors)
             # Aggregate the monitors per model in order to query the versions windows data only once per model
             monitors_per_model = defaultdict(list)
-            for m in monitors:
-                monitors_per_model[m.check.model].append(m)
+            for monitor in monitors:
+                session.expunge(monitor)
+                monitors_per_model[monitor.check.model].append(m)
 
             for model, monitors in monitors_per_model.items():
                 # Get the minimal time needed to query windows data for. Doing it together for all monitors in order to
@@ -161,7 +162,6 @@ class AlertsScheduler:
                 # For each monitor enqueue schedules
                 for monitor in monitors:
                     schedules = []
-                    session.expunge(monitor)
                     frequency = monitor.frequency.to_pendulum_duration()
                     schedule_time = monitor.next_schedule
 
