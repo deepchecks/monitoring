@@ -155,6 +155,7 @@ class AlertsScheduler:
                 # For each monitor enqueue schedules
                 for monitor in monitors:
                     schedules = []
+                    session.expunge(monitor)
                     frequency = monitor.frequency.to_pendulum_duration()
                     schedule_time = monitor.next_schedule
 
@@ -170,6 +171,7 @@ class AlertsScheduler:
                         try:
                             await enqueue_tasks(monitor, schedules, organization, session)
                             monitor.latest_schedule = schedules[-1]
+                            session.add(monitor)
                             await session.commit()
                         # NOTE:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
