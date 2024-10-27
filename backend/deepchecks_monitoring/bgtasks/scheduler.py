@@ -134,7 +134,7 @@ class AlertsScheduler:
                     (Monitor.latest_schedule + Monitor.frequency_as_interval) < Model.end_time
                 )
             )
-            monitors = list(monitors)
+            monitors: list[Monitor] = list(monitors)
             # Aggregate the monitors per model in order to query the versions windows data only once per model
             monitors_per_model = defaultdict(list)
             for monitor in monitors:
