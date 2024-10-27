@@ -138,7 +138,6 @@ class AlertsScheduler:
             # Aggregate the monitors per model in order to query the versions windows data only once per model
             monitors_per_model = defaultdict(list)
             for monitor in list_monitor_scalars:
-                session.expunge(monitor)
                 monitors_per_model[monitor.check.model].append(monitor)
 
             for model, monitors in monitors_per_model.items():
@@ -162,6 +161,7 @@ class AlertsScheduler:
                 # For each monitor enqueue schedules
                 for monitor in monitors:
                     schedules = []
+                    session.add(monitor)
                     frequency = monitor.frequency.to_pendulum_duration()
                     schedule_time = monitor.next_schedule
 
@@ -177,7 +177,6 @@ class AlertsScheduler:
                         try:
                             await enqueue_tasks(monitor, schedules, organization, session)
                             monitor.latest_schedule = schedules[-1]
-                            session.add(monitor)
                             await session.commit()
                         # NOTE:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
