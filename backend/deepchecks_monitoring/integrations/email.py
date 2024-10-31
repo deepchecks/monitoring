@@ -16,8 +16,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
 
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
+from starlette.templating import Jinja2Templates
 from typing_extensions import Self
 
 from deepchecks_monitoring.config import EmailSettings

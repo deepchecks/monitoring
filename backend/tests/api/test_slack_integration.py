@@ -65,8 +65,8 @@ async def test_slack_installation(client: TestClient):
             }
         )
 
-        assert response.status_code == 201
-        assert response.content == b"Slack app installed"
+        assert response.status_code == 200
+        assert b"<h3 >Slack app installed</h3>" in response.content
 
 
 @pytest.mark.asyncio
@@ -89,8 +89,8 @@ async def test_slack_installation_update(client: TestClient):
             }
         )
 
-        assert response.status_code == 201, response.content
-        assert response.content == b"Slack app installed"
+        assert response.status_code == 200, response.content
+        assert b"<h3 >Slack app installed</h3>" in response.content
 
     # generate new state
     new_state = fetch_installation_state(client=client)
@@ -106,8 +106,8 @@ async def test_slack_installation_update(client: TestClient):
             }
         )
 
-        assert response.status_code == 201, response.content
-        assert response.content == b"Slack app installed"
+        assert response.status_code == 200, response.content
+        assert b"<h3 >Slack app installed</h3>" in response.content
 
 
 @pytest.mark.asyncio
@@ -118,8 +118,8 @@ async def test_slack_installation_with_missing_state_param(client: TestClient):
         params={"code": 123}
     )
 
-    assert response.status_code == 401, response.content
-    assert response.content == b"Missing installation state code"
+    assert response.status_code == 200, response.content
+    assert b'<h3  class="error" >Missing installation state code</h3>' in response.content
 
 
 class MockedSlackInstallationUtils(SlackInstallationUtils):
