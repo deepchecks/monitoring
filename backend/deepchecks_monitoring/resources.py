@@ -239,7 +239,6 @@ class ResourcesProvider(BaseResourcesProvider):
             expire_on_commit=False,
             autocommit=False,
         ) as session:  # pylint: disable=not-callable
-            session: ExtendedAsyncSession
             try:
                 if organization_id:
                     organization_schema = await session.scalar(
