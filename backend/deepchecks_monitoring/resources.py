@@ -79,9 +79,7 @@ class ResourcesProvider(BaseResourcesProvider):
     def __init__(self, settings: config.BaseSettings):
         self._settings = settings
         self._database_engine: t.Optional[Engine] = None
-        self._session_factory: t.Optional[sessionmaker] = None
         self._async_database_engine: t.Optional[AsyncEngine] = None
-        self._async_session_factory: t.Optional[sessionmaker] = None
         self._kafka_admin: t.Optional[KafkaAdminClient] = None
         self._redis_client: t.Optional[Redis] = None
         self._cache_funcs: t.Optional[CacheFunctions] = None
@@ -147,15 +145,11 @@ class ResourcesProvider(BaseResourcesProvider):
 
     def dispose_resources(self):
         """Dispose resources."""
-        if self._session_factory is not None:
-            self._session_factory.close_all()
         if self._database_engine is not None:
             self._database_engine.dispose()
 
     async def async_dispose_resources(self):
         """Dispose async resources."""
-        # if self._async_session_factory is not None:
-        #     await AsyncSession.close_all()
         if self._async_database_engine is not None:
             await self._async_database_engine.dispose()
 
@@ -180,23 +174,15 @@ class ResourcesProvider(BaseResourcesProvider):
 
         return self._database_engine
 
-    @property
-    def session_factory(self) -> sessionmaker:
-        """Return alchemy session factory."""
-        if self._session_factory is None:
-            self._session_factory = sessionmaker(
-                self.database_engine,
-                # class_=ExtendedAsyncSession,  # TODO:
-                autoflush=False,
-                expire_on_commit=False,
-                autocommit=False,
-            )
-        return self._session_factory
-
     @contextmanager
     def create_database_session(self) -> t.Iterator[Session]:
         """Create sqlalchemy database session."""
-        with self.session_factory() as session:  # pylint: disable=not-callable
+        with sessionmaker(
+            self.database_engine,
+            autoflush=False,
+            expire_on_commit=False,
+            autocommit=False,
+        ) as session:  # pylint: disable=not-callable
             try:
                 yield session
                 session.commit()
@@ -225,19 +211,6 @@ class ResourcesProvider(BaseResourcesProvider):
         )
         return self._async_database_engine
 
-    @property
-    def async_session_factory(self) -> sessionmaker:
-        """Return async alchemy session maker."""
-        if self._async_session_factory is None:
-            self._async_session_factory = sessionmaker(
-                self.async_database_engine,
-                class_=ExtendedAsyncSession,
-                autoflush=False,
-                expire_on_commit=False,
-                autocommit=False,
-            )
-        return self._async_session_factory
-
     @t.overload
     def create_async_database_session(
         self,
@@ -260,7 +233,13 @@ class ResourcesProvider(BaseResourcesProvider):
         organization_id: t.Optional[int] = None
     ) -> t.AsyncIterator[t.Optional[ExtendedAsyncSession]]:
         """Create async sqlalchemy database session."""
-        async with self.async_session_factory() as session:  # pylint: disable=not-callable
+        async with sessionmaker(
+            self.async_database_engine,
+            class_=ExtendedAsyncSession,
+            autoflush=False,
+            expire_on_commit=False,
+            autocommit=False,
+        ) as session:  # pylint: disable=not-callable
             session: ExtendedAsyncSession
             try:
                 if organization_id:
