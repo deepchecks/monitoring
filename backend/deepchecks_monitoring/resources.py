@@ -26,7 +26,7 @@ from redis.exceptions import RedisClusterException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
@@ -177,7 +177,7 @@ class ResourcesProvider(BaseResourcesProvider):
     @contextmanager
     def create_database_session(self) -> t.Iterator[Session]:
         """Create sqlalchemy database session."""
-        with sessionmaker(
+        with Session(
             self.database_engine,
             autoflush=False,
             expire_on_commit=False,
@@ -233,9 +233,8 @@ class ResourcesProvider(BaseResourcesProvider):
         organization_id: t.Optional[int] = None
     ) -> t.AsyncIterator[t.Optional[ExtendedAsyncSession]]:
         """Create async sqlalchemy database session."""
-        async with sessionmaker(
+        async with ExtendedAsyncSession(
             self.async_database_engine,
-            class_=ExtendedAsyncSession,
             autoflush=False,
             expire_on_commit=False,
             autocommit=False,
