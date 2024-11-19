@@ -73,9 +73,7 @@ const AnalysisItem = ({
   setTimeout(() => setRunLookBack(true), 500); // Todo - figure out another solution
 
   useEffect(() => {
-    if (check.id && refetch) {
-      refetch();
-    }
+    if (check.id && refetch) refetch();
   }, [check.id, refetch]);
 
   useEffect(() => {
@@ -137,7 +135,7 @@ const AnalysisItem = ({
   const chartItemProps = {
     subtitle: `Last Update: ${dayjs(lastUpdate).format('L')}`,
     title: check?.name || '-',
-    sx: { height: { xs: height - 104, xl: height }, minHeight: { xs: height - 104, xl: height } },
+    sx: { height: { sm: 'auto', xl: height }, minHeight: { xs: height - 104, xl: height } },
     docsLink: check.docs_link
   };
 

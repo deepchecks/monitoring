@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useContext } from 'react';
+
 import { useLocation } from 'react-router-dom';
+
 import { Box, Stack } from '@mui/material';
 
 import {
@@ -14,21 +16,26 @@ import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 import { Loader } from 'components/base/Loader/Loader';
 import { AnalysisFilters } from 'components/Analysis/AnalysisFilters/AnalysisFilters';
 import { AnalysisHeader } from 'components/Analysis/AnalysisHeader/AnalysisHeader';
-import { AnalysisGroupBy } from 'components/Analysis/AnalysisGroupBy';
+import { AnalysisDrillDown } from 'components/AnalysisDrillDown';
 import AnalysisItem from 'components/Analysis/AnalysisItem/AnalysisItem';
+import NoResults from 'components/NoResults';
 
-import { getParams } from 'helpers/utils/getParams';
 import { CheckType } from 'helpers/types/check';
-import { onDrawerOpen } from 'helpers/base/onDrawerOpen';
+import { getParams } from 'helpers/utils/getParams';
+import { onDrawerOpen } from 'components/AnalysisDrillDown/AnalysisDrillDown.helpers';
+import useOnboarding from 'helpers/hooks/useOnboarding';
+
+const constants = { noModelsAvailable: 'No models available' };
 
 const AnalysisPage = () => {
-  const location = useLocation();
   const { models, getCurrentModel } = useModels();
+
+  const location = useLocation();
   const { period, frequency, compareWithPreviousPeriod, compareByReference, activeFilters, resetAllFilters } =
     useContext(AnalysisContext);
 
   const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
-  const [isGroupByOpen, setIsGroupByOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentCheck, setCurrentCheck] = useState<CheckSchema | null>(null);
   const [currentDatasetName, setCurrentDatasetName] = useState<string | null>(null);
   const [currentAdditionalKwargs, setCurrentAdditionalKwargs] = useState<MonitorCheckConfSchema | null>(null);
@@ -60,7 +67,7 @@ const AnalysisPage = () => {
         additionalKwargs,
         checkInfo,
         check,
-        setIsGroupByOpen,
+        setIsDrawerOpen,
         setCurrentType,
         setCurrentAdditionalKwargs,
         setCurrentDatasetName,
@@ -72,29 +79,29 @@ const AnalysisPage = () => {
     [currentModel.versions]
   );
 
-  const handleDrawerClose = useCallback(() => {
-    setIsGroupByOpen(false);
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
     setCurrentCheck(null);
     setCurrentDatasetName(null);
     setCurrentAdditionalKwargs(null);
     setCurrentModelVersionId(null);
     setCurrentTimeLabel(null);
     setCurrentType(null);
-  }, []);
+  };
 
   useEffect(() => {
-    if (models) {
-      setModelId(+getParams()?.modelId || models[0]?.id);
-    }
+    setModelId(+getParams()?.modelId || models[0]?.id);
   }, [models, location.search]);
 
   useEffect(() => {
-    if (modelId) {
-      refetch();
-    }
+    if (modelId) refetch();
   }, [modelId, refetch]);
 
-  return (
+  useOnboarding();
+
+  return models.length === 0 ? (
+    <NoResults custom={constants.noModelsAvailable} />
+  ) : (
     <>
       <Box>
         <Stack sx={{ marginBottom: '20px' }}>
@@ -128,17 +135,18 @@ const AnalysisPage = () => {
           )}
         </Stack>
       </Box>
-      <AnalysisGroupBy
+      <AnalysisDrillDown
+        type={currentType}
+        open={isDrawerOpen}
+        check={currentCheck}
+        onClose={handleDrawerClose}
+        timeLabel={currentTimeLabel}
         modelName={currentModel.name}
         datasetName={currentDatasetName}
-        check={currentCheck}
-        modelVersionId={currentModelVersionId}
-        open={isGroupByOpen}
-        onClose={handleDrawerClose}
         onCloseIconClick={handleDrawerClose}
-        timeLabel={currentTimeLabel}
+        modelVersionId={currentModelVersionId}
         additionalKwargs={currentAdditionalKwargs}
-        type={currentType}
+        frequency={(frequency as number) || undefined}
       />
     </>
   );

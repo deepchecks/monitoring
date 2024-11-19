@@ -4,6 +4,7 @@
    :width: 80%
 ..    :target: https://deepchecks.com/?utm_source=docs.deepchecks.com&utm_medium=referral&utm_campaign=welcome
 
+.. _welcome_depchecks_monitoring:
 
 ========================
 Welcome to Deepchecks!
@@ -38,16 +39,16 @@ performance across the model's entire development process.
     :gutter: 1 1 3 3
 
     .. grid-item-card:: Testing Docs
-        :link-type: doc
-        :link: deepchecks:getting-started/welcome
+        :link-type: ref
+        :link: deepchecks:welcome_deepchecks_testing
         :img-top: /_static/images/welcome/testing_tile.png
         :columns: 6 4 4 4
 
         Tests during research and model development
     
     .. grid-item-card:: CI Docs
-        :link-type: doc
-        :link: deepchecks:general/usage/ci_cd
+        :link-type: ref
+        :link: deepchecks:using_deepchecks_ci_cd
         :img-top: /_static/images/welcome/ci_tile.png
         :columns: 6 4 4 4
         

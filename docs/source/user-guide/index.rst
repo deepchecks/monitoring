@@ -26,9 +26,10 @@ aggregation methods (over windows), metrics, etc.
     :maxdepth: 2
     :caption: General
 
-    general/workspace_and_users
+    general/workspace_settings
     general/concepts
     general/faq
+    general/deploying_on_ec2
     general/aggregation_methods
     general/scorers
 
@@ -62,6 +63,7 @@ and how you can work with each of them.
     user_interface/alerts
     user_interface/analysis
     user_interface/configuration
+    user_interface/integrations
 
 Examples
 --------

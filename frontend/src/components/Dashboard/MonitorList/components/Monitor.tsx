@@ -3,35 +3,50 @@ import React, { useMemo, useEffect, useState, memo, useCallback } from 'react';
 import {
   MonitorSchema,
   runMonitorLookbackApiV1MonitorsMonitorIdRunPost,
-  getMonitorApiV1MonitorsMonitorIdGet
+  getMonitorApiV1MonitorsMonitorIdGet,
+  CheckSchema,
+  MonitorCheckConf,
+  MonitorCheckConfSchema,
+  Frequency
 } from 'api/generated';
-import useModels from 'helpers/hooks/useModels';
-import { useElementOnScreen } from 'helpers/hooks/useElementOnScreen';
 
 import { Grid, GridProps } from '@mui/material';
 import { GraphicsSection } from './GraphicsSection';
 
+import useModels from 'helpers/hooks/useModels';
+import { useElementOnScreen } from 'helpers/hooks/useElementOnScreen';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { SetStateType } from 'helpers/types';
-import { DrawerNames } from '../../Dashboard.types';
+import { DialogNames } from '../../Dashboard.types';
 
 interface MonitorProps extends GridProps {
   initialMonitor: MonitorSchema;
   hidden?: boolean;
+  setFrequency: (frequency: Frequency) => void;
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
   setIsDeleteMonitorDialogOpen: SetStateType<boolean>;
-  handleOpenMonitorDrawer: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
+  handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
+  onPointClick: (
+    datasetName: string,
+    versionName: string,
+    timeLabel: number,
+    additional_kwargs: MonitorCheckConfSchema | undefined,
+    checkInfo: MonitorCheckConf | undefined,
+    check: CheckSchema
+  ) => void;
 }
 
 const MonitorComponent = ({
   initialMonitor,
+  setFrequency,
   setCurrentMonitor,
   setIsDeleteMonitorDialogOpen,
-  handleOpenMonitorDrawer,
+  handleOpenMonitorDialog,
   monitorToRefreshId,
   setMonitorToRefreshId,
+  onPointClick,
   ...props
 }: MonitorProps) => {
   const { getCurrentModel } = useModels();
@@ -87,13 +102,23 @@ const MonitorComponent = ({
   };
 
   return (
-    <Grid ref={observedContainerRef} item md={6} lg={6} xl={4} {...props}>
+    <Grid
+      ref={observedContainerRef}
+      item
+      md={6}
+      lg={6}
+      xl={4}
+      {...props}
+      width="100%"
+      onClick={() => setFrequency(initialMonitor?.frequency)}
+    >
       <GraphicsSection
         data={data}
         monitor={monitor}
         isLoading={loading}
-        onOpenMonitorDrawer={handleOpenMonitorDrawer}
+        onOpenMonitorDrawer={handleOpenMonitorDialog}
         onDeleteMonitor={openDeleteMonitorDialog}
+        onPointClick={onPointClick}
       />
     </Grid>
   );

@@ -88,16 +88,16 @@ class DataIngestionAlertRule(Base, MetadataMixin, PermissionMixin):
     )
 
     @classmethod
-    def get_object_by_id(cls, obj_id, user):
+    async def has_object_permissions(cls, session, obj_id, user):
         # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.model import Model
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
-        return (sa.select(cls)
-                .join(DataIngestionAlertRule.model)
-                .join(Model.members)
-                .where(ModelMember.user_id == user.id)
-                .where(cls.id == obj_id))
+        return await session.scalar(sa.select(1)
+                                    .join(DataIngestionAlertRule.model)
+                                    .join(Model.members)
+                                    .where(ModelMember.user_id == user.id)
+                                    .where(cls.id == obj_id))
 
     @classmethod
     async def get_alerts_per_rule(

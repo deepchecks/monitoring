@@ -109,7 +109,7 @@ class OperatorsEnum(str, enum.Enum):
     GT = 'greater_than'
     LE = 'less_than_equals'
     LT = 'less_than'
-    CONTAINS = 'contains'
+    IN = 'in'
     EQ = 'equals'
     NOT_EQ = 'not_equals'
 

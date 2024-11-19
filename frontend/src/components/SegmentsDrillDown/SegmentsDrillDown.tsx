@@ -15,7 +15,7 @@ import { styled, Box } from '@mui/material';
 import { SegmentTests } from './components/SegmentTests';
 import { NoGraphDataToShow } from './components/NoGraphDataToShow';
 import { CheckPerSegment } from './components/CheckPerSegment';
-import { ClassOrFeature } from 'components/Analysis/AnalysisGroupBy/AnalysisGroupBy.types';
+import { ClassOrFeature } from 'components/AnalysisDrillDown/AnalysisDrillDown.types';
 import { Loader } from 'components/base/Loader/Loader';
 
 import { ControlledMarkedSelectSelectValues } from 'components/base/MarkedSelect/ControlledMarkedSelect';
@@ -47,13 +47,13 @@ const SegmentsDrillDownComponent = ({
 }: SegmentsDrillDownProps) => {
   const dataSet: Array<number | null> = useMemo(
     () =>
-      data.length && datasetName
+      Array?.isArray(data) && datasetName
         ? data.map(d => (d.value ? d.value[getKeyByDatasetName(d.value, '' + datasetName) || ''] : null))
         : [],
     [data, datasetName]
   );
 
-  const labels = useMemo(() => (data.length ? data.map(d => d.name || JSON.stringify(d.name)) : []), [data]);
+  const labels = useMemo(() => (Array?.isArray(data) ? data.map(d => d.name || JSON.stringify(d.name)) : []), [data]);
   const yTitle = useMemo(
     () => (classOrFeature?.type === 'Feature' ? `${check.name} - ${datasetName}` : `${datasetName}`),
     [check, datasetName, classOrFeature]
@@ -76,7 +76,7 @@ const SegmentsDrillDownComponent = ({
       setPlots(resp);
     }
 
-    if (setActiveBarFilters && data && data[activeBarIndex] && data[activeBarIndex].filters) {
+    if (setActiveBarFilters && data && data[activeBarIndex] && data[activeBarIndex]?.filters) {
       setActiveBarFilters(data[activeBarIndex].filters.filters);
     }
 

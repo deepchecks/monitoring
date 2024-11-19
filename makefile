@@ -130,7 +130,7 @@ $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
 	@$(PIP) install -e backend/
-	@$(PIP) install -U pip setuptools ray==2.3.1
+	@$(PIP) install -U pip setuptools ray==2.9.0
 
 
 requirements: $(ENV)
@@ -334,7 +334,7 @@ cypress: env-setup
 
 doc-requirements: $(ENV)
 	@echo "####  installing documentation dependencies, it could take some time, please wait! #### "
-	@$(PIP) install -q -r ./docs/requirements.txt
+	@$(PIP) install -r ./docs/requirements.txt
 
 # ANSI_COLORS_DISABLED disables pretty_print in mon cli and makes doctest work with those prints
 docs: doc-requirements $(DOCS_SRC)

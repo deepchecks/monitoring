@@ -20,7 +20,7 @@ from pydantic.main import BaseModel
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, MetaData, String, Table,
                         UniqueConstraint, func, select, update)
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import async_object_session
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin
@@ -124,16 +124,16 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
         return self._optional_fields
 
     @classmethod
-    def get_object_by_id(cls, obj_id, user):
+    async def has_object_permissions(cls, session, obj_id, user):
         # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.model import Model
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
-        return (sa.select(cls)
-                .join(ModelVersion.model)
-                .join(Model.members)
-                .where(ModelMember.user_id == user.id)
-                .where(cls.id == obj_id))
+        return await session.scalar(sa.select(1)
+                                    .join(ModelVersion.model)
+                                    .join(Model.members)
+                                    .where(ModelMember.user_id == user.id)
+                                    .where(cls.id == obj_id))
 
     def get_monitor_table_name(self) -> str:
         """Get name of monitor table."""
@@ -174,7 +174,7 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
         columns_sqlalchemy = column_types_to_table_columns(columns)
         return Table(self.get_reference_table_name(), metadata, *columns_sqlalchemy)
 
-    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
+    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime):
         """Update start and end date if needed based on given timestamps."""
         # Running an update with min/max in order to prevent race condition when running in parallel
         updates = {}
@@ -183,14 +183,18 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
         if max_timestamp > self.end_time:
             updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, max_timestamp)
         if updates:
-            await session.execute(update(ModelVersion).where(ModelVersion.id == self.id).values(updates))
+            await async_object_session(self).execute(update(ModelVersion)
+                                                     .where(ModelVersion.id == self.id)
+                                                     .values(updates))
 
-    async def update_statistics(self, new_statistics: dict, session: AsyncSession):
+    async def update_statistics(self, new_statistics: dict):
         """Update the statistics with a lock on the row."""
         # Locking the row before updating to prevent race condition, since we are updating json column.
         # after a commit the row will be unlocked
-        locked_model_version_query = await session.execute(select(ModelVersion).filter(ModelVersion.id == self.id)
-                                                           .with_for_update())
+        locked_model_version_query = (await async_object_session(self)
+                                      .execute(select(ModelVersion)
+                                               .filter(ModelVersion.id == self.id)
+                                               .with_for_update()))
         locked_model_version = locked_model_version_query.scalar()
         # Statistics might have changed by another concurrent insert, so unify the latest statistics from the db
         # with the updated statistics

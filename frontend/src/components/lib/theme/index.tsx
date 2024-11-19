@@ -1,7 +1,7 @@
 import { createTheme, Theme } from '@mui/material';
 
 import { typographyOptions } from './typography';
-import { paletteOptions } from './palette';
+import { darkModePalette, paletteOptions } from './palette';
 import { breakpointOptions } from './breakpoints';
 
 const theme: Theme = createTheme({
@@ -10,4 +10,10 @@ const theme: Theme = createTheme({
   typography: typographyOptions
 });
 
-export { theme };
+const darkTheme: Theme = createTheme({
+  palette: darkModePalette,
+  breakpoints: breakpointOptions,
+  typography: typographyOptions
+});
+
+export { theme, darkTheme };

@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.keys import get_data_topic_name
-from deepchecks_monitoring.monitoring_utils import TimeUnit
+from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -44,6 +44,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
     def __init__(self, kafka_admin: ExtendedAIOKafkaAdminClient):
         super().__init__()
         self.kafka_admin = kafka_admin
+        self.logger = configure_logger(self.__class__.__name__)
 
     @classmethod
     def queue_name(cls) -> str:
@@ -60,8 +61,11 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         entity_id = task.params.get('id') or task.params['model_version_id']
         entity = task.params.get('entity', 'model-version')
         #####
-
         org_id = task.params['organization_id']
+
+        self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
+                          'task': entity_id, 'model version': entity, 'org_id': org_id})
+
         topic_names = [get_data_topic_name(org_id, entity_id, entity)]
         reinsert_task = False
 
@@ -104,6 +108,9 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
 
         if reinsert_task:
             await insert_model_version_topic_delete_task(org_id, entity_id, entity, session)
+
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
+                          'task': entity_id, 'model version': entity, 'org_id': org_id})
 
 
 async def insert_model_version_topic_delete_task(organization_id, entity_id, entity, session):

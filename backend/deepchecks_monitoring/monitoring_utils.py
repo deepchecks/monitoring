@@ -83,20 +83,22 @@ class OperatorsEnum(str, enum.Enum):
     def stringify(self) -> str:
         """Return a string representing the operator instance."""
         cls = type(self)
-        if self is cls.EQ:
-            return "=="
-        elif self is cls.NOT_EQ:
-            return "!="
-        elif self is cls.GT:
-            return ">"
-        elif self is cls.GE:
-            return ">="
-        elif self is cls.LT:
-            return "<"
-        elif self is cls.LE:
-            return "<="
-        else:
-            raise TypeError("Unknown operator")
+        match self:
+            case cls.EQ:
+                return "=="
+            case cls.NOT_EQ:
+                return "!="
+            case cls.GT:
+                return ">"
+            case cls.GE:
+                return ">="
+            case cls.LT:
+                return "<"
+            case cls.LE:
+                return "<="
+            case cls.IN:
+                return "in"
+        raise TypeError("Unknown operator")
 
 
 class CheckParameterTypeEnum(str, enum.Enum):
@@ -420,7 +422,8 @@ def field_length(column) -> int:
 def configure_logger(
     name: str,
     log_level: str = "INFO",
-    message_format: str = "%(asctime)s %(process)s %(levelname)s %(name)s %(module)s %(funcName)s %(lineno)s",
+    message_format: str = "%(asctime)s %(process)s %(levelname)s %(name)s"
+                          " %(module)s %(funcName)s %(lineno)s %(message)s",
     logfile: t.Optional[str] = None,
     logfile_backup_count: int = 3,
 ):

@@ -7,13 +7,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-#  pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,unused-argument,invalid-name
 import asyncio
+import json
 import os
 import random
 import string
 import typing as t
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import dotenv
 import faker
@@ -166,7 +167,23 @@ def settings(async_engine, smtp_server):
         auth_jwt_secret="secret",
         kafka_host=None,
         is_cloud=True,
+        mixpanel_id="xxxxxx",
+        enable_analytics=True
     )
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+def _mock_mixpanel_client():
+    mixpanel_mock = MagicMock()
+    with patch("deepchecks_monitoring.utils.mixpanel.Mixpanel", new=mixpanel_mock) as MockClass:
+        instance = MockClass.return_value
+        def track(distinct_id, event_name, properties=None, meta=None):
+            nonlocal instance, mixpanel_mock
+            if properties:
+                serializer = mixpanel_mock.call_args.kwargs["serializer"]
+                json.dumps(properties, cls=serializer)
+        instance.track = track
+        yield
 
 
 @pytest.fixture(scope="function")
@@ -273,6 +290,19 @@ def multiclass_model_version_client(
 
 
 @pytest.fixture()
+# pylint: disable=unused-argument
+def multiclass_model_version_client_with_bool(
+    classification_model: Payload,
+    classification_model_version_with_bool: Payload,
+    deepchecks_sdk: DeepchecksClient
+):
+    return deepchecks_sdk.get_or_create_model(
+        name="Classification Model",
+        task_type=TaskType.MULTICLASS.value
+    ).version("v1")
+
+
+@pytest.fixture()
 def regression_model_version_client(
     regression_model_client,
     regression_model_version: Payload,
@@ -341,6 +371,23 @@ async def classification_model_version(
             "features": {"a": "numeric", "b": "categorical"},
             "feature_importance": {"a": 0.1, "b": 0.5},
             "additional_data": {"c": "numeric"},
+            "classes": ["0", "1", "2"]
+        }
+    )
+    return t.cast(t.Dict[str, t.Any], result)
+
+@pytest_asyncio.fixture()
+async def classification_model_version_with_bool(
+    test_api: TestAPI,
+    classification_model: t.Dict[str, t.Any]
+) -> t.Dict[str, t.Any]:
+    result = test_api.create_model_version(
+        model_id=classification_model["id"],
+        model_version={
+            "name": "v1",
+            "features": {"a": "numeric", "b": "boolean"},
+            "feature_importance": {"a": 0.1, "b": 0.5},
+            "additional_data": {"c": "numeric", "my_bool": "boolean"},
             "classes": ["0", "1", "2"]
         }
     )

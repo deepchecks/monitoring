@@ -69,7 +69,7 @@ export const constants = {
   assignModels: {
     title: 'Assign Models',
     willBeAssignedTo: 'Will be assigned to ',
-    submitButtonLabel: 'Assign',
+    submitButtonLabel: 'Save',
     searchfieldPlaceholder: 'Search models...',
     dialogListItemSubtitle: (subtitle: number | undefined) =>
       `Last data update: ${subtitle ? dayjs.unix(subtitle).format('ll') : '-'}`
