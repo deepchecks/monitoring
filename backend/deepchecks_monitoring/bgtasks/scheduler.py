@@ -55,6 +55,8 @@ except ImportError:
     with_ee = False
 
 # TODO: rename to MonitorScheduler
+
+
 class AlertsScheduler:
     """Alerts scheduler."""
 
@@ -187,7 +189,10 @@ class AlertsScheduler:
                     if schedules:
                         try:
                             await enqueue_tasks(monitor, schedules, organization, session)
-                            await session.execute(sa.update(Monitor).where(Monitor.id == monitor.id).values({Monitor.latest_schedule: schedules[-1]}))
+                            await session.execute(
+                                sa.update(Monitor)
+                                .where(Monitor.id == monitor.id).values({Monitor.latest_schedule: schedules[-1]})
+                            )
                             await session.commit()
                         # NOTE:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
