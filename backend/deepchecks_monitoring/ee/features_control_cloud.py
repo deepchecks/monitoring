@@ -10,6 +10,7 @@ class CloudFeaturesControl(FeaturesControl):
     def __init__(self, user: User, settings):
         super().__init__(settings)
         self.user = user
+        self._allowed_models = None
 
     async def get_allowed_models(self, session) -> int:
         if self._allowed_models is None:

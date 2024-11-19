@@ -1,7 +1,4 @@
-from sqlalchemy import select
-
 from deepchecks_monitoring.features_control import FeaturesControl
-from deepchecks_monitoring.public_models import Billing, User
 
 
 class OnPremFeaturesControl(FeaturesControl):
