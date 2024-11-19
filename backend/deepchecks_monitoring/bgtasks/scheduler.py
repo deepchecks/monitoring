@@ -48,6 +48,11 @@ if t.TYPE_CHECKING:
 
 __all__ = ['AlertsScheduler']
 
+try:
+    from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel
+    with_ee = True
+except ImportError:
+    with_ee = False
 
 # TODO: rename to MonitorScheduler
 class AlertsScheduler:
@@ -139,7 +144,14 @@ class AlertsScheduler:
             monitors_per_model = defaultdict(list)
             for monitor in list_monitor_scalars:
                 monitors_per_model[monitor.check.model].append(monitor)
+            session.expunge_all()
 
+        async with self.async_session_factory() as session:
+            session: AsyncSession
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
             for model, monitors in monitors_per_model.items():
                 # Get the minimal time needed to query windows data for. Doing it together for all monitors in order to
                 # query the data once
@@ -161,7 +173,6 @@ class AlertsScheduler:
                 # For each monitor enqueue schedules
                 for monitor in monitors:
                     schedules = []
-                    session.add(monitor)
                     frequency = monitor.frequency.to_pendulum_duration()
                     schedule_time = monitor.next_schedule
 
@@ -176,7 +187,7 @@ class AlertsScheduler:
                     if schedules:
                         try:
                             await enqueue_tasks(monitor, schedules, organization, session)
-                            monitor.latest_schedule = schedules[-1]
+                            await session.execute(sa.update(Monitor).where(Monitor.id == monitor.id).values({Monitor.latest_schedule: schedules[-1]}))
                             await session.commit()
                         # NOTE:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
@@ -184,7 +195,7 @@ class AlertsScheduler:
                         except (SerializationError, DBAPIError) as error:
                             await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                                self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
+                                self.logger.warning('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise
 
     async def run_organization_data_ingestion_alert(self, organization):
@@ -217,7 +228,7 @@ class AlertsScheduler:
                         # error is possible. In that case we just skip the monitor and try again next time.
                         except (SerializationError, DBAPIError) as error:
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                                self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
+                                self.logger.warning('Model(id=%s) tasks enqueue failed', model.id)
                                 raise
 
     async def run_object_storage_ingestion(self, organization):
