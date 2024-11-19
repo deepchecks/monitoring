@@ -47,13 +47,5 @@ class CloudFeaturesControl(FeaturesControl):
         return 500_000
 
     @property
-    def data_retention_months(self) -> int:
-        return 3
-
-    @property
-    def monthly_predictions_limit(self) -> int:
-        return 500_000
-
-    @property
     def multi_tenant(self) -> bool:
         return True

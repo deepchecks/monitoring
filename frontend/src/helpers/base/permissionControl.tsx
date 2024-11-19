@@ -12,8 +12,6 @@ export const featuresList = {
   signup_enabled: 'signup_enabled',
   slack_enabled: 'slack_enabled',
   rows_per_minute: 'rows_per_minute',
-  data_retention_months: 'data_retention_months',
-  monthly_predictions_limit: 'monthly_predictions_limit',
   sso_enabled: 'sso_enabled',
   onboarding_enabled: 'onboarding_enabled',
   email_enabled: 'email_enabled'

@@ -34,13 +34,5 @@ class OnPremFeaturesControl(FeaturesControl):
         return 500_000
 
     @property
-    def data_retention_months(self) -> int:
-        return 12
-
-    @property
-    def monthly_predictions_limit(self) -> int:
-        return 10_000_000
-
-    @property
     def multi_tenant(self) -> bool:
         return False

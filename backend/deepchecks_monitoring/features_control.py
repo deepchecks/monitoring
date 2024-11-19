@@ -18,8 +18,6 @@ class FeaturesSchema(BaseModel):
 
     slack_enabled: bool
     rows_per_minute: int
-    data_retention_months: int
-    monthly_predictions_limit: int
     sso_enabled: bool
     onboarding_enabled: bool
     update_roles: bool
@@ -68,16 +66,6 @@ class FeaturesControl:
         return 500_000
 
     @property
-    def data_retention_months(self) -> int:
-        """Get number of months to keep data for."""
-        return 3
-
-    @property
-    def monthly_predictions_limit(self) -> int:
-        """Maximum number of predictions per month allowed for organization."""
-        return 500_000
-
-    @property
     def multi_tenant(self) -> bool:
         """Whether multi-tenant is enabled."""
         return False
@@ -93,8 +81,6 @@ class FeaturesControl:
             signup_enabled=self.signup_enabled,
             slack_enabled=self.slack_enabled,
             rows_per_minute=self.rows_per_minute,
-            data_retention_months=self.data_retention_months,
-            monthly_predictions_limit=self.monthly_predictions_limit,
             onboarding_enabled=self.onboarding_enabled,
             update_roles=self.update_roles,
             model_assignment=self.model_assignment,
