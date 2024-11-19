@@ -271,7 +271,7 @@ class AlertsScheduler:
                 except (SerializationError, DBAPIError) as error:
                     await session.rollback()
                     if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                        self.logger.is_serialization_error('Monitor(id=%s) tasks enqueue failed', model.id)
+                        self.logger.is_serialization_error('Model(id=%s) s3 task enqueue failed', model.id)
                         raise
 
 
