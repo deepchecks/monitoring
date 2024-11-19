@@ -169,7 +169,7 @@ class DeepchecksClient:
             return model_client
 
         raise RuntimeError(
-            f'Server returned unexpected response status - {response.status_code}'
+            f'Server returned unexpected response status - {response.status_code}: {response.text}'
         )
 
     def _select_model_client_type(self, task_type):

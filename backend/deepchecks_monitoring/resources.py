@@ -14,18 +14,19 @@ import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
+import tenacity
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
-from kafka.errors import TopicAlreadyExistsError
+from kafka.errors import KafkaError, TopicAlreadyExistsError
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
@@ -78,10 +79,7 @@ class ResourcesProvider(BaseResourcesProvider):
     def __init__(self, settings: config.BaseSettings):
         self._settings = settings
         self._database_engine: t.Optional[Engine] = None
-        self._session_factory: t.Optional[sessionmaker] = None
         self._async_database_engine: t.Optional[AsyncEngine] = None
-        self._async_session_factory: t.Optional[sessionmaker] = None
-        self._kafka_producer: t.Optional[AIOKafkaProducer] = None
         self._kafka_admin: t.Optional[KafkaAdminClient] = None
         self._redis_client: t.Optional[Redis] = None
         self._cache_funcs: t.Optional[CacheFunctions] = None
@@ -89,7 +87,6 @@ class ResourcesProvider(BaseResourcesProvider):
         self._oauth_client: t.Optional[OAuth] = None
         self._parallel_check_executors = None
         self._mixpanel_event_reporter: MixpanelEventReporter | None = None
-        self._topics = set()
 
     @property
     def email_settings(self) -> config.EmailSettings:
@@ -148,15 +145,11 @@ class ResourcesProvider(BaseResourcesProvider):
 
     def dispose_resources(self):
         """Dispose resources."""
-        if self._session_factory is not None:
-            self._session_factory.close_all()
         if self._database_engine is not None:
             self._database_engine.dispose()
 
     async def async_dispose_resources(self):
         """Dispose async resources."""
-        # if self._async_session_factory is not None:
-        #     await AsyncSession.close_all()
         if self._async_database_engine is not None:
             await self._async_database_engine.dispose()
 
@@ -173,26 +166,23 @@ class ResourcesProvider(BaseResourcesProvider):
             echo=settings.echo_sql,
             json_serializer=json_dumps,
             future=True,
-            pool_pre_ping=True
+            pool_pre_ping=True,
+            pool_recycle=3600,
+            pool_size=10,
+            max_overflow=20
         )
 
         return self._database_engine
 
-    @property
-    def session_factory(self) -> sessionmaker:
-        """Return alchemy session factory."""
-        if self._session_factory is None:
-            self._session_factory = sessionmaker(
-                self.database_engine,
-                # class_=ExtendedAsyncSession,  # TODO:
-                expire_on_commit=False
-            )
-        return self._session_factory
-
     @contextmanager
     def create_database_session(self) -> t.Iterator[Session]:
         """Create sqlalchemy database session."""
-        with self.session_factory() as session:  # pylint: disable=not-callable
+        with Session(
+            self.database_engine,
+            autoflush=False,
+            expire_on_commit=False,
+            autocommit=False,
+        ) as session:  # pylint: disable=not-callable
             try:
                 yield session
                 session.commit()
@@ -214,20 +204,12 @@ class ResourcesProvider(BaseResourcesProvider):
             str(settings.async_database_uri),
             echo=settings.echo_sql,
             json_serializer=json_dumps,
-            pool_pre_ping=True
+            pool_pre_ping=True,
+            pool_recycle=3600,
+            pool_size=10,
+            max_overflow=20
         )
         return self._async_database_engine
-
-    @property
-    def async_session_factory(self) -> sessionmaker:
-        """Return async alchemy session maker."""
-        if self._async_session_factory is None:
-            self._async_session_factory = sessionmaker(
-                self.async_database_engine,
-                class_=ExtendedAsyncSession,
-                expire_on_commit=False
-            )
-        return self._async_session_factory
 
     @t.overload
     def create_async_database_session(
@@ -251,7 +233,12 @@ class ResourcesProvider(BaseResourcesProvider):
         organization_id: t.Optional[int] = None
     ) -> t.AsyncIterator[t.Optional[ExtendedAsyncSession]]:
         """Create async sqlalchemy database session."""
-        async with self.async_session_factory() as session:  # pylint: disable=not-callable
+        async with ExtendedAsyncSession(
+            self.async_database_engine,
+            autoflush=False,
+            expire_on_commit=False,
+            autocommit=False,
+        ) as session:  # pylint: disable=not-callable
             try:
                 if organization_id:
                     organization_schema = await session.scalar(
@@ -273,26 +260,30 @@ class ResourcesProvider(BaseResourcesProvider):
             finally:
                 await session.close()
 
-    @property
-    async def kafka_producer(self) -> t.Optional[AIOKafkaProducer]:
+    @asynccontextmanager
+    async def get_kafka_producer(self) -> t.AsyncGenerator[AIOKafkaProducer, None]:
         """Return kafka producer."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            return
-        if self._kafka_producer is None:
-            self._kafka_producer = AIOKafkaProducer(**settings.kafka_params)
-            await self._kafka_producer.start()
-        return self._kafka_producer
+            raise ValueError("No kafka host configured")
+        kafka_producer = AIOKafkaProducer(**settings.kafka_params)
+        try:
+            await kafka_producer.start()
+            yield kafka_producer
+        finally:
+            await kafka_producer.stop()
 
-    @property
-    def kafka_admin(self) -> t.Optional[KafkaAdminClient]:
-        """Return kafka admin client. Used to manage kafka cluser."""
+    @contextmanager
+    def get_kafka_admin(self) -> t.Generator[KafkaAdminClient, None, None]:
+        """Return kafka admin."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            return
-        if self._kafka_admin is None:
-            self._kafka_admin = KafkaAdminClient(**settings.kafka_params)
-        return self._kafka_admin
+            raise ValueError("No kafka host configured")
+        kafka_admin = KafkaAdminClient(**settings.kafka_params)
+        try:
+            yield kafka_admin
+        finally:
+            kafka_admin.close()
 
     @property
     def redis_client(self) -> t.Optional[Redis]:
@@ -393,6 +384,13 @@ class ResourcesProvider(BaseResourcesProvider):
         import ray  # noqa
         ray.shutdown()
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        wait=tenacity.wait_fixed(1),
+        retry=tenacity.retry_if_exception_type(KafkaError),
+        reraise=True,
+        before_sleep=tenacity.before_sleep_log(logging.getLogger("server"), logging.WARNING),
+    )
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.
 
@@ -401,28 +399,24 @@ class ResourcesProvider(BaseResourcesProvider):
         bool
             True if topic existed, False if was created
         """
-        if topic_name in self._topics:
-            return True
-        # Refresh the topics list from the server
-        kafka_admin: KafkaAdminClient = self.kafka_admin
-        self._topics = set(kafka_admin.list_topics())
-        if topic_name in self._topics:
-            return True
+        with self.get_kafka_admin() as kafka_admin:
+            # Refresh the topics list from the server
+            if topic_name in set(kafka_admin.list_topics()):
+                return True
 
-        # If still doesn't exist try to create
-        try:
-            kafka_admin.create_topics([
-                NewTopic(
-                    name=topic_name,
-                    num_partitions=num_partitions,
-                    replication_factor=self.kafka_settings.kafka_replication_factor
-                )
-            ])
-            self._topics.add(topic_name)
-            return False
-        # 2 workers might try to create topic at the same time so ignoring if already exists
-        except TopicAlreadyExistsError:
-            return True
+            # If still doesn't exist try to create
+            try:
+                kafka_admin.create_topics([
+                    NewTopic(
+                        name=topic_name,
+                        num_partitions=num_partitions,
+                        replication_factor=self.kafka_settings.kafka_replication_factor
+                    )
+                ])
+                return False
+            # 2 workers might try to create topic at the same time so ignoring if already exists
+            except TopicAlreadyExistsError:
+                return True
 
     async def lazy_report_mixpanel_event(
         self,
@@ -481,19 +475,14 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return features control."""
         return FeaturesControl(self.settings)
 
-    def initialize_telemetry_collectors(self, *targets):
-        """Initialize telemetry."""
-        pass
-
     def get_client_configuration(self) -> "dict[str, t.Any]":
         """Return configuration to be used in client side."""
         return {
-            "sentryDsn": None,
-            "stripeApiKey": None,
             "lauchdarklySdkKey": None,
             "environment": None,
             "mixpanel_id": None,
             "is_cloud": False,
             "hotjar_id": None,
-            "hotjar_sv": None
+            "hotjar_sv": None,
+            "datadog_fe_token": None,
         }

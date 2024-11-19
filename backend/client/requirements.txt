@@ -8,6 +8,6 @@ termcolor
 PyYAML
 importlib_metadata; python_version < '3.8'
 pip-system-certs>=3.1
-typing_extensions==4.4.0
+typing_extensions>=4.11.0,<5
 rfc3339-validator==0.1.4 # Used to validate date-time format in jsonschema
 packaging==23.0

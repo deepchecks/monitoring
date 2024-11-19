@@ -18,8 +18,9 @@ from datetime import datetime
 
 import pandas as pd
 import pendulum as pdl
+import pytz
 import sqlalchemy as sa
-from fastapi import BackgroundTasks, Depends, Path, Query
+from fastapi import Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.cimmutabledict import immutabledict
@@ -32,10 +33,11 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProvide
 from deepchecks_monitoring.exceptions import BadRequest, PaymentRequired
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
-from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel, MonitorsCountPerModel
+from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
                                                     field_length)
+from deepchecks_monitoring.public_models.role import Role, RoleEnum
 from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -191,12 +193,18 @@ async def get_create_model(
         notes = [ModelNote(created_by=user.id, updated_by=user.id, **it) for it in data.pop("notes", [])]
         model = Model(notes=notes, created_by=user.id, updated_by=user.id, **data)
         session.add(model)
+        await session.flush()
+        await session.refresh(model)
 
-        org_users: t.List[User] = await session.scalars(sa.select(User.id)
-                                                        .where(User.organization_id == user.organization_id))
-        model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in org_users]
+        allowed_org_users = set(await session.scalars(
+            sa.select(User.id)
+            .where(User.organization_id == user.organization_id)
+            .where(Role.role.in_([RoleEnum.ADMIN, RoleEnum.OWNER]))
+            .join(Role, Role.user_id == User.id)
+        ))
+        allowed_org_users.add(user.id)
+        model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in allowed_org_users]
         session.add_all(model_members)
-
         await session.flush()
 
         # Create model tables
@@ -280,7 +288,7 @@ def _sample_label(columns):
 async def _retrieve_models_data_ingestion(
         *,
         model_identifier: t.Optional[ModelIdentifier] = None,
-        time_filter: int = TimeUnit.HOUR * 24,
+        time_filter: int = TimeUnit.DAY,
         end_time: t.Optional[str] = None,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
@@ -298,7 +306,6 @@ async def _retrieve_models_data_ingestion(
     feature_control = resources_provider.get_features_control(user)
 
     if model_identifier is not None:
-        model_identifier_name = model_identifier.column_name
         model = t.cast(Model, await session.fetchone_or_404(
             models_query.where(model_identifier.as_expression),
             message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
@@ -309,7 +316,6 @@ async def _retrieve_models_data_ingestion(
             model
         ]
     else:
-        model_identifier_name = "id"
         if feature_control.model_assignment:
             models_query = models_query.join(Model.members).where(ModelMember.user_id == user.id)
         result = await session.execute(models_query)
@@ -327,47 +333,44 @@ async def _retrieve_models_data_ingestion(
 
     end_time = pdl.parse(end_time) if end_time else max((m.end_time for m in models))
 
-    all_models_queries = []
-
+    model_queries = []
     for model in models:
+        if model.end_time < end_time - pdl.duration(seconds=time_filter):
+            continue
         tables = [version.get_monitor_table(session) for version in model.versions]
         if not tables:
             continue
 
         labels_table = model.get_sample_labels_table(session)
         # Get all samples within time window from all the versions
-        data_query = sa.union_all(*(
-            sa.select(
-                _sample_id(table.c).label("sample_id"),
-                truncate_date(_sample_timestamp(table.c), agg_time_unit).label("timestamp")
-            ).where(is_within_dateframe(
-                _sample_timestamp(table.c),
-                end_time
-            )).distinct()  # TODO why distinct?
-            for table in tables)
+        data_query = sa.union_all(
+            *(
+                sa.select(
+                    sa.func.count().label("count"),
+                    sa.func.count(_sample_id(labels_table.c)).label("label_count"),
+                    truncate_date(_sample_timestamp(table.c), agg_time_unit).label("timestamp"),
+                )
+                .where(is_within_dateframe(
+                    _sample_timestamp(table.c),
+                    end_time
+                ))
+                .join(labels_table, onclause=_sample_id(table.c) == _sample_id(labels_table.c), isouter=True)
+                .group_by(_sample_timestamp(table.c))
+                for table in tables
+            )
         )
-        # Join with labels table
-        all_models_queries.append(
-            sa.select(sa.literal(getattr(model, model_identifier_name)).label("model_id"),
-                      data_query.c.sample_id,
-                      data_query.c.timestamp,
-                      sa.func.cast(_sample_label(labels_table.c), sa.String).label("label"))
-            .join(labels_table, onclause=data_query.c.sample_id == _sample_id(labels_table.c), isouter=True)
-        )
+        q = sa.select(
+            sa.literal(int(model.id)).label("model_id"),
+            data_query.c.timestamp,
+            sa.func.sum(data_query.c.count).label("count"),
+            sa.func.sum(data_query.c.label_count).label("label_count")
+        ).group_by(data_query.c.timestamp)
+        model_queries.append(q)
 
-    if not all_models_queries:
-        return {}
-
-    union = sa.union_all(*all_models_queries)
+    union_q = sa.union_all(*model_queries)
 
     rows = (await session.execute(
-        sa.select(
-            union.c.model_id,
-            union.c.timestamp,
-            sa.func.count(union.c.sample_id).label("count"),
-            sa.func.count(sa.func.cast(union.c.label, sa.String)).label("label_count"))
-        .group_by(union.c.model_id, union.c.timestamp)
-        .order_by(union.c.model_id, union.c.timestamp, "count"),
+        sa.select(union_q.c.model_id, union_q.c.timestamp, union_q.c.count, union_q.c.label_count)
     )).fetchall()
 
     result = defaultdict(list)
@@ -463,6 +466,11 @@ class ModelVersionManagmentSchema(BaseModel):
         orm_mode = True
 
 
+class IdNotifySchema(BaseModel):
+    id: int
+    notify: bool
+
+
 class ModelManagmentSchema(BaseModel):
     """Model schema for the "Model managment" screen."""
 
@@ -477,7 +485,8 @@ class ModelManagmentSchema(BaseModel):
     has_data: bool = False
     max_severity: t.Optional[AlertSeverity] = None
     versions: t.List[ModelVersionManagmentSchema]
-    members: t.List[int]
+    members: t.List[IdNotifySchema]
+    severities_count: t.Dict[AlertSeverity, int]
 
     class Config:
         """Schema config."""
@@ -492,34 +501,61 @@ class ModelManagmentSchema(BaseModel):
     description="Retrieve list of available models."
 )
 async def retrieve_available_models(
-    show_all: bool = Query(default=False),
-    session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.CurrentUser()),
-    resources_provider: ResourcesProvider = ResourcesProviderDep,
+        show_all: bool = Query(default=False),
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ) -> t.List[ModelManagmentSchema]:
     """Retrieve list of models for the "Models management" screen."""
-    alerts_count = AlertsCountPerModel.cte()
-    monitors_count = MonitorsCountPerModel.cte()
+
+    alerts_per_type_count = (
+        sa.select(
+            Check.model_id,
+            sa.func.count(Monitor.id).label("n_of_monitors"),
+            sa.func.count(Alert.id).label("n_of_alerts"),
+            sa.func.max(AlertRule.alert_severity_index).label("max_severity"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.LOW, 1)
+            ], else_=0)).label("low_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.MEDIUM, 1)
+            ], else_=0)).label("medium_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.HIGH, 1)
+            ], else_=0)).label("high_count"),
+            sa.func.sum(sa.case([
+                (AlertRule.alert_severity == AlertSeverity.CRITICAL, 1)
+            ], else_=0)).label("critical_count")
+        )
+        .join(Check.monitors)
+        .join(Monitor.alert_rules)
+        .join(AlertRule.alerts)
+        .where(Alert.resolved.is_(False))
+        .group_by(Check.model_id)
+    ).cte()
 
     query = (sa.select(
-                Model,
-                alerts_count.c.count.label("n_of_alerts"),
-                alerts_count.c.max.label("max_severity"),
-                monitors_count.c.count.label("n_of_monitors"),
+        Model,
+        alerts_per_type_count.c.low_count,
+        alerts_per_type_count.c.medium_count,
+        alerts_per_type_count.c.high_count,
+        alerts_per_type_count.c.critical_count,
+        alerts_per_type_count.c.n_of_alerts,
+        alerts_per_type_count.c.max_severity,
+        alerts_per_type_count.c.n_of_monitors,
+    )
+        .select_from(Model)
+        .outerjoin(alerts_per_type_count, alerts_per_type_count.c.model_id == Model.id)
+        .options(
+            joinedload(Model.members),
+            joinedload(Model.versions).load_only(
+                ModelVersion.id,
+                ModelVersion.name,
+                ModelVersion.model_id,
+                ModelVersion.start_time,
+                ModelVersion.end_time,
             )
-            .select_from(Model)
-            .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-            .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
-            .options(
-                joinedload(Model.members),
-                joinedload(Model.versions).load_only(
-                    ModelVersion.id,
-                    ModelVersion.name,
-                    ModelVersion.model_id,
-                    ModelVersion.start_time,
-                    ModelVersion.end_time,
-                )
-            ))
+    ))
 
     if resources_provider.get_features_control(user).model_assignment and \
             not (show_all and auth.is_admin(user)):
@@ -548,8 +584,14 @@ async def retrieve_available_models(
                 for version in record.Model.versions
             ],
             members=[
-                member.user_id for member in record.Model.members
+                IdNotifySchema(id=member.user_id, notify=member.notify) for member in record.Model.members
             ],
+            severities_count={
+                AlertSeverity.LOW: record.low_count or 0,
+                AlertSeverity.MEDIUM: record.medium_count or 0,
+                AlertSeverity.HIGH: record.high_count or 0,
+                AlertSeverity.CRITICAL: record.critical_count or 0,
+            }
         )
         for record in records
     ]
@@ -561,7 +603,6 @@ async def retrieve_available_models(
     description="Delete model"
 )
 async def delete_model(
-        background_tasks: BackgroundTasks,
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         resources_provider: ResourcesProvider = ResourcesProviderDep,
@@ -598,18 +639,6 @@ async def delete_model(
     await session.execute(sa.delete(Model).where(model_identifier.as_expression))
     await session.commit()
     report_mixpanel_event()
-
-
-async def drop_tables(
-        resources_provider: ResourcesProvider,
-        tables: t.List[str]
-):
-    """Drop specified tables."""
-    if not tables:
-        return
-    async with resources_provider.async_database_engine.begin() as connection:
-        for name in tables:
-            await connection.execute(sa.text(f"DROP TABLE IF EXISTS {name}"))
 
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])
@@ -654,7 +683,7 @@ async def get_model_columns(
         column_dict[col_name] = ColumnMetadata(type=latest_version.features_columns[col_name],
                                                stats=latest_version.statistics.get(col_name, {}))
     for (col_name, col_type) in latest_version.additional_data_columns.items():
-        column_dict[col_name] = ColumnMetadata(type=col_type, stats={})
+        column_dict[col_name] = ColumnMetadata(type=col_type, stats=latest_version.statistics.get(col_name, {}))
     return column_dict
 
 
@@ -736,18 +765,17 @@ async def retrieve_connected_models(
         .cte()
     )
     q = (sa.select(
-            Model.id,
-            Model.name,
-            Model.task_type,
-            Model.description,
-            alerts_count.c.count.label("n_of_alerts"),
-            ingestion_info.c.latest_update,
-            ingestion_info.c.n_of_pending_rows,
-            ingestion_info.c.n_of_updating_versions
-        )
+        Model,
+        alerts_count.c.count.label("n_of_alerts"),
+        ingestion_info.c.latest_update,
+        ingestion_info.c.n_of_pending_rows,
+        ingestion_info.c.n_of_updating_versions
+    )
         .select_from(Model)
         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id))
+        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id)
+        .options(selectinload(Model.versions))
+    )
 
     if resources_provider.get_features_control(user).model_assignment:
         q = q.join(Model.members).where(ModelMember.user_id == user.id)
@@ -756,34 +784,39 @@ async def retrieve_connected_models(
     connected_models: t.List[ConnectedModelSchema] = []
 
     for record in records:
-        model_id = record.id
-
-        model: Model = (
-            await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
-        ).scalar()
+        model = record[0]
 
         tables = [version.get_monitor_table(session) for version in model.versions]
 
-        if len(tables) == 0:
-            sample_count = 0
-            label_count = 0
-            label_ratio = 0
-        else:
-            data_query = \
-                sa.union_all(*(sa.select(_sample_id(table.c).label("sample_id")).distinct() for table in tables))
-            row = (await session.execute(sa.select(
-                        sa.func.count(data_query.c.sample_id).label("count")))).first()
-            sample_count = row.count
+        sample_count = 0
+        label_count = 0
+        label_ratio = 0
+
+        if len(tables) > 0:
             labels_table = model.get_sample_labels_table(session)
-            row = (await session.execute(sa.select(
-                        sa.func.count(_sample_id(labels_table.c)).label("label_count")))).first()
-            label_count = row.label_count
-            label_ratio = sample_count and label_count / sample_count
+
+            for table in tables:
+                query = (
+                    sa.select(
+                        sa.func.count().label("count"),
+                        sa.func.count(_sample_id(labels_table.c)).label("label_count"))
+                    .select_from(table)
+                    .join(
+                        labels_table,
+                        onclause=_sample_id(table.c) == _sample_id(labels_table.c),
+                        isouter=True
+                    )
+                )
+                row = (await session.execute(query)).first()
+                sample_count += row.count
+                label_count += row.label_count
+
+        label_ratio = sample_count and label_count / sample_count
 
         connected_models.append(
             ConnectedModelSchema(
-                id=record.id, name=record.name, description=record.description,
-                task_type=record.task_type, n_of_alerts=record.n_of_alerts,
+                id=model.id, name=model.name, description=model.description,
+                task_type=model.task_type, n_of_alerts=record.n_of_alerts,
                 n_of_pending_rows=record.n_of_pending_rows,
                 n_of_updating_versions=record.n_of_updating_versions,
                 sample_count=sample_count, label_count=label_count, label_ratio=label_ratio,
@@ -896,6 +929,7 @@ class IngestionErrorSchema(BaseModel):
     error: t.Optional[str] = None
     sample: t.Optional[str] = None
     created_at: datetime
+    model_version_id: t.Optional[int] = None
 
     class Config:
         """Config."""
@@ -903,6 +937,7 @@ class IngestionErrorSchema(BaseModel):
         orm_mode = True
 
 
+# TODO: delete this one after the changes in the UI
 @router.get(
     "/connected-models/{model_id}/versions/{version_id}/ingestion-errors",
     tags=[Tags.MODELS, "connected-models"],
@@ -942,6 +977,99 @@ async def retrieve_connected_model_version_ingestion_errors(
         .limit(limit)
         .offset(offset)
     )
+
+    if download is True:
+        # TODO:
+        # - add comments
+        # - reconsider
+        # - consider using more compact formats like avro/parquet
+        async def response_stream():
+            nonlocal session, q
+            n_of_rows = 1000
+            chunk_size = 10000000  # 10Mb
+            result = await session.stream(q)
+            async for records in result.partitions(n_of_rows):
+                buffer = io.BytesIO()
+                pd.DataFrame.from_records(records).to_csv(buffer, encoding="utf-8")
+                buffer.seek(0)
+                while True:
+                    batch = buffer.read(chunk_size)
+                    if not batch:
+                        break
+                    yield batch
+
+        return StreamingResponse(content=response_stream(), media_type="text/csv")
+
+    max_rows_per_request = 300
+
+    if limit > max_rows_per_request:
+        raise BadRequest(
+            f"Retrieval of more than {max_rows_per_request} rows by one request is not allowed. "
+            f"Use 'download=true' query parameter to download more than {max_rows_per_request} rows "
+            "of ingestion errors in csv format."
+        )
+
+    records = (await session.execute(q)).all()
+    return [IngestionErrorSchema.from_orm(it) for it in records]
+
+
+@router.get(
+    "/connected-models/{model_id}/ingestion-errors",
+    tags=[Tags.MODELS, "connected-models"],
+    description="Retrieve connected model ingestion errors.",
+    dependencies=[Depends(Model.get_object_from_http_request)],
+    response_model=t.List[IngestionErrorSchema]
+)
+async def retrieve_connected_model_ingestion_errors(
+        model_id: int = Path(...),
+        sort_key: IngestionErrorsSortKey = Query(default=IngestionErrorsSortKey.TIMESTAMP),
+        msg_contains: str = Query(default=None),
+        model_version_id: int = Query(default=None),
+        sort_order: SortOrder = Query(default=SortOrder.DESC),
+        download: bool = Query(default=False),
+        limit: int = Query(default=50, le=10_000, ge=1),
+        offset: int = Query(default=0, ge=0),
+        start_time_epoch: int = Query(default=None),
+        end_time_epoch: int = Query(default=None),
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
+):
+    """Retrieve connected model version ingestion errors."""
+    order_by_expression: t.Dict[t.Tuple[IngestionErrorsSortKey, SortOrder], t.Any] = {
+        (IngestionErrorsSortKey.TIMESTAMP, SortOrder.ASC): IngestionError.created_at.asc(),
+        (IngestionErrorsSortKey.TIMESTAMP, SortOrder.DESC): IngestionError.created_at.desc(),
+        (IngestionErrorsSortKey.ERROR, SortOrder.ASC): IngestionError.error.asc(),
+        (IngestionErrorsSortKey.ERROR, SortOrder.DESC): IngestionError.error.desc(),
+    }
+
+    q = (
+        sa.select(
+            IngestionError.id,
+            IngestionError.model_version_id,
+            IngestionError.sample_id,
+            IngestionError.created_at,
+            IngestionError.error,
+            IngestionError.sample,
+        )
+        .where(IngestionError.model_id == model_id)
+        .order_by(order_by_expression[(sort_key, sort_order)])
+        .limit(limit)
+        .offset(offset)
+    )
+
+    if model_version_id:
+        q = q.where(IngestionError.model_version_id == model_version_id)
+
+    if msg_contains:
+        q = q.where(IngestionError.error.ilike(f"%{msg_contains}%"))
+
+    if start_time_epoch:
+        dt = datetime.fromtimestamp(start_time_epoch, tz=pytz.UTC)
+        q = q.where(IngestionError.created_at >= dt)
+
+    if end_time_epoch:
+        dt = datetime.fromtimestamp(end_time_epoch, tz=pytz.UTC)
+        q = q.where(IngestionError.created_at <= dt)
 
     if download is True:
         # TODO:

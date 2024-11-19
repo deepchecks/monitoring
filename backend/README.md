@@ -41,8 +41,10 @@ schema.
 - Create a database named `deepchecks` in postgres.
 - Install all the requirements for the server:
 ```bash
-pip install -r requirements.txt dev-requirements.txt
+pip install -U pip setuptools
+pip install -r requirements.txt -r dev-requirements.txt
 pip install -e .
+pip install -q -e ./client (or pip install deepchecks-client)
 ```
 - Run the migrations for the public schema. For more info on migrations see below.
 ```bash
@@ -119,4 +121,13 @@ alembic --name org -x schema=<org-schema-name> upgrade heads
 
 # print current revision used by organization schema
 alembic --name org -x schema=<org-schema-name> current
+```
+
+## Running pylint / flake8
+```bash
+cd .. && pylint -j 0 --rcfile=./backend/.pylintrc ./backend/deepchecks_monitoring
+```
+
+```bash
+flake8 --whitelist spelling-allowlist.txt deepchecks_monitoring client/deepchecks_client --per-file-ignores="deepchecks_monitoring/utils/notebook_resources/*:E999 "
 ```

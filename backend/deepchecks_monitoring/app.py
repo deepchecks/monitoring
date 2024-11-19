@@ -203,24 +203,6 @@ def create_application(
         if settings.is_cloud:
             app.include_router(ee.api.v1.cloud_router, dependencies=[Depends(LicenseCheckDependency())])
 
-        # Configure telemetry
-        if settings.sentry_dsn:
-            import sentry_sdk
-
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sampler=ee.utils.sentry.traces_sampler,
-                environment=settings.sentry_env,
-                before_send_transaction=ee.utils.sentry.sentry_send_hook
-            )
-            # Ignoring this logger since it can spam sentry with errors
-            sentry_sdk.integrations.logging.ignore_logger("aiokafka.cluster")
-            ee.utils.telemetry.collect_telemetry(DataIngestionBackend)
-
-        if settings.stripe_secret_api_key:
-            import stripe
-            stripe.api_key = settings.stripe_secret_api_key
-
         if settings.debug_mode:
             app.add_middleware(ee.middlewares.ProfilingMiddleware)
 
@@ -235,5 +217,7 @@ def create_application(
 
     # AIOKafka is spamming our logs, disable it for errors and warnings
     logging.getLogger("aiokafka.cluster").setLevel(logging.CRITICAL)
+
+    logger.info("FastAPI Application created")
 
     return app

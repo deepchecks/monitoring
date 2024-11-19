@@ -27,7 +27,6 @@ from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.organization import OrgTier
 from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
-from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.utils import auth, database
 from deepchecks_monitoring.utils.auth import create_api_token
@@ -122,21 +121,11 @@ async def update_complete_details(
     elif body.accept_invite:
         invite: Invitation = await fetch_or_404(session, Invitation, email=user.email)
         # Check organization exists
-        organization = await fetch_or_404(session, Organization, id=invite.organization_id)
+        _ = await fetch_or_404(session, Organization, id=invite.organization_id)
         # Update user in database
         user.organization_id = invite.organization_id
         # delete the invite
         await session.delete(invite)
-
-        # Attach the organization schema to the session in order to query the models
-        await database.attach_schema_switcher_listener(
-            session=session,
-            schema_search_path=[organization.schema_name, "public"]
-        )
-
-        model_ids = await session.scalars(select(Model.id))
-        model_members = [ModelMember(user_id=user.id, model_id=model_id) for model_id in model_ids]
-        session.add_all(model_members)
 
     await session.flush()
     # Redirect carries over the POST verb, in order to change it to GET we need to set 302 code instead of 307

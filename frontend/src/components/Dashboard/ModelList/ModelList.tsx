@@ -11,6 +11,7 @@ import { Loader } from 'components/base/Loader/Loader';
 import { ModelItem } from './components/ModelItem';
 import { AlertsCountWidget } from './components/AlertsCountWidget';
 
+import { StyledText } from 'components/lib';
 import {
   StyledModelListContainer,
   StyledHeadingContainer,
@@ -22,12 +23,11 @@ import {
 } from './ModelList.style';
 import { StyledTextInput } from 'components/base/Input/Input.styles';
 
-import { CloseIcon, Rotate, SearchIcon } from 'assets/icon/icon';
-
-import { handleSetParams } from 'helpers/utils/getParams';
 import useModels from 'helpers/hooks/useModels';
+import { handleSetParams } from 'helpers/utils/getParams';
+
 import { constants } from '../dashboard.constants';
-import { StyledText } from 'components/lib';
+import { CloseIcon, Rotate, SearchIcon } from 'assets/icon/icon';
 
 export type SelectedModelAlerts = { [key in AlertSeverity]: number };
 
@@ -36,7 +36,6 @@ interface ModelListProps {
   selectedModelId: number | null;
 }
 
-const ZERO_ALERTS = { low: 0, medium: 0, high: 0, critical: 0 };
 const { heading, reset, searchFieldPlaceholder } = constants.modelList;
 
 export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProps) {
@@ -47,14 +46,33 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
       refetchOnWindowFocus: false
     }
   });
+
   const connectedModelsMap = useMemo(() => {
     const map: Record<string, ConnectedModelSchema> = {};
     (Array.isArray(connectedModels) ? connectedModels : []).forEach(model => (map[model.id] = model));
     return map;
   }, [connectedModels]);
 
+  const total_alerts = useMemo(() => {
+    const tot = {
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0
+    };
+
+    models.forEach(obj => {
+      tot.low += obj.severities_count.low || 0;
+      tot.medium += obj.severities_count.medium || 0;
+      tot.high += obj.severities_count.high || 0;
+      tot.critical += obj.severities_count.critical || 0;
+    });
+
+    return tot;
+  }, [models?.length]);
+
   const [modelName, setModelName] = useState('');
-  const [selectedModelAlerts, setSelectedModelAlerts] = useState<SelectedModelAlerts | null>(null);
+  const [selectedModelAlerts, setSelectedModelAlerts] = useState<SelectedModelAlerts>(total_alerts);
 
   const filteredModels = useMemo(() => {
     if (!modelName) return models;
@@ -66,7 +84,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
     event.stopPropagation();
     setSelectedModelId(null);
     handleSetParams('modelId');
-    setSelectedModelAlerts(null);
+    setSelectedModelAlerts(total_alerts);
   };
 
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,9 +100,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
   const handleModelClick = (model: ModelManagmentSchema) => {
     setSelectedModelId(model.id);
     handleSetParams('modelId', model.id);
-    setSelectedModelAlerts(
-      model.max_severity ? { ...ZERO_ALERTS, [model.max_severity]: model.alerts_count } : ZERO_ALERTS
-    );
+    setSelectedModelAlerts({ ...(model.severities_count as SelectedModelAlerts) });
   };
 
   return (

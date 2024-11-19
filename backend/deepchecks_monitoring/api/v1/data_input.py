@@ -48,9 +48,9 @@ from .router import router
 async def log_data_batch(
     model_version_id: int,
     data: t.List[t.Dict[str, t.Any]] = Body(...),
+    user: User = Depends(CurrentActiveUser()),
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
-    user: User = Depends(CurrentActiveUser()),
     resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Insert batch data samples."""
@@ -124,9 +124,9 @@ async def log_labels(
     model_id: int,  # pylint: disable=unused-argument
     data: t.List[t.Dict[t.Any, t.Any]] = Body(...),
     model: Model = Depends(Model.get_object_from_http_request),
+    user: User = Depends(CurrentActiveUser()),
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
-    user: User = Depends(CurrentActiveUser()),
     resources_provider=ResourcesProviderDep
 ):
     """Update data samples."""
@@ -278,7 +278,7 @@ async def save_reference(
     for sample in items:
         update_statistics_from_sample(updated_statistics, sample)
     if model_version.statistics != updated_statistics:
-        await model_version.update_statistics(updated_statistics, session)
+        await model_version.update_statistics(updated_statistics)
 
     await session.execute(ref_table.insert(), items)
     return Response(status_code=status.HTTP_200_OK)

@@ -37,7 +37,6 @@ export const Notifications = () => {
   const stackDisplay = isLargeDesktop ? 'flex' : 'block';
   const isSlackConnected = data?.is_slack_connected;
   const isWebhookConnected = data?.is_webhook_connected;
-  const deniedLink = isNotPaid && !isNotAdminOrOwner ? constants.integration.error.link.text : '';
 
   if (isLoading) {
     return <StyledLoader />;
@@ -58,7 +57,6 @@ export const Notifications = () => {
           deniedReason={deniedReason}
           isNotAdminOrOwner={isNotAdminOrOwner}
           isNotPaid={isNotPaid}
-          deniedLink={deniedLink}
         />
         <Box display="flex" flexDirection="column" gap="16px">
           <ConnectWebhook

@@ -1,12 +1,9 @@
 import React, { memo, useState } from 'react';
+
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-
-import { AlertRuleInfoSchema, useGetMonitorApiV1MonitorsMonitorIdGet } from 'api/generated';
-import useModels from 'helpers/hooks/useModels';
-import { AlertRuleDialogProvider } from '../AlertRuleDialog/AlertRuleDialogContext';
 
 import { Tooltip, Typography, Stack } from '@mui/material';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
@@ -14,12 +11,9 @@ import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import SyncIcon from '@mui/icons-material/Sync';
 
 import { AlertRuleDialog } from '../AlertRuleDialog/AlertRuleDialog';
-import { Loader } from '../../base/Loader/Loader';
-import { StyledSeverity } from 'components/lib';
+import { AlertRuleDialogProvider } from '../AlertRuleDialog/AlertRuleDialogContext';
 
-import { OperatorsEnumMap } from 'helpers/base/conditionOperator';
-import processFrequency from 'helpers/utils/processFrequency';
-
+import { StyledSeverity, StyledSkeleton } from 'components/lib';
 import {
   StyledBlur,
   StyledCaption,
@@ -31,7 +25,11 @@ import {
   StyledTitle
 } from './AlertsRulesItem.style';
 
+import useModels from 'helpers/hooks/useModels';
 import { FrequencyMap } from 'helpers/utils/frequency';
+import processFrequency from 'helpers/utils/processFrequency';
+import { OperatorsEnumMap } from 'helpers/base/conditionOperator';
+import { AlertRuleInfoSchema, useGetMonitorApiV1MonitorsMonitorIdGet } from 'api/generated';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -88,7 +86,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
   const onMouseLeave = () => setHover(false);
 
   return isMonitorLoading ? (
-    <Loader />
+    <StyledSkeleton width="100%" height="70px" />
   ) : (
     <>
       <StyledMainWrapper

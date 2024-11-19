@@ -48,13 +48,17 @@ jobs:
       - name: Set TAG env var
         run: |
           echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
-      - name: Tag image as latest-release
+      - name: Tag image as latest-release - private
         run: |
           docker buildx imagetools create \
             --tag ${{ secrets.MON_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
+            ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
+      - name: Tag image as latest-release - public
+        run: |
+          docker buildx imagetools create \
             --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
             --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:latest-release \
-            ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
+            ${{ secrets.PUBLIC_IMAGE_NAME }}:${{ github.sha }}
       - name: Logout from Amazon ECR
         if: always()
         run: |

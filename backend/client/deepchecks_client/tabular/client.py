@@ -270,7 +270,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             kind = type(timestamps).__name__
             raise TypeError(f'Unexpected type of "timestamps" parameter - {kind}')
 
-        data_batch = _process_batch(
+        data_batch = process_batch(
             schema_validator=self.schema_validator,
             data_columns=self.all_columns,
             task_type=TaskType(self.model['task_type']),
@@ -322,7 +322,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if timestamp is None:
             warnings.warn('log_sample was called without timestamp, using current time instead')
             timestamp = pdl.now().int_timestamp
-        self._log_samples.append(_process_sample(
+        self._log_samples.append(process_sample(
             schema_validator=self.schema_validator,
             data_columns=self.all_columns,
             task_type=TaskType(self.model['task_type']),
@@ -610,7 +610,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         self.add_monitor(check_name='Performance', frequency=frequency, name='Performance')
 
 
-def _process_batch(
+def process_batch(
     *,
     task_type: TaskType,
     schema_validator: t.Callable[..., t.Any],
@@ -664,7 +664,7 @@ def _process_batch(
 
     if data is None:
         return [
-            _process_sample(
+            process_sample(
                 task_type=task_type,
                 schema_validator=schema_validator,
                 data_columns=data_columns,
@@ -693,6 +693,7 @@ def _process_batch(
         missing_columns = all_columns.difference(provided_columns)
         if missing_columns:
             raise ValueError(f'The following schema columns are missing: {list(missing_columns)}')
+
         additional_columns = provided_columns.difference(all_columns)
         if additional_columns:
             warnings.warn(
@@ -708,7 +709,7 @@ def _process_batch(
         data_batch = data.to_dict(orient='records')
 
         return [
-            _process_sample(
+            process_sample(
                 task_type=task_type,
                 schema_validator=schema_validator,
                 data_columns=data_columns,
@@ -720,7 +721,7 @@ def _process_batch(
         ]
 
 
-def _process_sample(
+def process_sample(
     *,
     task_type: TaskType,
     schema_validator: t.Callable[..., t.Any],
@@ -775,6 +776,8 @@ def _process_sample(
             sample[name] = _string_formatter(sample[name])
         elif kind == ColumnType.DATETIME and name in sample:
             sample[name] = _datetime_formatter(sample[name])
+        elif kind == ColumnType.BOOLEAN and name in sample:
+            sample[name] = _numeric_to_boolean(sample[name])
 
     sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
     schema_validator(sample)
@@ -816,6 +819,18 @@ def _string_formatter(some_obj):
     if pd.isna(some_obj):
         return None
     return str(some_obj)
+
+
+def _numeric_to_boolean(some_obj):
+    # written this way so it will still fail if invalid boolean column
+    if pd.isna(some_obj):
+        return None
+    elif some_obj == 1:
+        return True
+    elif some_obj == 0:
+        return False
+    else:
+        return some_obj
 
 
 def _feature_importance_validate(feature_importance: dict, features: dict):

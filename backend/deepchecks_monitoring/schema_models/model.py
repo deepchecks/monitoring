@@ -29,6 +29,7 @@ from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models import IngestionError
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
     from deepchecks_monitoring.schema_models.model_memeber import ModelMember
@@ -112,6 +113,14 @@ class Model(Base, MetadataMixin, PermissionMixin):
         passive_updates=True,
     )
 
+    ingestion_errors: Mapped[t.List["IngestionError"]] = relationship(
+        "IngestionError",
+        back_populates="model",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
+    )
+
     @classmethod
     async def has_object_permissions(cls, session, obj_id, user):
         # pylint: disable=redefined-outer-name,import-outside-toplevel
@@ -121,7 +130,7 @@ class Model(Base, MetadataMixin, PermissionMixin):
                                     .where(ModelMember.user_id == user.id)
                                     .where(cls.id == obj_id))
 
-    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
+    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime):
         """Update start and end date if needed based on given timestamps."""
         # Running an update with min/max in order to prevent race condition when running in parallel
         updates = {}
@@ -131,7 +140,7 @@ class Model(Base, MetadataMixin, PermissionMixin):
             updates[Model.end_time] = func.greatest(Model.end_time, max_timestamp)
 
         if updates:
-            await session.execute(update(Model).where(Model.id == self.id).values(updates))
+            await async_object_session(self).execute(update(Model).where(Model.id == self.id).values(updates))
 
     def has_data(self) -> bool:
         """Check if model has data."""

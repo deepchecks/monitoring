@@ -12,7 +12,6 @@
 import logging.handlers
 import typing as t
 
-import aiokafka
 import anyio
 import pendulum as pdl
 import uvloop
@@ -25,13 +24,11 @@ from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
 from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
-from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
-from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
+# from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE, TASK_RUNNER_LOCK
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
-from deepchecks_monitoring.utils.other import ExtendedAIOKafkaAdminClient
 
 try:
     from deepchecks_monitoring import ee
@@ -50,7 +47,7 @@ class TaskRunner:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
-            redis,
+            redis: RedisCluster | Redis,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
     ):
@@ -79,12 +76,12 @@ class TaskRunner:
             self.logger.warning('Worker interrupted')
             raise
 
-    async def wait_for_task(self, timeout=0):
+    async def wait_for_task(self, timeout=120):
         task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
 
         # If timeout is not 0 we might get return value of None
         if task_entry is None:
-            self.logger.debug('Got from redis queue task_id none')
+            self.logger.info('Got from redis queue task_id none')
             return
         else:
             # Return value from redis is (redis key, value, score)
@@ -101,15 +98,16 @@ class TaskRunner:
         lock = self.redis.lock(lock_name, blocking=False, timeout=60 * 5)
         lock_acquired = await lock.acquire()
         if not lock_acquired:
-            self.logger.debug(f'Failed to acquire lock for task id: {task_id}')
+            self.logger.info(f'Failed to acquire lock for task id: {task_id}')
             return
 
-        task = await session.scalar(select(Task).where(Task.id == task_id))
+        task: Task = await session.scalar(select(Task).where(Task.id == task_id))
         # Making sure task wasn't deleted for some reason
         if task is not None:
+            self.logger.info(f'Running task id: {task_id} for {task.bg_worker_task}')
             await self._run_task(task, session, queued_timestamp, lock)
         else:
-            self.logger.debug(f'Got already removed task id: {task_id}')
+            self.logger.info(f'Got already removed task id: {task_id}')
 
         try:
             await lock.release()
@@ -120,29 +118,30 @@ class TaskRunner:
     async def _run_task(self, task: Task, session, queued_timestamp, lock):
         """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
         to log the task parameters and queued time."""
+        bg_worker_task = task.bg_worker_task
         try:
-            worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
+            worker: BackgroundWorker = self.workers.get(bg_worker_task)
             if worker:
                 start = pdl.now()
                 await worker.run(task, session, self.resource_provider, lock)
                 duration = (pdl.now() - start).total_seconds()
                 delay = start.int_timestamp - queued_timestamp
-                self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})
+                self.logger.info({'duration': duration, 'task': bg_worker_task, 'delay': delay})
             else:
-                self.logger.error({'message': f'Unknown task type: {task.bg_worker_task}'})
+                self.logger.error({'message': f'Unknown task type: {bg_worker_task}'})
         except Exception:  # pylint: disable=broad-except
+            self.logger.exception({'message': 'Exception running task', 'task': bg_worker_task})
             await session.rollback()
-            self.logger.exception({'message': 'Exception running task'})
 
 
 class BaseWorkerSettings():
     """Worker settings."""
 
     logfile: t.Optional[str] = None
-    loglevel: str = 'INFO'
+    loglevel: str = 'DEBUG'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
-    num_workers: int = 10
+    num_workers: int = 5
 
     class Config:
         """Model config."""
@@ -189,18 +188,6 @@ def execute_worker():
         # the telemetry collection. Adding here this import to fix this
         from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
 
-        if with_ee and settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
-
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=0.1,
-                environment=settings.sentry_env
-            )
-            ee.utils.telemetry.collect_telemetry(tasks_runner.TaskRunner)
-            # Ignoring this logger since it can spam sentry with errors
-            sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
-
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
 
@@ -211,18 +198,6 @@ def execute_worker():
                 AlertsTask(),
                 MixpanelSystemStateEvent()
             ]
-
-            # Adding kafka related workers
-            if settings.kafka_host is not None:
-                # AIOKafka is spamming our logs, disable it for errors and warnings
-                logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)
-                consumer = aiokafka.AIOKafkaConsumer(**rp.kafka_settings.kafka_params)
-                await consumer.start()
-                kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
-                await kafka_admin.start()
-
-                workers.append(ModelVersionTopicDeletionWorker(kafka_admin))
-                workers.append(ModelVersionOffsetUpdate(consumer))
 
             # Adding ee workers
             if with_ee:

@@ -37,7 +37,7 @@ async def test_clear_monitor_cache(resources_provider):
 
 
 @pytest.mark.asyncio
-async def test_delete_monitor_cache_by_timestamp(resources_provider):
+async def test_delete_monitor_cache_by_timestamp(resources_provider, async_session):
     cache_funcs: CacheFunctions = resources_provider.cache_functions
 
     # Arrange - Organization with 2 monitors and 2 model versions, and another organization with same monitor id.
@@ -60,7 +60,7 @@ async def test_delete_monitor_cache_by_timestamp(resources_provider):
     cache_funcs.add_invalidation_timestamps(1, 1, timestamps_to_invalidate)
 
     # Act - run task
-    async with resources_provider.async_session_factory() as session:
+    async with async_session as session:
         task_id = await insert_model_version_cache_invalidation_task(1, 1, session=session)
         task = await session.scalar(select(Task).where(Task.id == task_id))
         await ModelVersionCacheInvalidation().run(task, session, resources_provider, lock=None)

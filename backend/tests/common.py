@@ -41,7 +41,7 @@ async def generate_user(
     f = faker.Faker()
     email = email or f.email()
     u = await User.from_oauth_info(
-        info=UserOAuthDTO(email=email, name=f.name()),
+        info=UserOAuthDTO(email=email, name=f.name(), email_verified=True),
         session=session,
         auth_jwt_secret=auth_jwt_secret,
         eula=eula

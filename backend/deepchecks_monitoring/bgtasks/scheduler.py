@@ -15,6 +15,7 @@ import logging
 import logging.handlers
 import typing as t
 from collections import defaultdict
+from contextlib import asynccontextmanager
 from time import perf_counter
 
 import anyio
@@ -47,16 +48,21 @@ if t.TYPE_CHECKING:
 
 __all__ = ['AlertsScheduler']
 
+try:
+    from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel
+    with_ee = True
+except ImportError:
+    with_ee = False
 
-# TODO: rename to MonitorScheduler
+
 class AlertsScheduler:
     """Alerts scheduler."""
 
     def __init__(
-        self,
-        engine: AsyncEngine,
-        sleep_seconds: int = TimeUnit.MINUTE * 5,
-        logger: t.Optional[logging.Logger] = None,
+            self,
+            engine: AsyncEngine,
+            sleep_seconds: int = TimeUnit.MINUTE * 5,
+            logger: t.Optional[logging.Logger] = None,
     ):
         self.engine = engine
         self.async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -83,6 +89,15 @@ class AlertsScheduler:
             self.logger.warning('Scheduler interrupted')
             raise
 
+    @asynccontextmanager
+    async def organization_error_handler(self, org_id, task_name):
+        try:
+            yield
+        except SerializationError:  # We use 'Repeatable Read Isolation Level'.
+            self.logger.warning({'task': task_name, 'org_id': org_id})
+        except:  # noqa: E722
+            self.logger.exception({'task': task_name, 'org_id': org_id})
+
     async def run_all_organizations(self):
         """Enqueue tasks for execution."""
         async with self.async_session_factory() as session:
@@ -95,30 +110,15 @@ class AlertsScheduler:
             return
 
         for org in organizations:
-            try:
-                start = perf_counter()
+            async with self.organization_error_handler(org.id, 'run_organization'):
                 await self.run_organization(org)
-                duration = perf_counter() - start
-                self.logger.info({'duration': duration, 'task': 'run_organization', 'org_id': org.id})
-            except:  # noqa: E722
-                self.logger.exception({'task': 'run_organization', 'org_id': org.id})
-            try:
-                start = perf_counter()
+
+            async with self.organization_error_handler(org.id, 'run_organization_data_ingestion_alert'):
                 await self.run_organization_data_ingestion_alert(org)
-                duration = perf_counter() - start
-                self.logger.info({'duration': duration, 'task': 'run_organization_data_ingestion_alert',
-                                  'org_id': org.id})
-            except:  # noqa: E722
-                self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
+
             if with_ee:
-                try:
-                    start = perf_counter()
+                async with self.organization_error_handler(org.id, 'run_object_storage_ingestion'):
                     await self.run_object_storage_ingestion(org)
-                    duration = perf_counter() - start
-                    self.logger.info({'duration': duration, 'task': 'run_object_storage_ingestion',
-                                      'org_id': org.id})
-                except:  # noqa: E722
-                    self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -127,7 +127,7 @@ class AlertsScheduler:
                 session=session,
                 schema_search_path=[organization.schema_name, 'public']
             )
-            monitors = await session.scalars(
+            monitor_scalars = await session.scalars(
                 select(Monitor)
                 .options(
                     joinedload(Monitor.check)
@@ -139,12 +139,19 @@ class AlertsScheduler:
                     (Monitor.latest_schedule + Monitor.frequency_as_interval) < Model.end_time
                 )
             )
-
+            list_monitor_scalars: list[Monitor] = list(monitor_scalars)
             # Aggregate the monitors per model in order to query the versions windows data only once per model
             monitors_per_model = defaultdict(list)
-            for m in monitors:
-                monitors_per_model[m.check.model].append(m)
+            for monitor in list_monitor_scalars:
+                monitors_per_model[monitor.check.model].append(monitor)
+            session.expunge_all()
 
+        async with self.async_session_factory() as session:
+            session: AsyncSession
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
             for model, monitors in monitors_per_model.items():
                 # Get the minimal time needed to query windows data for. Doing it together for all monitors in order to
                 # query the data once
@@ -171,8 +178,8 @@ class AlertsScheduler:
 
                     # IMPORTANT NOTE: Forwarding the schedule only if the rule is passing for ALL the model versions.
                     while (
-                        schedule_time <= model.end_time
-                        and rules_pass(versions_windows, monitor, schedule_time, model)
+                            schedule_time <= model.end_time
+                            and rules_pass(versions_windows, monitor, schedule_time, model)
                     ):
                         schedules.append(schedule_time)
                         schedule_time = schedule_time + frequency
@@ -180,7 +187,10 @@ class AlertsScheduler:
                     if schedules:
                         try:
                             await enqueue_tasks(monitor, schedules, organization, session)
-                            monitor.latest_schedule = schedules[-1]
+                            await session.execute(
+                                sa.update(Monitor)
+                                .where(Monitor.id == monitor.id).values({Monitor.latest_schedule: schedules[-1]})
+                            )
                             await session.commit()
                         # NOTE:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
@@ -233,30 +243,41 @@ class AlertsScheduler:
             models: t.List[Model] = (await session.scalars(
                 select(Model)
                 .where(Model.obj_store_path.isnot(None))
+                .where(Model.obj_store_path != '')
             )).all()
 
             if len(models) == 0:
                 return
+            session.expunge_all()
 
+        async with self.async_session_factory() as session:
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
             time = pdl.now()
-            tasks = []
             for model in models:
                 if (model.obj_store_last_scan_time is None
                         or pdl.instance(model.obj_store_last_scan_time).add(hours=2) < time):
-                    tasks.append(dict(name=f'{organization.id}:{model.id}',
-                                      bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
-                                      params=dict(model_id=model.id, organization_id=organization.id)))
-
-            await session.execute(insert(Task).values(tasks)
-                                  .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
-            await session.commit()
+                    task = dict(name=f'{organization.id}:{model.id}',
+                                bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
+                                params=dict(model_id=model.id, organization_id=organization.id))
+                try:
+                    await session.execute(insert(Task).values(task)
+                                          .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+                    await session.commit()
+                except (SerializationError, DBAPIError) as error:
+                    await session.rollback()
+                    if isinstance(error, DBAPIError) and not is_serialization_error(error):
+                        self.logger.exception('Model(id=%s) s3 task enqueue failed', model.id)
+                        raise
 
 
 async def get_versions_hour_windows(
-    model: Model,
-    versions: t.List[ModelVersion],
-    session: AsyncSession,
-    minimum_time: 'PendulumDateTime'
+        model: Model,
+        versions: t.List[ModelVersion],
+        session: AsyncSession,
+        minimum_time: 'PendulumDateTime'
 ) -> t.List[t.Dict[int, t.Dict]]:
     """Get windows data for all given versions starting from minimum time.
 
@@ -286,8 +307,8 @@ async def get_versions_hour_windows(
             func.count(mon_table.c[SAMPLE_PRED_COL]).label('count_predictions'),
             func.max(mon_table.c[SAMPLE_LOGGED_TIME_COL]).label('max_logged_timestamp'),
             func.count(labels_table.c[SAMPLE_LABEL_COL]).label('count_labels')
-        ).join(labels_table, mon_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL], isouter=True)\
-            .where(hour_window > minimum_time)\
+        ).join(labels_table, mon_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL], isouter=True) \
+            .where(hour_window > minimum_time) \
             .group_by(hour_window)
 
         records = (await session.execute(query)).all()
@@ -296,10 +317,10 @@ async def get_versions_hour_windows(
 
 
 def rules_pass(
-    versions_windows: t.List[t.Dict[int, t.Dict]],
-    monitor: Monitor,
-    schedule_time: pdl.DateTime,
-    model: Model
+        versions_windows: t.List[t.Dict[int, t.Dict]],
+        monitor: Monitor,
+        schedule_time: pdl.DateTime,
+        model: Model
 ):
     """Check the versions windows for given schedule time. If in all versions at least one of the alerts delay rules \
     passes, return True. Otherwise, return False."""
@@ -333,8 +354,9 @@ def rules_pass(
             labels_percent = total_label_count / total_preds_count
             # Test the rules. If both rules don't pass, return False.
             if (
-                labels_percent < model.alerts_delay_labels_ratio
-                and max_timestamp and pdl.instance(max_timestamp).add(seconds=model.alerts_delay_seconds) > pdl.now()
+                    labels_percent < model.alerts_delay_labels_ratio
+                    and max_timestamp
+                    and pdl.instance(max_timestamp).add(seconds=model.alerts_delay_seconds) > pdl.now()
             ):
                 return False
     # In all versions at least one of the rules passed, return True
@@ -385,7 +407,7 @@ def is_serialization_error(error: DBAPIError):
     )
 
 
-class BaseSchedulerSettings(config.DatabaseSettings):
+class SchedulerSettings(config.DatabaseSettings):
     """Scheduler settings."""
 
     scheduler_sleep_seconds: int = 30
@@ -395,37 +417,12 @@ class BaseSchedulerSettings(config.DatabaseSettings):
     scheduler_logfile_backup_count: int = 3
 
 
-try:
-    from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel
-
-    with_ee = True
-
-    class SchedulerSettings(BaseSchedulerSettings, ee.config.TelemetrySettings):
-        """Set of worker settings."""
-        pass
-except ImportError:
-    with_ee = False
-
-    class SchedulerSettings(BaseSchedulerSettings):
-        """Set of worker settings."""
-        pass
-
-
 def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
     """Execute alrets scheduler."""
+
     async def main():
         settings = SchedulerSettings()  # type: ignore
         service_name = 'alerts-scheduler'
-
-        if with_ee:
-            if settings.sentry_dsn:
-                import sentry_sdk  # pylint: disable=import-outside-toplevel
-                sentry_sdk.init(
-                    dsn=settings.sentry_dsn,
-                    traces_sample_rate=0.6,
-                    environment=settings.sentry_env
-                )
-                ee.utils.telemetry.collect_telemetry(scheduler_implementation)
 
         logger = configure_logger(
             name=service_name,
@@ -463,4 +460,5 @@ if __name__ == '__main__':
     # we need to reimport AlertsScheduler type
     #
     from deepchecks_monitoring.bgtasks import scheduler
+
     execute_alerts_scheduler(scheduler.AlertsScheduler)

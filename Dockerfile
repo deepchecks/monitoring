@@ -24,28 +24,35 @@ RUN yarn build
 
 # Build the backend image
 
-FROM python:3.11.3
+FROM ubuntu:22.04
 
 ENV PYTHONUNBUFFERED 1
+ENV TZ=Asia/Jerusalem
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN echo "Updated on 2 Apr 2024" # Change to force apt to update the cache
+RUN apt-get -y update &&  apt-get -y upgrade
+
+RUN apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa &&  \
+    apt install -y git python3.11 python3.11-dev python3.11-distutils curl g++ libpq-dev &&  \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
 
 WORKDIR /code
 
-COPY backend/requirements.txt ./
-COPY backend/addon-requirements.txt ./
+COPY backend/requirements.txt ./backend_requirements.txt
+COPY backend/client/requirements.txt ./client_requirements.txt
 
 # TODO: not secure, use docker build-kit instead
 ARG MIXPANEL_ID
 ENV MIXPANEL_ID=$MIXPANEL_ID
 # ---
 ARG DEEPCHECKS_CI_TOKEN
-ARG IS_DEEPCHECKS_OSS
 
-RUN pip install -U pip setuptools
+RUN ln -s /usr/bin/python3.11 /usr/bin/python && python -m pip install -U pip "setuptools"
 # For ARM arch, ray>2.3.1 uses grpcio==1.51.3 which doesn't has wheel and takes forever to build from source
-RUN pip install ray==2.3.1 grpcio==1.54.2
-RUN pip install -r requirements.txt --compile --no-cache-dir
-
-RUN if [[ -z "$IS_DEEPCHECKS_OSS" ]] ; then pip install -q -r addon-requirements.txt --compile --no-cache-dir ; fi
+RUN python -m pip install ray==2.9.0 grpcio==1.60.0 --no-cache-dir
+RUN python -m pip install -r backend_requirements.txt --compile --no-cache-dir
+RUN python -m pip install -r client_requirements.txt --compile --no-cache-dir
 
 RUN adduser --system --group deepchecks
 
@@ -57,12 +64,16 @@ USER deepchecks
 COPY backend backend/
 COPY --from=frontend /code/frontend/build /code/frontend/dist
 
+ARG IS_DEEPCHECKS_OSS
+RUN if [ -z "$IS_DEEPCHECKS_OSS" ] ; then pip install -q -r backend/addon-requirements.txt --compile --no-cache-dir 2> /dev/null ; fi
+
 # Switch to root and install yarn so we can install runtime deps. Node that we
 # still need yarn to run the plugin-server so we do not remove it.
 USER root
 
 # RUN pip install deepchecks-monitoring --no-index --find-links file:///code/backend/
-RUN pip install -q -e backend/
+RUN python -m pip install -q -e backend/
+RUN python -m pip install -q -e backend/client
 
 COPY ./bin ./bin/
 
