@@ -250,7 +250,13 @@ class AlertsScheduler:
 
             if len(models) == 0:
                 return
+            session.expunge_all()
 
+        async with self.async_session_factory() as session:
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
             time = pdl.now()
             for model in models:
                 if (model.obj_store_last_scan_time is None
