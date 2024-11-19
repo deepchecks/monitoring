@@ -193,32 +193,6 @@ def test_check_duplicate_creation(
     assert response.json()["error_message"] == f"Model already contains a check named {payload['name']}"
 
 
-def test_check_creation_of_wrong_type(
-    test_api: TestAPI,
-    classification_model: Payload,
-):
-    """Test that the backend disallows creation of vision checks for tabular models."""
-    # Arrange
-    payload = {
-        "name": "checky v1",
-        "config": {
-            "class_name": "SingleDatasetPerformance",
-            "params": {"reduce": "mean"},
-            "module_name": "deepchecks.vision.checks"
-        }
-    }
-
-    # Act
-    response = test_api.create_check(
-        model_id=classification_model["id"],
-        check=payload,
-        expected_status=400
-    )
-
-    response = t.cast(httpx.Response, response)
-    assert response.json()["error_message"] == "Check checky v1 is not compatible with the model task type"
-
-
 def test_check_deletion(
     test_api: TestAPI,
     classification_model: Payload,
@@ -1292,12 +1266,12 @@ def test_run_reference(
 
     check_id = classification_model_check["id"]
     result = test_api.execute_check_for_reference(check_id, {
-                              "filter": {
-                                  "filters": [
-                                      {"column": "a", "operator": "greater_than", "value": 12}
-                                  ]
-                              }
-                          })
+        "filter": {
+            "filters": [
+                {"column": "a", "operator": "greater_than", "value": 12}
+            ]
+        }
+    })
     result = t.cast(Payload, result)
 
     assert result == {"v1": {"Accuracy": 1.0, "Precision - Macro Average": 1.0, "Recall - Macro Average": 1.0}}

@@ -28,6 +28,7 @@ from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
+from deepchecks_monitoring.utils.mixpanel import AlertRuleCreatedEvent
 
 from .router import router
 
@@ -84,6 +85,7 @@ async def create_alert_rule(
         alert_rule: AlertRuleCreationSchema,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Create new alert rule on a given check."""
     stm = insert(AlertRule).values(
@@ -94,6 +96,14 @@ async def create_alert_rule(
     ).returning(AlertRule.id)
 
     rule_id = (await session.execute(stm)).scalar_one()
+    await session.commit()
+
+    await resources_provider.report_mixpanel_event(
+        AlertRuleCreatedEvent.create_event,
+        alert_rule=await session.get(AlertRule, rule_id),
+        user=user
+    )
+
     return {"id": rule_id}
 
 

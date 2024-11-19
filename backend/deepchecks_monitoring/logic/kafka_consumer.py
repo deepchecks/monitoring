@@ -10,7 +10,7 @@
 """Module defining an infinite consuming loop form kafka."""
 import asyncio
 
-from aiokafka import AIOKafkaConsumer
+from aiokafka import AIOKafkaConsumer, TopicPartition
 from kafka.errors import KafkaError
 
 from deepchecks_monitoring.config import KafkaSettings
@@ -36,11 +36,12 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logg
             while True:
                 result = await consumer.getmany(timeout_ms=30 * 1000)
                 for tp, messages in result.items():
+                    tp: TopicPartition
                     if messages:
-                        to_commit = await handle_func(tp, messages)
+                        to_commit = await handle_func(consumer, tp, messages)
                         if to_commit:
-                            await consumer.commit({tp: messages[-1].offset + 1})
-
+                            offset = messages[-1].offset
+                            await consumer.commit({tp: offset + 1})
         except KafkaError as e:  # pylint: disable=broad-except
             logger.exception(e)
         finally:

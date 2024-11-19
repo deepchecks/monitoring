@@ -10,6 +10,9 @@ export interface ImageProps {
   background?: string;
   padding?: string;
   boxShadow?: string;
+  id?: string;
+  onClick?: () => void;
+  style?: React.CSSProperties;
 }
 
 export const Image = (props: ImageProps) => {
@@ -22,7 +25,10 @@ export const Image = (props: ImageProps) => {
     borderRadius = '0',
     background = 'transparent',
     padding = '0',
-    boxShadow = 'none'
+    boxShadow = 'none',
+    id = '',
+    onClick,
+    style
   } = props;
 
   return (
@@ -31,12 +37,15 @@ export const Image = (props: ImageProps) => {
       alt={alt}
       height={height}
       width={width}
+      id={id}
+      onClick={onClick}
       style={{
         margin: margin,
         padding: padding,
         borderRadius: borderRadius,
         background: background,
-        boxShadow: boxShadow
+        boxShadow: boxShadow,
+        ...style
       }}
     />
   );

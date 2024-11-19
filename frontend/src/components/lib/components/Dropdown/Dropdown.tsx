@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from 'react';
 
-import { FormControl, MenuItem } from '@mui/material';
-import { SelectChangeEvent, SelectProps } from '@mui/material/Select';
+import { FormControl } from '@mui/material';
+import { SelectProps } from '@mui/material/Select';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-import { Text } from '../Text/Text';
 import { Input } from '../Input/Input';
 
-import { StyledSelect, menuProps, StyledStickyContainer } from './Dropdown.styles';
-import { highlightText } from './Dropdown.helpers';
+import { StyledSelect, menuProps, StyledStickyContainer, StyledBottomContainer } from './Dropdown.styles';
+
+import { Text } from '../Text/Text';
+import { DropdownItem } from './DropdownItem';
 
 interface DropdownProps extends SelectProps {
-  label: string;
+  label?: string;
   data: {
     name: string;
-    amount: string;
+    amount?: string;
   }[];
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
+  value: string | undefined;
+  setValue: (value: string) => void;
   searchField?: boolean;
+  bottomBtn?: {
+    label?: string;
+    action: () => void;
+  };
 }
 
-const NO_RESULTS_STRING = 'No results, try a different combination';
-
 export const Dropdown = (props: DropdownProps) => {
-  const { label, data, value, setValue, searchField, ...otherProps } = props;
+  const { label = '', data, value, setValue, searchField, bottomBtn, ...otherProps } = props;
 
   const [open, setOpen] = useState(false);
   const [state, setState] = useState(data);
@@ -41,8 +44,10 @@ export const Dropdown = (props: DropdownProps) => {
     setState(data);
   };
 
-  const handleChange = (event: SelectChangeEvent<unknown>) => {
-    setValue(event.target.value as string);
+  const handleChange = (name: string) => {
+    setValue(name);
+    handleClose();
+    setInputValue('');
   };
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,35 +68,34 @@ export const Dropdown = (props: DropdownProps) => {
         open={open}
         onOpen={handleOpen}
         onClose={handleClose}
-        MenuProps={menuProps(!!searchField)}
-        value={value}
-        onChange={handleChange}
-        displayEmpty
-        renderValue={() => (value ? value : label)}
+        data-testid="dropdown"
         IconComponent={ExpandMoreIcon}
+        MenuProps={menuProps(!!searchField)}
+        renderValue={() => (value ? value : label)}
         autoWidth
+        displayEmpty
         {...otherProps}
       >
         {searchField && (
           <StyledStickyContainer>
             <Input
               value={inputValue}
+              onChange={handleSearch}
               onCloseIconClick={resetInput}
               placeholder={`Search ${label}`}
-              searchField
-              onChange={handleSearch}
               onKeyDown={e => e.stopPropagation()}
               onClick={e => e.stopPropagation()}
+              searchField
               sx={theme => ({
                 width: 1,
-                color: theme.palette.common.white,
+                color: theme.palette.grey[500],
 
                 '&::before, ::after': {
-                  borderColor: theme.palette.common.white,
+                  borderColor: theme.palette.grey[500],
                   opacity: 0.3,
 
                   '&:hover': {
-                    borderColor: theme.palette.common.white
+                    borderColor: theme.palette.grey[500]
                   }
                 },
                 '& svg': { opacity: 0.3 }
@@ -99,23 +103,11 @@ export const Dropdown = (props: DropdownProps) => {
             />
           </StyledStickyContainer>
         )}
-        {state.length > 0 ? (
-          state.map(({ name, amount }, i) => (
-            <MenuItem key={i + name} value={name}>
-              <Text
-                text={inputValue ? highlightText(name, inputValue) : name}
-                type="button"
-                sx={{ marginRight: '20px', color: 'white' }}
-              />
-              <Text text={amount} type="tiny" sx={{ marginLeft: 'auto', color: 'white' }} />
-            </MenuItem>
-          ))
-        ) : (
-          <Text
-            type="smallNormal"
-            text={NO_RESULTS_STRING}
-            sx={theme => ({ color: theme.palette.common.white, margin: '2px 16px 8px 16px' })}
-          />
+        <DropdownItem state={state} inputValue={inputValue} selectedValue={value} handleChange={handleChange} />
+        {bottomBtn?.label && (
+          <StyledBottomContainer onClick={() => bottomBtn.action()}>
+            <Text text={bottomBtn?.label} color="primary" type="bodyBold" />
+          </StyledBottomContainer>
         )}
       </StyledSelect>
     </FormControl>

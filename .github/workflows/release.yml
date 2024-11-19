@@ -45,14 +45,20 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
         with:
           registry-type: public
-      - name: Tag image as latest-release
+      - name: Set TAG env var
         run: |
           echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
+      - name: Tag image as latest-release - private
+        run: |
           docker buildx imagetools create \
             --tag ${{ secrets.MON_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
+            ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
+      - name: Tag image as latest-release - public
+        run: |
+          docker buildx imagetools create \
             --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3) \
             --tag ${{ secrets.PUBLIC_IMAGE_NAME }}:latest-release \
-            ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
+            ${{ secrets.PUBLIC_IMAGE_NAME }}:${{ github.sha }}
       - name: Logout from Amazon ECR
         if: always()
         run: |
@@ -72,6 +78,9 @@ jobs:
       - name: Download task definition
         run: |
           aws ecs describe-task-definition --task-definition mon-commercial-staging --query taskDefinition > task-definition.json
+      - name: Set TAG env var
+        run: |
+          echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
       - name: Fill in the new image ID in the Amazon ECS task definition - app
         id: render-app-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1

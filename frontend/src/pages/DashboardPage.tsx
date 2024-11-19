@@ -1,10 +1,14 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import {
   MonitorSchema,
   useGetOrCreateDashboardApiV1DashboardsGet,
-  useRetrieveBackendVersionApiV1BackendVersionGet
+  useRetrieveBackendVersionApiV1BackendVersionGet,
+  CheckSchema,
+  MonitorCheckConfSchema,
+  MonitorCheckConf,
+  ModelManagmentSchema,
+  Frequency
 } from 'api/generated';
 
 import { Grid, Snackbar, Alert } from '@mui/material';
@@ -13,68 +17,71 @@ import { ModelList } from 'components/Dashboard/ModelList';
 import { DataIngestion } from 'components/Dashboard/DataIngestion';
 import { MonitorListHeader } from 'components/Dashboard/MonitorListHeader/MonitorListHeader';
 import { MonitorList } from 'components/Dashboard/MonitorList';
-import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
-import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { MonitorDialog } from 'components/Dashboard/MonitorDialog';
+import { AnalysisDrillDown } from 'components/AnalysisDrillDown';
 
 import { getParams } from 'helpers/utils/getParams';
-import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
 import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 import { ONE_MINUTE, THIRTY_SECONDS } from 'helpers/base/time';
+import useOnboarding from 'helpers/hooks/useOnboarding';
+import { CheckType } from 'helpers/types/check';
+import { onDrawerOpen } from 'components/AnalysisDrillDown/AnalysisDrillDown.helpers';
+import { DialogNames } from 'components/Dashboard/Dashboard.types';
+import { emptyModel } from 'helpers/hooks/useModels';
+import { FrequencyMap } from 'helpers/utils/frequency';
 
 const constants = { snackbarAlertMessage: 'Initial first load can take a few minutes, we are processing your data' };
 
-let TIMEOUT: NodeJS.Timeout;
+let timeout: NodeJS.Timeout;
 
 export const DashboardPage = () => {
-  const navigate = useNavigate();
   const { data: versionData } = useRetrieveBackendVersionApiV1BackendVersionGet();
   const {
     data: dashboard,
     isLoading: isDashboardLoading,
-    refetch
+    refetch: refetchMonitors
   } = useGetOrCreateDashboardApiV1DashboardsGet({
     query: {
       refetchOnWindowFocus: false,
       refetchInterval: ONE_MINUTE
     }
   });
-  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
+
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(+getParams()?.modelId || null);
+  const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
+  const [currentMonitor, setCurrentMonitor] = useState<MonitorSchema | null>(null);
+  const [currentModel, setCurrentModel] = useState<ModelManagmentSchema>(emptyModel);
+  const [currentCheck, setCurrentCheck] = useState<CheckSchema | null>(null);
+  const [currentDatasetName, setCurrentDatasetName] = useState<string | null>(null);
+  const [currentAdditionalKwargs, setCurrentAdditionalKwargs] = useState<MonitorCheckConfSchema | null>(null);
+  const [currentModelVersionId, setCurrentModelVersionId] = useState<number | null>(null);
+  const [currentTimeLabel, setCurrentTimeLabel] = useState<number | null>(null);
+  const [currentType, setCurrentType] = useState<CheckType>(null);
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [frequency, setFrequency] = useState<Frequency>(null as unknown as Frequency);
+  const [dialogName, setDialogName] = useState(DialogNames.CreateMonitor);
+
+  const handleOpenMonitorDialog = (dialogName: DialogNames, monitor?: MonitorSchema) => {
+    setCurrentMonitor(monitor || null);
+    setDialogName(dialogName);
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseMonitorDialog = () => {
+    setIsDialogOpen(false);
+    setTimeout(() => setCurrentMonitor(null), 100);
+  };
 
   const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
 
-  function refetchMonitors() {
-    refetch();
-  }
-
-  const [currentMonitor, setCurrentMonitor] = useState<MonitorSchema | null>(null);
-  const [selectedModelId, setSelectedModelId] = useState<number | null>(+getParams()?.modelId || null);
-  const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerName, setDrawerName] = useState(DrawerNames.CreateMonitor);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-
-  const handleOpenMonitorDrawer = (drawerName: DrawerNames, monitor?: MonitorSchema) => {
-    if (monitor) setCurrentMonitor(monitor);
-    setDrawerName(drawerName);
-    setIsDrawerOpen(true);
-  };
-
-  const handleCloseMonitorDrawer = useCallback(() => {
-    setCurrentMonitor(null);
-    setIsDrawerOpen(false);
-  }, []);
-
-  useEffect(() => {
-    if (dashboard?.monitors?.length === 0 && (onboardingEnabled || !isCloud)) {
-      navigate({ pathname: '/onboarding' });
-    }
-  }, [dashboard, onboardingEnabled]);
-
   useEffect(() => {
     if (!dashboard) {
-      TIMEOUT = setTimeout(() => setSnackbarOpen(true), THIRTY_SECONDS);
+      timeout = setTimeout(() => setSnackbarOpen(true), THIRTY_SECONDS);
     } else {
-      clearTimeout(TIMEOUT);
+      clearTimeout(timeout);
     }
   }, [dashboard]);
 
@@ -89,46 +96,104 @@ export const DashboardPage = () => {
     });
   }, [versionData]);
 
+  useOnboarding();
+
+  const handleDrawerOpen = useCallback(
+    (
+      datasetName: string,
+      versionName: string,
+      timeLabel: number,
+      additionalKwargs: MonitorCheckConfSchema | undefined,
+      checkInfo: MonitorCheckConf | undefined,
+      check: CheckSchema,
+      currentModel: ModelManagmentSchema
+    ) =>
+      onDrawerOpen(
+        datasetName,
+        versionName,
+        timeLabel,
+        additionalKwargs,
+        checkInfo,
+        check,
+        setIsDrawerOpen,
+        setCurrentType,
+        setCurrentAdditionalKwargs,
+        setCurrentDatasetName,
+        setCurrentModelVersionId,
+        setCurrentTimeLabel,
+        setCurrentCheck,
+        currentModel
+      ),
+    [currentModel.versions]
+  );
+
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+    setCurrentCheck(null);
+    setCurrentDatasetName(null);
+    setCurrentAdditionalKwargs(null);
+    setCurrentModelVersionId(null);
+    setCurrentTimeLabel(null);
+    setCurrentType(null);
+    setCurrentModel(emptyModel);
+  };
+
   return (
     <>
       <Grid
         container
         sx={{
           padding: '30px 0',
-          maxWidth: { xs: 'calc(100vw - 196px - 65px)', xl: 'calc(100vw - 237px - 65px)' }
+          maxWidth: { lg: '100vw', xl: '100vw - 280px' }
         }}
         spacing={{ md: 2.5, xl: 4 }}
       >
-        <Grid item md={6} lg={6} xl={4}>
+        <Grid item md={6} lg={6} xl={4} width="100%">
           <ModelList selectedModelId={selectedModelId} setSelectedModelId={setSelectedModelId} />
         </Grid>
-        <Grid item md={6} lg={6} xl={8}>
+        <Grid item md={6} lg={6} xl={8} width="100%" marginTop="24px">
           <DataIngestion modelId={selectedModelId} />
         </Grid>
-        <Grid item md={12}>
-          <MonitorListHeader onClick={handleOpenMonitorDrawer} />
+        <Grid item md={12} width="100%">
+          <MonitorListHeader onClick={handleOpenMonitorDialog} />
         </Grid>
-        <Grid item md={12}>
+        <Grid item md={12} width="100%">
           <MonitorList
             dashboard={dashboard}
             currentModelId={selectedModelId}
             currentMonitor={currentMonitor}
             setCurrentMonitor={setCurrentMonitor}
-            handleOpenMonitorDrawer={handleOpenMonitorDrawer}
+            handleOpenMonitorDialog={handleOpenMonitorDialog}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
             isLoading={isDashboardLoading}
+            onPointClick={handleDrawerOpen}
+            setFrequency={setFrequency}
+            setCurrentModel={setCurrentModel}
           />
         </Grid>
       </Grid>
-      <MonitorDrawer
+      <MonitorDialog
         monitor={currentMonitor}
         refetchMonitors={refetchMonitors}
-        drawerName={drawerName}
-        open={isDrawerOpen}
-        onClose={handleCloseMonitorDrawer}
+        dialogName={dialogName}
+        open={isDialogOpen}
+        onClose={handleCloseMonitorDialog}
         setMonitorToRefreshId={setMonitorToRefreshId}
         selectedModelId={selectedModelId}
+      />
+      <AnalysisDrillDown
+        modelName={currentModel.name}
+        datasetName={currentDatasetName}
+        frequency={FrequencyMap[frequency]}
+        check={currentCheck}
+        modelVersionId={currentModelVersionId}
+        open={isDrawerOpen}
+        onClose={handleDrawerClose}
+        onCloseIconClick={handleDrawerClose}
+        timeLabel={currentTimeLabel}
+        additionalKwargs={currentAdditionalKwargs}
+        type={currentType}
       />
       <Snackbar
         anchorOrigin={{ vertical: 'top', horizontal: 'left' }}

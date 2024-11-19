@@ -4,14 +4,14 @@ import { StyledButton, StyledContainer, StyledText } from 'components/lib';
 
 import { NativePlus } from 'assets/icon/icon';
 
-import { DrawerNames } from '../Dashboard.types';
+import { DialogNames } from '../Dashboard.types';
 
 interface MonitorListHeaderProps {
-  onClick: (monitorName: DrawerNames) => void;
+  onClick: (monitorName: DialogNames) => void;
 }
 
 export const MonitorListHeader = ({ onClick }: MonitorListHeaderProps) => {
-  const handleClick = () => onClick(DrawerNames.CreateMonitor);
+  const handleClick = () => onClick(DialogNames.CreateMonitor);
 
   return (
     <StyledContainer width="100%" flexDirection="row" justifyContent="space-between" alignItems="center">

@@ -44,8 +44,10 @@ export const AssignMembersToModelDialog = ({
     const result: number[] = [];
 
     if (currentModel) {
+      const currentModelIds = currentModel.members.map(m => m.id);
+
       membersList.forEach(({ id }) => {
-        if (currentModel.members.includes(id)) result.push(id);
+        if (currentModelIds?.includes(id)) result.push(id);
       });
     }
 

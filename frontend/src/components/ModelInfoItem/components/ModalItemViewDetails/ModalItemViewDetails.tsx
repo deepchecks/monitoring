@@ -2,7 +2,7 @@ import React from 'react';
 import { StyledModal, StyledModalCloseButton, StyledModalContent } from './ModalItemViewDetails.style';
 import { CloseIcon } from 'assets/icon/icon';
 import { ConnectedModelSchema } from 'api/generated';
-import { ModelDetails } from './components/ModelDetails';
+import { ModelDetails } from './ModelDetails';
 
 interface ModalItemDetailsProps {
   open: boolean;

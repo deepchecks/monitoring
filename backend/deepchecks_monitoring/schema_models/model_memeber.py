@@ -11,7 +11,7 @@
 """Module defining the model members ORM model."""
 import typing as t
 
-from sqlalchemy import Column, ForeignKey, Integer, UniqueConstraint
+import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.schema_models.base import Base
@@ -26,14 +26,15 @@ class ModelMember(Base):
     """ORM model for the model members."""
 
     __tablename__ = "model_members"
-    __table_args__ = (UniqueConstraint("user_id", "model_id"),)
+    __table_args__ = (sa.UniqueConstraint("user_id", "model_id"),)
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.Column(sa.Integer, nullable=False)
+    notify = sa.Column(sa.Boolean, default=True, server_default=sa.text("true"), nullable=False)
 
-    model_id = Column(
-        Integer,
-        ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
+    model_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
     model: Mapped["Model"] = relationship(

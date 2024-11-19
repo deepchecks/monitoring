@@ -75,8 +75,8 @@ Data can be uploaded in two ways:
     >>> model_name = 'my_model'  # Replace with your model name
     >>> model = dc_client.get_or_create_model(name=model_name, task_type='regression')
     Model my_model was successfully created!. Default checks, monitors and alerts added.
-    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction
-    >>> ref_dataset, _ = load_data(data_format='Dataset')
+    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions
+    >>> ref_dataset, _ = load_data_and_predictions(data_format='Dataset')
     >>> from deepchecks_client import create_schema, read_schema
     >>> schema_file_path = 'schema_file.yaml'
     >>> create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
@@ -93,8 +93,9 @@ Batch Upload
 .. doctest::
    :hide:
 
-    >>> _, prod_data = load_data(data_format='DataFrame')
-    >>> _, prod_predictions = load_pre_calculated_prediction()
+    >>> prod_data, prod_predictions = load_data_and_predictions(data_format='DataFrame', load_train=False,
+                                                                data_size=100_000)
+
 
 To upload a batch of data, use the
 :meth:`DeepchecksModelVersionClient.log_batch() <deepchecks_client.core.client.DeepchecksModelVersionClient.log_batch>`

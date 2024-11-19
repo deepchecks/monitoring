@@ -1,23 +1,24 @@
 import React, { useEffect } from 'react';
+
 import { Radio as MUIRadio } from '@mui/material';
 import RadioGroup from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { Text } from '../../Text/Text';
 
 import { paletteOptions } from '../../../theme/palette';
 
 export interface RadioProps {
-  state: any;
-  setState: (state: any) => void;
+  state: string | undefined;
+  setState: (state: string) => void;
   options: {
-    value: any;
+    value: string;
     label?: string;
   }[];
   formTitle?: string;
   disabled?: boolean;
-  defaultValue?: any;
+  defaultValue?: string;
   direction?: 'row' | 'column';
 }
 
@@ -34,24 +35,27 @@ export const Radio = (props: RadioProps) => {
 
   const isRow = direction === 'row';
 
-  const labelColor = (value: any) => state === value && (paletteOptions.primary as any).main;
+  const labelColor = (value: string) =>
+    state === value && paletteOptions.primary
+      ? paletteOptions.primary['main' as keyof typeof paletteOptions.primary]
+      : '';
 
   useEffect(() => {
     const setDefaultValue = () => defaultValue && setState(defaultValue);
 
     setDefaultValue();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <FormControl>
-      {formTitle && <Text type="bodyBold" text={formTitle} color={(paletteOptions.primary as any).main} />}
+      {formTitle && <Text type="bodyBold" text={formTitle} color={paletteOptions.grey?.[500]} />}
       <RadioGroup value={state} defaultValue={defaultValue} row={isRow}>
         {options.map((option, i) => (
           <FormControlLabel
             key={i}
             value={option.value}
             control={<MUIRadio disabled={disabled} />}
+            data-testid={`Radio${option.value}`}
             label={
               option.label && (
                 <Text

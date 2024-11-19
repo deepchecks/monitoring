@@ -1,6 +1,6 @@
 import React, { FC, useState } from 'react';
+
 import { Button } from '@mui/material';
-import * as Sentry from '@sentry/react';
 
 import { StyledDescription, StyledForm, StyledTextField, StyledUploadArea } from './ReportModal.style';
 
@@ -26,19 +26,6 @@ export const ReportModal: FC<ReportModalProps> = ({ open, onClose }) => {
       const reader = new FileReader();
 
       reader.onloadend = function () {
-        const result = reader.result as string;
-        const [imageData, path] = result.split(';');
-        const [type] = imageData.split(':');
-        const [currentPath] = path.split(',');
-
-        Sentry.configureScope(scope => {
-          scope.addAttachment({ filename: 'screenshot', data: currentPath, contentType: type });
-        });
-
-        Sentry.configureScope(scope => {
-          scope.clearAttachments();
-        });
-
         setInputDescription('');
         onClose();
       };

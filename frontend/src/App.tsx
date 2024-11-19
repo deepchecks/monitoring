@@ -1,7 +1,8 @@
-import React, { Suspense, lazy, ReactNode } from 'react';
+import React, { Suspense, ReactNode } from 'react';
+
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as Sentry from '@sentry/react';
 
 import { CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -11,7 +12,7 @@ import InitializationProvider from 'helpers/context/InitializationProvider';
 import { GlobalStateProvider } from './helpers/context/GlobalProvider';
 import { StatsTimeProvider } from './helpers/hooks/useStatsTime';
 import { UserProvider } from './helpers/hooks/useUser';
-import { lazyRetry, outLayoutRoutes, pathsInfo } from 'helpers/routes';
+import { outLayoutRoutes, pathsInfo } from 'helpers/routes';
 
 import { Loader } from 'components/base/Loader/Loader';
 import { StyledThemeProvider } from 'components/lib';
@@ -20,11 +21,7 @@ import Layout from 'components/Layout/Layout';
 import 'overlayscrollbars/overlayscrollbars.css';
 import './components/lib/assets/css/fonts.css';
 
-const NotFoundPage = lazy(() => lazyRetry(() => import('./pages/NotFoundPage')));
-
 const LazyWrapper = ({ children }: { children: ReactNode }) => <Suspense fallback={<Loader />}>{children}</Suspense>;
-
-const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -34,28 +31,15 @@ const App = () => {
     <InitializationProvider>
       <BrowserRouter>
         <StyledThemeProvider>
-          <Sentry.ErrorBoundary fallback={<NotFoundPage />}>
-            <QueryClientProvider client={queryClient}>
-              <CssBaseline />
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <GlobalStateProvider>
-                  <UserProvider>
-                    <StatsTimeProvider>
-                      <SentryRoutes>
-                        <Route element={<Layout />}>
-                          {flatPathsInfo.map(({ link, element: PageElement }) => (
-                            <Route
-                              key={link}
-                              path={link}
-                              element={
-                                <LazyWrapper>
-                                  <PageElement />
-                                </LazyWrapper>
-                              }
-                            />
-                          ))}
-                        </Route>
-                        {outLayoutRoutes.map(({ link, element: PageElement }) => (
+          <QueryClientProvider client={queryClient}>
+            <CssBaseline />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <GlobalStateProvider>
+                <UserProvider>
+                  <StatsTimeProvider>
+                    <Routes>
+                      <Route element={<Layout />}>
+                        {flatPathsInfo.map(({ link, element: PageElement }) => (
                           <Route
                             key={link}
                             path={link}
@@ -66,17 +50,28 @@ const App = () => {
                             }
                           />
                         ))}
-                      </SentryRoutes>
-                    </StatsTimeProvider>
-                  </UserProvider>
-                </GlobalStateProvider>
-              </LocalizationProvider>
-            </QueryClientProvider>
-          </Sentry.ErrorBoundary>
+                      </Route>
+                      {outLayoutRoutes.map(({ link, element: PageElement }) => (
+                        <Route
+                          key={link}
+                          path={link}
+                          element={
+                            <LazyWrapper>
+                              <PageElement />
+                            </LazyWrapper>
+                          }
+                        />
+                      ))}
+                    </Routes>
+                  </StatsTimeProvider>
+                </UserProvider>
+              </GlobalStateProvider>
+            </LocalizationProvider>
+          </QueryClientProvider>
         </StyledThemeProvider>
       </BrowserRouter>
     </InitializationProvider>
   );
 };
 
-export default Sentry.withProfiler(App);
+export default App;

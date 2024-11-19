@@ -11,7 +11,6 @@ import { StyledStepContainer, StyledStep } from '../AlertRuleDialog.styles';
 
 interface AlertRuleDialogContentProps {
   activeStep: number;
-  setActiveStep: React.Dispatch<React.SetStateAction<number>>;
   steps: any[];
   setNextButtonDisabled: React.Dispatch<React.SetStateAction<boolean>>;
   isDataAlert?: boolean;

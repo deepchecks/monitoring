@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { FormControlLabel, Switch, styled } from '@mui/material';
 
 import { paletteOptions } from '../../../theme/palette';
@@ -16,7 +17,9 @@ export interface ToggleProps {
 export const Toggle = (props: ToggleProps) => {
   const { label, disabled, labelPlacement = 'end', state, setState } = props;
 
-  const labelColor = state ? (paletteOptions.primary as any).main : paletteOptions.grey?.[400];
+  const labelColor = state
+    ? paletteOptions.primary?.['main' as keyof typeof paletteOptions.primary]
+    : paletteOptions.grey?.[400];
 
   const StyledFormControlLabel = styled(FormControlLabel)({
     marginRight: 0,
