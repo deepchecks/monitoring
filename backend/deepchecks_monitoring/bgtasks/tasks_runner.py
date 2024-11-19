@@ -29,7 +29,6 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE, TASK_RUNNER_LOCK
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
-from deepchecks_monitoring.utils.other import ExtendedAIOKafkaAdminClient
 
 try:
     from deepchecks_monitoring import ee
@@ -199,16 +198,6 @@ def execute_worker():
                 AlertsTask(),
                 MixpanelSystemStateEvent()
             ]
-
-            # Adding kafka related workers
-            if settings.kafka_host is not None:
-                # AIOKafka is spamming our logs, disable it for errors and warnings
-                logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)
-                kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
-                await kafka_admin.start()
-
-                # flake8: noqa: SC100
-                # workers.append(ModelVersionTopicDeletionWorker(kafka_admin))
 
             # Adding ee workers
             if with_ee:
