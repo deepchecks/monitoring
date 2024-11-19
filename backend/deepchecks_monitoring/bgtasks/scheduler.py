@@ -200,7 +200,7 @@ class AlertsScheduler:
                         except (SerializationError, DBAPIError) as error:
                             await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                                self.logger.warning('Monitor(id=%s) tasks enqueue failed', monitor.id)
+                                self.logger.is_serialization_error('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise
 
     async def run_organization_data_ingestion_alert(self, organization):
@@ -233,7 +233,7 @@ class AlertsScheduler:
                         # error is possible. In that case we just skip the monitor and try again next time.
                         except (SerializationError, DBAPIError) as error:
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                                self.logger.warning('Model(id=%s) tasks enqueue failed', model.id)
+                                self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
                                 raise
 
     async def run_object_storage_ingestion(self, organization):
@@ -252,17 +252,21 @@ class AlertsScheduler:
                 return
 
             time = pdl.now()
-            tasks = []
             for model in models:
                 if (model.obj_store_last_scan_time is None
                         or pdl.instance(model.obj_store_last_scan_time).add(hours=2) < time):
-                    tasks.append(dict(name=f'{organization.id}:{model.id}',
-                                      bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
-                                      params=dict(model_id=model.id, organization_id=organization.id)))
-            if len(tasks) > 0:
-                await session.execute(insert(Task).values(tasks)
-                                      .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
-                await session.commit()
+                    task = dict(name=f'{organization.id}:{model.id}',
+                                bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
+                                params=dict(model_id=model.id, organization_id=organization.id))
+                try:
+                    await session.execute(insert(Task).values(task)
+                                          .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+                    await session.commit()
+                except (SerializationError, DBAPIError) as error:
+                    await session.rollback()
+                    if isinstance(error, DBAPIError) and not is_serialization_error(error):
+                        self.logger.is_serialization_error('Monitor(id=%s) tasks enqueue failed', model.id)
+                        raise
 
 
 async def get_versions_hour_windows(
