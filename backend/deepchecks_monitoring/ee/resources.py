@@ -17,7 +17,6 @@ from ldclient import Context
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
 
-from deepchecks_monitoring.ee import utils
 from deepchecks_monitoring.ee.config import Settings, SlackSettings
 from deepchecks_monitoring.ee.features_control_cloud import CloudFeaturesControl
 from deepchecks_monitoring.ee.features_control_on_prem import OnPremFeaturesControl

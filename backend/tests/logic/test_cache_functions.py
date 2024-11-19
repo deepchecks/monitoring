@@ -35,7 +35,7 @@ async def test_clear_monitor_cache(resources_provider):
     # Assert
     assert len(cache_funcs.redis.keys()) == 200
 
- 
+
 @pytest.mark.asyncio
 async def test_delete_monitor_cache_by_timestamp(resources_provider, async_session):
     cache_funcs: CacheFunctions = resources_provider.cache_functions
