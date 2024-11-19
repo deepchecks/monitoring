@@ -157,6 +157,7 @@ class Settings(
     oauth_client_secret: str
     mixpanel_id: str | None
     enable_analytics: bool = True
+    parallel_check_executor_flag: bool = True
 
     init_local_ray_instance: str | None = None
     total_number_of_check_executor_actors: int = os.cpu_count() or 8

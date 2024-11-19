@@ -478,7 +478,6 @@ class ResourcesProvider(BaseResourcesProvider):
     def get_client_configuration(self) -> "dict[str, t.Any]":
         """Return configuration to be used in client side."""
         return {
-            "lauchdarklySdkKey": None,
             "environment": None,
             "mixpanel_id": None,
             "is_cloud": False,

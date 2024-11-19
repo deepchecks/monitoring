@@ -1,4 +1,7 @@
+from sqlalchemy import select
+
 from deepchecks_monitoring.features_control import FeaturesControl
+from deepchecks_monitoring.public_models import Billing, User
 
 
 class OnPremFeaturesControl(FeaturesControl):
@@ -6,12 +9,15 @@ class OnPremFeaturesControl(FeaturesControl):
     TODO: implement license check :(
     """
 
-    @property
-    def max_models(self) -> int:
-        return 9999
-
     async def get_allowed_models(self, session) -> int:
-        return 10
+        if self._allowed_models is None:
+            self._allowed_models = await session.scalar(
+                select(Billing.bought_models).where(Billing.organization_id == self.user.organization_id)
+            )
+        if self._allowed_models is None:
+            return 1
+
+        return self._allowed_models + 1
 
     @property
     def update_roles(self) -> bool:
@@ -38,20 +44,12 @@ class OnPremFeaturesControl(FeaturesControl):
         return 500_000
 
     @property
-    def custom_checks_enabled(self) -> bool:
-        return False
-
-    @property
     def data_retention_months(self) -> int:
         return 12
 
     @property
     def monthly_predictions_limit(self) -> int:
         return 10_000_000
-
-    @property
-    def sso_enabled(self) -> bool:
-        return False
 
     @property
     def multi_tenant(self) -> bool:

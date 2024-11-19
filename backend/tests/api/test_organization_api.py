@@ -118,11 +118,8 @@ def test_organization_available_features(
 
     data = response.json()
     assert isinstance(data, dict)
-    assert data["custom_checks_enabled"] is False
     assert data["data_retention_months"] == 12
-    assert data["max_models"] == 8
     assert data["monthly_predictions_limit"] == 10000000
-    assert data["sso_enabled"] is False
     assert data["rows_per_minute"] == ROWS_PER_MINUTE_LIMIT
 
 

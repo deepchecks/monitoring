@@ -49,7 +49,6 @@ class Settings(
 
     enviroment: str = 'dev'
     debug_mode: bool = False
-    lauchdarkly_sdk_key: str = ''
     access_audit: bool = False
     hotjar_sv: str = ''
     hotjar_id: str = ''

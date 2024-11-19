@@ -843,11 +843,9 @@ export const Frequency = {
  * Schema to be returned to the client for the features control.
  */
 export interface FeaturesSchema {
-  max_models: number;
   signup_enabled: boolean;
   slack_enabled: boolean;
   rows_per_minute: number;
-  custom_checks_enabled: boolean;
   data_retention_months: number;
   monthly_predictions_limit: number;
   sso_enabled: boolean;

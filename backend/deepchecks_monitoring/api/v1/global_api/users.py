@@ -93,7 +93,7 @@ async def update_complete_details(
         body: CompleteDetailsUpdateSchema,
         user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep,
-        resources_provider=ResourcesProviderDep
+        resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Complete user details for final login."""
     if body.new_organization_name is not None and body.accept_invite is True:
