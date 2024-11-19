@@ -54,8 +54,6 @@ try:
 except ImportError:
     with_ee = False
 
-# TODO: rename to MonitorScheduler
-
 
 class AlertsScheduler:
     """Alerts scheduler."""
