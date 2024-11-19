@@ -18,29 +18,11 @@ from deepchecks_monitoring.config import Settings as OpenSourceSettings
 
 __all__ = [
     'Settings',
-    'TelemetrySettings',
-    'StripeSettings',
     'SlackSettings'
 ]
 
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
-
-
-class TelemetrySettings(BaseDeepchecksSettings):
-    """Telemetry settings."""
-
-    instrument_telemetry: bool = False
-    sentry_dsn: t.Optional[str] = None
-    sentry_env: str = 'dev'
-
-
-class StripeSettings(BaseDeepchecksSettings):
-    """Stripe settings."""
-
-    stripe_secret_api_key: str = ''
-    stripe_public_api_key: str = ''
-    stripe_webhook_secret: str = ''
 
 
 class SlackSettings(BaseDeepchecksSettings):
@@ -61,9 +43,7 @@ class SlackSettings(BaseDeepchecksSettings):
 
 class Settings(
     OpenSourceSettings,
-    SlackSettings,
-    TelemetrySettings,
-    StripeSettings
+    SlackSettings
 ):
     """Settings for the deepchecks_monitoring package."""
 
@@ -71,6 +51,6 @@ class Settings(
     debug_mode: bool = False
     lauchdarkly_sdk_key: str = ''
     access_audit: bool = False
-    mixpanel_id: str = ''
     hotjar_sv: str = ''
     hotjar_id: str = ''
+    datadog_fe_token: str = ''

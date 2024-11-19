@@ -18,17 +18,17 @@ from time import perf_counter
 import anyio
 import pendulum as pdl
 import redis.exceptions as redis_exceptions
+import sqlalchemy as sa
 import uvloop
 from redis.asyncio import Redis, RedisCluster
-from sqlalchemy import case, func, update
 from sqlalchemy.cimmutabledict import immutabledict
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
+from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
-from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
-from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
+# from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
 from deepchecks_monitoring.config import DatabaseSettings, RedisSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
@@ -50,11 +50,10 @@ class TasksQueuer:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
-            redis_client,
+            redis_client: RedisCluster | Redis,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
-            run_interval,
-            retries_interval: int = 600
+            run_interval: int,
     ):
         self.resource_provider = resource_provider
         self.logger = logger
@@ -62,14 +61,34 @@ class TasksQueuer:
         self.redis = redis_client
 
         # Build the query once to be used later
-        intervals_by_type = case([
-            (Task.bg_worker_task == bg_worker.queue_name(), datetime.timedelta(seconds=bg_worker.delay_seconds()))
-            for bg_worker in workers
-        ], else_=datetime.timedelta(seconds=0))
-        retry_interval = Task.num_pushed * datetime.timedelta(seconds=retries_interval)
-        condition = Task.creation_time + intervals_by_type + retry_interval
-        self.query = update(Task).where(condition <= func.statement_timestamp())\
-            .values({Task.num_pushed: Task.num_pushed + 1}).returning(Task.id)
+        delay_by_type = sa.case(
+            [(
+                Task.bg_worker_task == bg_worker.queue_name(),
+                datetime.timedelta(seconds=bg_worker.delay_seconds())
+            ) for bg_worker in workers],
+            else_=datetime.timedelta(seconds=0)
+        )
+        retry_by_type = sa.case(
+            [(
+                Task.bg_worker_task == bg_worker.queue_name(),
+                datetime.timedelta(seconds=bg_worker.retry_seconds())
+            ) for bg_worker in workers],
+            else_=datetime.timedelta(seconds=200)
+        )
+
+        retry_expression = Task.num_pushed * retry_by_type
+        next_execution_time = Task.creation_time + delay_by_type + retry_expression
+
+        self.query = (
+            sa.update(Task)
+            .where(Task.id.in_((
+                sa.select(Task.id)
+                .where(next_execution_time <= sa.func.statement_timestamp())
+                .with_for_update()
+            )))
+            .values(num_pushed=Task.num_pushed + 1)
+            .returning(Task.id, Task.bg_worker_task, Task.num_pushed)
+        )
 
     async def run(self):
         """Run the main loop."""
@@ -104,14 +123,20 @@ class TasksQueuer:
             try:
                 # Push to sorted set. if task id is already in set then do nothing.
                 pushed_count = await self.redis.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
+                for task in tasks:
+                    task_id = task['id']
+                    worker = task['bg_worker_task']
+                    num_pushed = task['num_pushed']
+                    self.logger.info(f'pushing task {task_id} for {worker} that was pushed {num_pushed}')
                 return pushed_count
             except redis_exceptions.ConnectionError:
                 # If redis failed, does not commit the update to the db
+                self.logger.error('Failed connecting to redis')
                 await session.rollback()
         return 0
 
 
-class BaseWorkerSettings(DatabaseSettings, RedisSettings):
+class WorkerSettings(DatabaseSettings, RedisSettings):
     """Worker settings."""
 
     logfile: t.Optional[str] = None
@@ -125,16 +150,6 @@ class BaseWorkerSettings(DatabaseSettings, RedisSettings):
 
         env_file = '.env'
         env_file_encoding = 'utf-8'
-
-
-if with_ee:
-    class WorkerSettings(BaseWorkerSettings, ee.config.TelemetrySettings):
-        """Set of worker settings."""
-        pass
-else:
-    class WorkerSettings(BaseWorkerSettings):
-        """Set of worker settings."""
-        pass
 
 
 async def init_async_redis(redis_uri):
@@ -165,18 +180,14 @@ def execute_worker():
         # the telemetry collection. Adding here this import to fix this
         from deepchecks_monitoring.bgtasks import tasks_queuer  # pylint: disable=import-outside-toplevel
 
-        if with_ee:
-            if settings.sentry_dsn:
-                import sentry_sdk  # pylint: disable=import-outside-toplevel
-                sentry_sdk.init(
-                    dsn=settings.sentry_dsn,
-                    traces_sample_rate=0.1,
-                    environment=settings.sentry_env,
-                )
-                ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
-
-        workers = [ModelVersionTopicDeletionWorker, ModelVersionOffsetUpdate, ModelVersionCacheInvalidation,
-                   ModelDataIngestionAlerter, DeleteDbTableTask, AlertsTask]
+        workers = [
+            # ModelVersionTopicDeletionWorker,
+            ModelVersionCacheInvalidation,
+            ModelDataIngestionAlerter,
+            DeleteDbTableTask,
+            AlertsTask,
+            MixpanelSystemStateEvent
+        ]
 
         # Add ee workers
         if with_ee:

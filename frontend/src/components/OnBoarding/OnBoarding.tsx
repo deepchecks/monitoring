@@ -12,6 +12,7 @@ import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
 import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { removeStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 import DownloadNotebook from './components/DownloadNotebook';
 import ColabLink from './components/ColabLink';
@@ -32,6 +33,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const [apiToken, setApiToken] = useState('API_TOKEN');
 
   const isLastStep = activeStep === 3;
+  const isLocal = window.location.href.includes('localhost');
 
   const redirectToDashboard = () => window.location.replace('/');
 
@@ -64,6 +66,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
       if (res?.step < 4) {
         setActiveStep(res?.step);
       } else if (res?.step === 4) {
+        removeStorageItem(storageKeys.is_onboarding);
         redirectToDashboard();
       }
     }, 5000);
@@ -79,7 +82,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
               <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
-              <StyledCodeSnippet code={step.codeSnippet} width="800px" />
+              <StyledCodeSnippet code={step.codeSnippet} />
               {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
@@ -92,10 +95,10 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
         ))}
       </Stepper>
       <OnBoardingAdditionalContainer>
-        <DownloadNotebook dataType={dataType} reportOnboardingStep={reportOnboardingStep} />
         <DownloadScript dataType={dataType} token={apiToken} reportOnboardingStep={reportOnboardingStep} />
-        <ColabLink dataType={dataType} reportOnboardingStep={reportOnboardingStep} />
-        <GenerateToken regenerateApiToken={regenerateApiToken} />
+        <DownloadNotebook dataType={dataType} token={apiToken} reportOnboardingStep={reportOnboardingStep} />
+        <ColabLink dataType={dataType} reportOnboardingStep={reportOnboardingStep} isLocal={isLocal} />
+        <GenerateToken regenerateApiToken={regenerateApiToken} isLocal={isLocal} apiToken={apiToken} />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );

@@ -16,8 +16,7 @@ const Members = () => {
     isOrganizationMembersLoading,
     organizationMembersList,
     refetchOrganizationMembers,
-    setOrganizationMembersList,
-    sortedOrganizationMembers
+    setOrganizationMembersList
   } = useOrganizationMembers();
 
   const [showActionDialog, setShowActionDialog] = useState(false);
@@ -39,7 +38,7 @@ const Members = () => {
   return (
     <>
       <MembersHeader
-        initialMembersList={sortedOrganizationMembers}
+        initialMembersList={organizationMembersList}
         setMembersList={setOrganizationMembersList}
         handleOpenActionDialog={handleOpenActionDialog}
         removeMultipleMembersDisabled={!selectedMembers.length}

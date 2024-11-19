@@ -51,16 +51,13 @@ Creating a New Model
 In Deepchecks, a model represents a ML pipeline performing a single task in production. The model groups together
 all the model versions that are performing the same task, e.g. versions representing model retrains.
 
-Creating a model is our first and simplest step, as it only requires the model name, and a task type. The model name
-is a unique identifier for the model and will be shown in the deepchecks monitoring system and used to later add
-versions, monitors and alerts to that model. Models task types should be set according to the kind of task they perform
-and the type of data they run on. Possible task types are:
+Creating a model is our first and simplest step, as it only requires the model name, and a task type.
+The model name is a unique identifier for the model in the deepchecks monitoring system and used to later add
+versions, monitors and alerts to that model. Possible task types are:
 
-- ``binary`` - Binary classification on tabular data
-- ``multiclass`` - Multiclass classification on tabular data
-- ``regression`` - Regression on tabular data
-- ``vision_classification`` - Classification on image data
-- ``vision_detection`` - Object detection on image data
+- ``binary`` - Binary classification
+- ``multiclass`` - Multiclass classification
+- ``regression`` - Regression
 
 .. doctest::
 
@@ -111,18 +108,18 @@ Apart from the mandatory ``name`` argument, there are a couple of other importan
   the `"Schema File" section <#schema-file>`__ for more details.
 - ``feature_importance`` (recommended) - A dict or pandas Series containing the feature importance of the model. See
   the `"Feature Importance" section <#feature-importance>`__ for more details.
-- ``model_classes`` (recommended) - An alphanumerically sorted list of the names of classes used by the model. This is
-  only relevant for classification models. Deepchecks uses this list to know which classes the model was trained on and
-  in what order they appear in the model's predicted probability array. This is mandatory for cases in which not all
-  possible labels are present in some window of the production data.
+- ``model_classes`` (recommended for classification tasks) - An alphanumerically sorted list of the names of
+  possible label classes known to the model. Deepchecks uses this list to map the model's predicted probabilities
+  array to the correct label classes. This is mandatory in case we wish to supply model probabilities for either
+  the reference or production data.
 
 An example of creating a model version (for a regression model, so ``model_classes`` is not needed):
 
 .. doctest::
    :hide:
 
-    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction
-    >>> ref_dataset, _ = load_data(data_format='Dataset')
+    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions
+    >>> ref_dataset, _ = load_data_and_predictions(data_format='Dataset')
     >>> from deepchecks_client import create_schema, read_schema
     >>> schema_file_path = 'schema_file.yaml'
     >>> create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
@@ -161,11 +158,9 @@ The schema file must be in the structure demonstrated in the example below:
 
 Essentially the YAML file is a dictionary with two keys: ``features`` and ``additional_data``. The ``features`` key
 contains a dictionary of the features in the data, and their types. The ``additional_data`` is the same for columns that
-are not used by the model itself - for e.g. metadata columns (such as user id, ip address, demographic data not
-used as a feature and so on). Columns with special roles, such as the label and
-index columns, should not appear in the schema file. While the data must have a main index that is unique for each row
-and is **not** part of the schema file, the ``additional_data`` in the schema can denote secondary indices, such as
-a user id.
+are not used by the model itself - for e.g. metadata columns (such as user id, ip address, demographic data, etc...).
+Columns with special roles, such as the label and
+index columns, should not appear in the schema file.
 
 The column types can be one of the following:
 
@@ -175,6 +170,8 @@ The column types can be one of the following:
 - ``boolean`` - A boolean column (True or False)
 - ``text`` - A text column - usually used to describe a metadata column containing text
 
+Automatically Generate a Schema File
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We'll show an example for using this method on the
 `Airbnb rent regression dataset <https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data>`__, in which
 the rent of the Airbnb unit is predicted from a set of features describing the rental unit. We'll also be using
@@ -187,9 +184,9 @@ In the following example we'll use an already existing dataset object.
 
 .. doctest::
 
-    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction
+    >>> from deepchecks.tabular.datasets.regression.airbnb import load_data_and_predictions
 
-    >>> ref_dataset, _ = load_data(data_format='Dataset')
+    >>> ref_dataset, ref_predictions = load_data_and_predictions(data_format='Dataset')
 
     >>> from deepchecks_client import create_schema, read_schema
     >>> schema_file_path = 'schema_file.yaml'
@@ -240,13 +237,20 @@ Feature Importance
 ------------------
 
 Deepchecks uses feature importance to prioritize the display of features
-within checks and to weigh the drift of different features among other things. While passing feature importance isn't
+within checks and to weight the drift of different features among other things. While passing feature importance isn't
 mandatory, the quality of the displayed results and alerts that can be received will be significantly better if feature
 importance is provided.
 
 Feature importance can either be a dict of feature names to their importance, or a pandas Series with the feature names
 as the index and the importance as the values. The importance is a positive numeric value, normalized such that the sum
-of the values for all of the features is 1.
+of the values for all of the features is 1. You can set the feature importance for a model version using the
+:func:`set_feature_importance <deepchecks_client.tabular.DeepchecksModelVersionClient.set_feature_importance>` method:
+
+.. doctest::
+    :options: +SKIP
+
+    >>> model.set_feature_importance(feature_importance)
+    Feature importance of v1 model version was updated.
 
 If you do not have the feature importance for your features ready, you can use deepchecks OSS built-in
 feature importance calculation method:
@@ -264,7 +268,7 @@ Uploading a Reference Dataset
 =============================
 
 Reference data is a dataset to which we wish to compare our production data stream for a given model version. Providing
-reference data is optional, yet many important :ref:`checks <deepchecks:general__deepchecks_hierarchyy>` such as
+reference data is optional, yet many important :ref:`checks <deepchecks:general__deepchecks_hierarchy>` such as
 :ref:`Feature Drift (Tabular Version) <deepchecks:tabular__feature_drift>`
 cannot run without it.
 
@@ -286,12 +290,6 @@ Apart from the dataset itself that contains the features, metadata and labels, w
    better drift scores on the model predictions.
 
 To upload reference data for the previously created version, simply run:
-
-.. doctest::
-   :hide:
-
-    >>> from deepchecks.tabular.datasets.regression.airbnb import load_pre_calculated_prediction
-    >>> ref_predictions, _ = load_pre_calculated_prediction()
 
 .. doctest::
 

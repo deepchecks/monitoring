@@ -1,35 +1,58 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
-import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete, DashboardSchema } from 'api/generated';
-import useModels from 'helpers/hooks/useModels';
+import {
+  MonitorSchema,
+  useDeleteMonitorApiV1MonitorsMonitorIdDelete,
+  DashboardSchema,
+  CheckSchema,
+  MonitorCheckConf,
+  MonitorCheckConfSchema,
+  ModelManagmentSchema,
+  Frequency
+} from 'api/generated';
 
 import { Loader } from 'components/base/Loader/Loader';
 import { MonitorsGroup } from './components/MonitorsGroup';
 import { DeleteMonitor } from './components/DeleteMonitor';
 
-import { DrawerNames } from '../Dashboard.types';
+import useModels from 'helpers/hooks/useModels';
+import { DialogNames } from '../Dashboard.types';
 import { SetStateType } from 'helpers/types';
 
 interface MonitorsListProps {
   dashboard: DashboardSchema | undefined;
   currentModelId: number | null;
   currentMonitor: MonitorSchema | null;
+  setFrequency: (frequency: Frequency) => void;
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
-  handleOpenMonitorDrawer: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
+  handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
   isLoading?: boolean;
+  setCurrentModel: React.Dispatch<React.SetStateAction<ModelManagmentSchema>>;
+  onPointClick: (
+    datasetName: string,
+    versionName: string,
+    timeLabel: number,
+    additionalKwargs: MonitorCheckConfSchema | undefined,
+    checkInfo: MonitorCheckConf | undefined,
+    check: CheckSchema,
+    currentModel: ModelManagmentSchema
+  ) => void;
 }
 
 export const MonitorList = ({
   dashboard,
   currentModelId,
   currentMonitor,
+  setFrequency,
   setCurrentMonitor,
-  handleOpenMonitorDrawer,
+  handleOpenMonitorDialog,
   monitorToRefreshId,
   setMonitorToRefreshId,
-  isLoading
+  isLoading,
+  onPointClick,
+  setCurrentModel
 }: MonitorsListProps) => {
   const { models, getCurrentModel } = useModels();
   const { mutateAsync: DeleteMonitorById } = useDeleteMonitorApiV1MonitorsMonitorIdDelete();
@@ -37,7 +60,7 @@ export const MonitorList = ({
   const dashboardMonitors = useMemo(
     () =>
       (dashboard?.monitors || []).sort((a, b) =>
-        getCurrentModel(a.check.model_id).name.localeCompare(getCurrentModel(b.check.model_id).name)
+        getCurrentModel(a.check.model_id).name?.localeCompare(getCurrentModel(b.check.model_id).name)
       ),
     [dashboard?.monitors, getCurrentModel]
   );
@@ -59,8 +82,7 @@ export const MonitorList = ({
 
     await DeleteMonitorById({ monitorId: currentMonitor.id });
 
-    const filtered = monitors.filter(mon => mon.id !== currentMonitor.id);
-    setMonitors(filtered);
+    setMonitors(monitors.filter(mon => mon.id !== currentMonitor.id));
     setCurrentMonitor(null);
   };
 
@@ -74,11 +96,14 @@ export const MonitorList = ({
             key={model.id}
             model={model}
             monitors={monitors.filter(mon => mon.check.model_id === model.id)}
-            handleOpenMonitorDrawer={handleOpenMonitorDrawer}
+            handleOpenMonitorDialog={handleOpenMonitorDialog}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
             setCurrentMonitor={setCurrentMonitor}
             setIsDeleteMonitorDialogOpen={setIsDeleteMonitorDialogOpen}
+            onPointClick={onPointClick}
+            setFrequency={setFrequency}
+            setCurrentModel={setCurrentModel}
           />
         ))
       )}

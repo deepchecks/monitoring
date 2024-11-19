@@ -7,8 +7,8 @@ import useUser from 'helpers/hooks/useUser';
 import { MenuItem } from '@mui/material';
 
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
-import { MembersActionDialogInput, MembersActionDialogDropdown } from './MembersActionDialogInput';
 import { StyledDialog } from 'components/lib';
+import { BaseInput, BaseDropdown } from 'components/base/InputDropdown/InputDropdown';
 
 import { MembersActionDialogWithMember } from '../Members.type';
 import { constants } from '../members.constants';
@@ -86,11 +86,11 @@ export const EditMember = ({ member, open, closeDialog, refetchMembers }: Member
       submitButtonDisabled={fetching}
     >
       <MembersActionDialogContentLayout>
-        <MembersActionDialogInput label={nameInputLabel} value={name} onChange={handleNameChange} disabled />
-        <MembersActionDialogInput label={emailInputLabel} value={email} onChange={handleEmailChange} disabled />
+        <BaseInput inputLabel={nameInputLabel} value={name} onChange={handleNameChange} disabled />
+        <BaseInput inputLabel={emailInputLabel} value={email} onChange={handleEmailChange} disabled />
         {isOwner && availableFeatures?.update_roles && (
-          <MembersActionDialogDropdown
-            label={role}
+          <BaseDropdown
+            inputLabel={role}
             value={selectValue}
             onChange={e => setSelectValue(e.target.value as RoleEnumWithMember)}
           >
@@ -99,7 +99,7 @@ export const EditMember = ({ member, open, closeDialog, refetchMembers }: Member
                 {val}
               </MenuItem>
             ))}
-          </MembersActionDialogDropdown>
+          </BaseDropdown>
         )}
       </MembersActionDialogContentLayout>
     </StyledDialog>

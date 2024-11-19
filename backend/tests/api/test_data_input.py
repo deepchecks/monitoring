@@ -225,7 +225,7 @@ async def test_log_labels_non_existing_samples(
         model_id=classification_model["id"],
         data=[{
             "_dc_sample_id": "not exists",
-            "c": 0
+            "_dc_label": "0"
         }]
     )
     # Assert

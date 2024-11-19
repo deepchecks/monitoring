@@ -171,7 +171,17 @@ def create_application(
 
     @app.on_event("startup")
     async def app_startup():
-        if app.state.data_ingestion_backend.use_kafka:
+        settings = t.cast(Settings, app.state.settings)
+        ingestion_backend = app.state.data_ingestion_backend
+        resources_provider = t.cast(ResourcesProvider, app.state.resources_provider)
+
+        if not settings.is_cloud or settings.is_on_prem:
+            if resources_provider.is_analytics_enabled:
+                async with resources_provider.create_async_database_session() as session:
+                    from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
+                    await MixpanelSystemStateEvent.enqueue_task(session=session)
+
+        if ingestion_backend.use_kafka:
             app.state.ingestion_task = asyncio.create_task(app.state.data_ingestion_backend.run_data_consumer())
 
             def auto_removal(task):  # pylint: disable=unused-argument
@@ -193,24 +203,6 @@ def create_application(
         if settings.is_cloud:
             app.include_router(ee.api.v1.cloud_router, dependencies=[Depends(LicenseCheckDependency())])
 
-        # Configure telemetry
-        if settings.sentry_dsn:
-            import sentry_sdk
-
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sampler=ee.utils.sentry.traces_sampler,
-                environment=settings.sentry_env,
-                before_send_transaction=ee.utils.sentry.sentry_send_hook
-            )
-            # Ignoring this logger since it can spam sentry with errors
-            sentry_sdk.integrations.logging.ignore_logger("aiokafka.cluster")
-            ee.utils.telemetry.collect_telemetry(DataIngestionBackend)
-
-        if settings.stripe_secret_api_key:
-            import stripe
-            stripe.api_key = settings.stripe_secret_api_key
-
         if settings.debug_mode:
             app.add_middleware(ee.middlewares.ProfilingMiddleware)
 
@@ -225,5 +217,7 @@ def create_application(
 
     # AIOKafka is spamming our logs, disable it for errors and warnings
     logging.getLogger("aiokafka.cluster").setLevel(logging.CRITICAL)
+
+    logger.info("FastAPI Application created")
 
     return app

@@ -12,18 +12,18 @@ const StyledLabel = styled(InputLabel)(({ theme }) => ({
 }));
 
 const StyledOutlinedInput = styled(OutlinedInput)(({ theme }) => ({
-  color: theme.palette.grey[400],
+  color: theme.palette.grey[500],
   '& input': { padding: '10px 12px' }
 }));
 
 const StyledSearchField = styled(MUIInput)(({ theme }) => ({
   fontWeight: 700,
   fontSize: '14px',
-  color: theme.palette.grey[400],
+  color: theme.palette.grey[500],
   '& input': { padding: '10px 12px 10px 0' }
 }));
 
-interface InputProps extends MUIInputProps {
+export interface InputProps extends MUIInputProps {
   value: string;
   onCloseIconClick?: () => void;
   searchField?: boolean;

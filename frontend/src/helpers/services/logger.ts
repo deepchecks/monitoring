@@ -1,5 +1,3 @@
-import * as Sentry from '@sentry/react';
-
 import pino from 'pino';
 
 const logger = (() =>
@@ -16,10 +14,6 @@ const logger = (() =>
 
           if (isDebug) {
             console[translatedLevel](...messages);
-          } else if (translatedLevel === 'error') {
-            Sentry.captureException(messages);
-          } else {
-            Sentry.captureMessage(translatedLevel, ...messages);
           }
         }
       }

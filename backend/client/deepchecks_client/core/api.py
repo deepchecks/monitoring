@@ -91,7 +91,7 @@ class API:
             The response object.
         """
         if raise_on_status:
-            maybe_raise(self.session.get('say-hello'), msg='Server not available.\n{error}')
+            maybe_raise(self.session.get('say-hello'))
         else:
             return self.session.get('say-hello')
 
@@ -103,8 +103,7 @@ class API:
         str : backend version string
         """
         payload = maybe_raise(
-            self.session.get('backend-version'),
-            msg='Server not available.\n{error}'
+            self.session.get('backend-version')
         ).json()
         return payload['version']
 

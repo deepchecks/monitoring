@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from deepchecks_monitoring.monitoring_utils import make_oparator_func
+from deepchecks_monitoring.monitoring_utils import configure_logger, make_oparator_func
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -26,15 +26,19 @@ from deepchecks_monitoring.schema_models.monitor import Frequency, as_pendulum_d
 from deepchecks_monitoring.utils import database
 from deepchecks_monitoring.utils.alerts import Condition
 
-__all__ = ["ModelDataIngestionAlerter"]
+__all__ = ['ModelDataIngestionAlerter']
 
 
-QUEUE_NAME = "model data ingestion alerter"
+QUEUE_NAME = 'model data ingestion alerter'
 DELAY = 60
 
 
 class ModelDataIngestionAlerter(BackgroundWorker):
     """Worker that alerts about data ingestion stats in relation to a model."""
+
+    def __init__(self):
+        super().__init__()
+        self.logger = configure_logger(self.__class__.__name__)
 
     @classmethod
     def queue_name(cls) -> str:
@@ -44,14 +48,17 @@ class ModelDataIngestionAlerter(BackgroundWorker):
     def delay_seconds(cls) -> int:
         return DELAY
 
-    async def run(self, task: "Task",
+    async def run(self, task: 'Task',
                   session: AsyncSession,  # pylint: disable=unused-argument
                   resources_provider: ResourcesProvider,
                   lock):
-        alert_rule_id = task.params["alert_rule_id"]
-        org_id = task.params["organization_id"]
-        end_time = task.params["end_time"]
-        start_time = task.params["start_time"]
+        alert_rule_id = task.params['alert_rule_id']
+        org_id = task.params['organization_id']
+        end_time = task.params['end_time']
+        start_time = task.params['start_time']
+
+        self.logger.info({'message': 'entered job', 'worker name': str(type(self)),
+                          'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})
 
         organization_schema = (await session.execute(
             sa.select(Organization.schema_name).where(
@@ -66,7 +73,7 @@ class ModelDataIngestionAlerter(BackgroundWorker):
 
         await database.attach_schema_switcher_listener(
             session=session,
-            schema_search_path=[organization_schema, "public"]
+            schema_search_path=[organization_schema, 'public']
         )
 
         alert_rule: DataIngestionAlertRule = (
@@ -86,8 +93,8 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         pdl_start_time = as_pendulum_datetime(start_time)
         pdl_end_time = as_pendulum_datetime(end_time)
 
-        def truncate_date(col, agg_time_unit: str = "day"):
-            return sa.func.cast(sa.func.extract("epoch", sa.func.date_trunc(agg_time_unit, col)), sa.Integer)
+        def truncate_date(col, agg_time_unit: str = 'day'):
+            return sa.func.cast(sa.func.extract('epoch', sa.func.date_trunc(agg_time_unit, col)), sa.Integer)
 
         def sample_id(columns):
             return getattr(columns, SAMPLE_ID_COL)
@@ -103,33 +110,36 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         if not tables:
             return
 
+        self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
+                          'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})
+
         labels_table = model.get_sample_labels_table(session)
         # Get all samples within time window from all the versions
         data_query = sa.union_all(*(
             sa.select(
-                sample_id(table.c).label("sample_id"),
+                sample_id(table.c).label('sample_id'),
                 truncate_date(sample_timestamp(table.c),
-                              freq.value.lower()).label("timestamp")
+                              freq.value.lower()).label('timestamp')
             ).where(
                 sample_timestamp(table.c) <= pdl_end_time,
                 sample_timestamp(table.c) > pdl_start_time
             ).distinct()
             for table in tables)
         )
-        joined_query = sa.select(sa.literal(model.id).label("model_id"),
+        joined_query = sa.select(sa.literal(model.id).label('model_id'),
                                  data_query.c.sample_id,
                                  data_query.c.timestamp,
-                                 sa.func.cast(sample_label(labels_table.c), sa.String).label("label")) \
+                                 sa.func.cast(sample_label(labels_table.c), sa.String).label('label')) \
             .join(labels_table, onclause=data_query.c.sample_id == sample_id(labels_table.c), isouter=True)
 
         rows = (await session.execute(
             sa.select(
                 joined_query.c.model_id,
                 joined_query.c.timestamp,
-                sa.func.count(joined_query.c.sample_id).label("count"),
-                sa.func.count(sa.func.cast(joined_query.c.label, sa.String)).label("label_count"))
+                sa.func.count(joined_query.c.sample_id).label('count'),
+                sa.func.count(sa.func.cast(joined_query.c.label, sa.String)).label('label_count'))
             .group_by(joined_query.c.model_id, joined_query.c.timestamp)
-            .order_by(joined_query.c.model_id, joined_query.c.timestamp, "count"),
+            .order_by(joined_query.c.model_id, joined_query.c.timestamp, 'count'),
         )).fetchall()
 
         pendulum_freq = freq.to_pendulum_duration()
@@ -156,3 +166,6 @@ class ModelDataIngestionAlerter(BackgroundWorker):
 
         await session.execute(sa.delete(Task).where(Task.id == task.id))
         await session.commit()
+
+        self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
+                          'task': task.id, 'alert_rule_id': alert_rule_id, 'org_id': org_id})

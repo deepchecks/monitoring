@@ -1,8 +1,6 @@
 import React, { ReactNode, forwardRef } from 'react';
 import { Box, BoxProps, useTheme } from '@mui/material';
 
-import { isDarkMode } from '../../theme/darkMode.helpers';
-
 export interface ContainerProps extends BoxProps {
   type?: 'card' | 'bar' | 'bg';
   children?: ReactNode | ReactNode[];
@@ -20,6 +18,7 @@ export const Container = forwardRef((props: ContainerProps, ref) => {
     width = '100%',
     gap = '8px',
     borderRadius = '12px',
+    boxShadow = 'none',
     ...otherProps
   } = props;
 
@@ -28,11 +27,11 @@ export const Container = forwardRef((props: ContainerProps, ref) => {
   const bgToUse = () => {
     switch (type) {
       case 'bg':
-        return isDarkMode ? theme.palette.grey[800] : theme.palette.grey[100];
+        return theme.palette.grey[100];
       case 'bar':
-        return isDarkMode ? theme.palette.grey[700] : theme.palette.grey[200];
+        return theme.palette.grey[200];
       case 'card':
-        return isDarkMode ? theme.palette.common.black : theme.palette.common.white;
+        return theme.palette.common.white;
       default:
         return background;
     }
@@ -46,6 +45,7 @@ export const Container = forwardRef((props: ContainerProps, ref) => {
       width={width}
       gap={gap}
       borderRadius={borderRadius}
+      boxShadow={type === 'card' ? `0 0 5px 0 ${theme.palette.grey[200]}` : boxShadow}
       sx={{ background: bgToUse() }}
       ref={ref}
       {...otherProps}

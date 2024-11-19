@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
+
+import { Box } from '@mui/material';
+
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { ModelManagmentSchema, ConnectedModelSchema } from 'api/generated';
-
-import { Box } from '@mui/material';
 
 import NoDataError from './NoDataError/NoDataError';
 
@@ -21,15 +23,16 @@ import {
 } from './ModelItem.style';
 
 import { handleSetParams } from 'helpers/utils/getParams';
+
 import { constants } from '../../../dashboard.constants';
 
 dayjs.extend(localizedFormat);
 
 interface ModelItemProps {
   activeModel: boolean;
-  onModelClick: (model: ModelManagmentSchema) => void;
   model: ModelManagmentSchema;
   connectedModelsMap: Record<string, ConnectedModelSchema>;
+  onModelClick: (model: ModelManagmentSchema) => void;
 }
 
 const { lastDataUpdate } = constants.modelList.modelItem;
@@ -38,6 +41,7 @@ export function ModelItem({ activeModel, onModelClick, model, connectedModelsMap
   const navigate = useNavigate();
 
   const { id, name, latest_time, alerts_count, max_severity, has_data } = model;
+
   const pendingRows = connectedModelsMap[id]?.n_of_pending_rows;
 
   const handleAlertClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -45,12 +49,12 @@ export function ModelItem({ activeModel, onModelClick, model, connectedModelsMap
     navigate({ pathname: '/alerts', search: handleSetParams('modelId', id, false) });
   };
 
-  const handleModelClick = () => {
-    onModelClick(model);
-  };
+  useEffect(() => {
+    activeModel && onModelClick(model);
+  }, [activeModel]);
 
   return (
-    <StyledContainer active={activeModel} onClick={handleModelClick} autoFocus={activeModel}>
+    <StyledContainer active={activeModel} onClick={() => onModelClick(model)} autoFocus={activeModel}>
       <StyledModelInfo>
         <Box>
           <StyledModelName>{name}</StyledModelName>

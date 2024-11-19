@@ -61,6 +61,43 @@ async def test_classification_log(
     assert stats['a'] == {'max': 3, 'min': 2}
     assert stats['c'] == {'max': 1, 'min': -1}
 
+@pytest.mark.asyncio
+async def test_classification_log_bool(
+    multiclass_model_version_client_with_bool: DeepchecksModelVersionClient,
+    async_session: AsyncSession
+):
+    multiclass_model_version_client_with_bool.log_sample(
+        sample_id='1',
+        prediction='2',
+        prediction_proba=[0.1, 0.3, 0.6],
+        values={'a': 2, 'b': True, 'c': 1, 'my_bool': None}
+    )
+    multiclass_model_version_client_with_bool.log_sample(
+        sample_id='2',
+        prediction='1',
+        prediction_proba=[0.1, 0.6, 0.1],
+        values={'a': 3, 'b': 1, 'c': -1, 'my_bool': 0}
+    )
+    multiclass_model_version_client_with_bool.log_sample(
+        sample_id='3',
+        prediction='0',
+        prediction_proba=[0.1, 0.6, 0.1],
+        values={'a': 2, 'b': 0, 'c': 0, 'my_bool': 1}
+    )
+
+    multiclass_model_version_client_with_bool.send()
+
+    model_version = await async_session.get(
+        ModelVersion,
+        multiclass_model_version_client_with_bool.model_version_id
+    )
+
+    stats = model_version.statistics
+    assert set(stats['_dc_prediction']['values']) == {'0', '1', '2'}
+    assert set(stats['b']['values']) == {False, True}
+    assert set(stats['my_bool']['values']) == {False, True}
+    assert stats['a'] == {'max': 3, 'min': 2}
+    assert stats['c'] == {'max': 1, 'min': -1}
 
 @pytest.mark.asyncio
 async def test_regression_w_date_log(

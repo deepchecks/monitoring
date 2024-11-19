@@ -26,15 +26,32 @@ interface DataIngestionProps {
   modelId: number | null;
 }
 
-const LABELS_ARR = ['Samples', 'Labels', 'Missing Labels'];
+interface StorageCurrentTime {
+  id: string;
+  label: string;
+  value: number;
+}
+
+const LABELS_ARR = ['Samples', 'Labels', 'Missing Labels'] as const;
+type SelectLabels = typeof LABELS_ARR[number];
 
 export const DataIngestion = ({ modelId }: DataIngestionProps) => {
-  const [selectedPointType, setSelectedPointType] = useState<string>('Samples');
+  const [selectedPointType, setSelectedPointType] = useState<SelectLabels>(LABELS_ARR[0]);
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
   const [minTimeUnit, setMinTimeUnit] = useState<TimeUnit>('day');
   const [timeValue, setTimeValue] = useState(frequencyValues.DAY);
 
   const { graphData, isLoading } = useDataIngestion(modelId, selectedPointType, timeValue);
+
+  const handleMinTimeUnit = (value: number) => {
+    if (value <= frequencyValues.HOUR) {
+      setMinTimeUnit('minute');
+    } else if (value <= frequencyValues.DAY) {
+      setMinTimeUnit('hour');
+    } else {
+      setMinTimeUnit('day');
+    }
+  };
 
   const handleTime = (value: unknown) => {
     if (typeof value !== 'string' && typeof value !== 'number') return;
@@ -42,18 +59,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
     const newTimeValue = +value;
     const newTimeIndex = timeOptions.findIndex(time => time.value === newTimeValue);
 
-    if (newTimeValue <= frequencyValues.HOUR) {
-      setMinTimeUnit('minute');
-    } else if (newTimeValue <= frequencyValues.DAY) {
-      setMinTimeUnit('hour');
-    } else if (newTimeValue <= frequencyValues.WEEK) {
-      setMinTimeUnit('day');
-    } else if (newTimeValue <= frequencyValues.MONTH) {
-      setMinTimeUnit('week');
-    } else {
-      setMinTimeUnit('month');
-    }
-
+    handleMinTimeUnit(newTimeValue);
     setTimeValue(newTimeValue);
     setCurrentTime(timeOptions[newTimeIndex].id);
   };
@@ -62,9 +68,10 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
     const storageCurrentTime = getStorageItem(storageKeys.dataIngestionTimeFilter);
 
     if (storageCurrentTime) {
-      const parsedCurrentTime = JSON.parse(storageCurrentTime);
+      const parsedCurrentTime: StorageCurrentTime = JSON.parse(storageCurrentTime);
 
       setCurrentTime(parsedCurrentTime.id);
+      handleMinTimeUnit(parsedCurrentTime.value);
       setTimeValue(parsedCurrentTime.value);
     }
   }, []);
@@ -72,14 +79,14 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   useEffect(() => setStorageItem(storageKeys.dataIngestionTimeFilter, JSON.stringify(currentTime)), [currentTime]);
 
   return (
-    <StyledDataIngestionContainer type="card">
+    <StyledDataIngestionContainer type="card" minWidth="410px">
       <StyledHeader>
         <StyledTitle>Samples status</StyledTitle>
         <StyledFiltersContainer>
           <CustomStyledSelect
             value={selectedPointType}
             size="small"
-            onChange={e => setSelectedPointType(e.target.value as string)}
+            onChange={e => setSelectedPointType(e.target.value as SelectLabels)}
           >
             {LABELS_ARR.map((val, i) => (
               <MenuItem key={i} value={val}>

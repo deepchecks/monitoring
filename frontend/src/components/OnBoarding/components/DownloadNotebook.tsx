@@ -6,32 +6,32 @@ import * as FileSaver from 'file-saver';
 
 import { StyledButton } from 'components/lib';
 
+import demoSnippet from './snippets/Onboarding_Demo_Data.json';
+import userSnippet from './snippets/Onboarding_Your_Data.json';
+
 const constants = {
   text: 'Download Notebook'
 };
 
 const DownloadNotebook = ({
+  token,
   dataType,
   reportOnboardingStep
 }: {
+  token: string;
   dataType: 'demo' | 'user';
   reportOnboardingStep: (src: string) => void;
 }) => {
-  const fileName = dataType === 'demo' ? 'Onboarding_Demo_Data' : 'Onboarding_Your_Data';
+  const handleDownload = () => {
+    const fileName = dataType === 'demo' ? 'onboarding-demo-data.ipynb' : 'onboarding-custom-data.ipynb';
+    const fileContent = dataType === 'demo' ? demoSnippet : userSnippet;
+    const updatedContent = JSON.stringify(fileContent)
+      .replace('YOUR_API_TOKEN', token)
+      .replace('YOUR_DEPLOYMENT_URL', window.location.origin);
+    const blob = new Blob([updatedContent], { type: 'application/json' });
 
-  const handleDownload = async () => {
-    const response = await fetch(`${window.location.origin}/notebooks/${fileName}.json`);
     reportOnboardingStep('notebook');
-
-    if (!response.ok) {
-      throw new Error('Error downloading the notebook');
-    }
-
-    const data = await response.json();
-    const notebookData = JSON.stringify(data);
-    const blob = new Blob([notebookData], { type: 'application/json' });
-
-    FileSaver.saveAs(blob, `${fileName}.ipynb`);
+    FileSaver.saveAs(blob, fileName);
   };
 
   return (

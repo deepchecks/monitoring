@@ -7,6 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+#
+# pylint: disable=unused-import
 """Organization entity model."""
 import enum
 import logging
@@ -16,7 +18,6 @@ from random import choice
 from string import ascii_lowercase
 
 import sqlalchemy as sa
-import stripe
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 from typing_extensions import Self
@@ -27,7 +28,7 @@ from deepchecks_monitoring.utils.database import SchemaBuilder
 from deepchecks_monitoring.utils.text import slugify
 
 if t.TYPE_CHECKING:
-    from . import Invitation, User  # pylint: disable=unused-import
+    from . import Invitation, User
 
 __all__ = ["Organization"]
 
@@ -50,7 +51,6 @@ class Organization(Base):
     name = sa.Column(sa.String(100), unique=False, nullable=False)
     schema_name = sa.Column(sa.String(100), unique=True, nullable=False)
     tier = sa.Column(sa.Enum(OrgTier), nullable=False, default=OrgTier.FREE)
-    stripe_customer_id = sa.Column(sa.String(100), unique=True, nullable=True)
 
     slack_notification_levels = sa.Column(
         sa.ARRAY(sa.Enum(AlertSeverity)),
@@ -86,8 +86,7 @@ class Organization(Base):
         from deepchecks_monitoring.public_models.role import Role, RoleEnum  # pylint: disable=import-outside-toplevel
 
         org = Organization(name=name,
-                           schema_name=cls.generate_schema_name(name),
-                           stripe_customer_id=cls.generate_stripe_customer_id(name))
+                           schema_name=cls.generate_schema_name(name))
         owner.organization = org
         session.add(Role(user_id=owner.id, role=RoleEnum.OWNER))
         session.add(Role(user_id=owner.id, role=RoleEnum.ADMIN))
@@ -101,17 +100,6 @@ class Organization(Base):
         random_16_char_suffix = secrets.token_hex(8)
         # postgres schema name has limit of 63 characters, so truncate the org name
         return f"org_{value[:30]}_{random_16_char_suffix}"
-
-    @classmethod
-    def generate_stripe_customer_id(cls, org_name: str) -> t.Optional[str]:
-        """Generate a customer ID on stripe"""
-        if stripe.api_key:
-            return stripe.Customer.create(
-                name=org_name
-            ).stripe_id
-        else:
-            logging.warning("Stripe API key wasn't provided. %s won't have a stripe customer ID", org_name)
-            return None
 
     # Instance Properties
     # ===================

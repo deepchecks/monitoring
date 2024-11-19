@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { ChartData } from 'chart.js';
 
-import { Frequency, MonitorSchema } from 'api/generated';
+import {
+  Frequency,
+  MonitorSchema,
+  CheckSchema,
+  MonitorCheckConf,
+  MonitorCheckConfSchema,
+  useGetCheckInfoApiV1ChecksCheckIdInfoGet
+} from 'api/generated';
 
 import { BoxProps, Stack } from '@mui/material';
 
@@ -10,19 +17,28 @@ import { Loader } from 'components/base/Loader/Loader';
 import { RootMenu } from './components/RootMenu';
 import { MonitorInfoWidget } from './components/MonitorInfoWidget';
 import { MonitorAlertRuleWidget } from './components/MonitorAlertRuleWidget';
-import { DrawerNames } from 'components/Dashboard/Dashboard.types';
-import { constants } from 'components/Dashboard/dashboard.constants';
+
 import { StyledContainer, StyledText } from './GraphicsSection.style';
 
+import { DialogNames } from 'components/Dashboard/Dashboard.types';
+import { constants } from 'components/Dashboard/dashboard.constants';
 import { GraphData } from 'helpers/types';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
 interface GraphicsSectionProps extends BoxProps {
   data: ChartData<'line', GraphData>;
   monitor: MonitorSchema;
-  onOpenMonitorDrawer: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
+  onOpenMonitorDrawer: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   onDeleteMonitor: (monitor: MonitorSchema) => void;
   isLoading?: boolean;
+  onPointClick: (
+    datasetName: string,
+    versionName: string,
+    timeLabel: number,
+    additional_kwargs: MonitorCheckConfSchema | undefined,
+    checkInfo: MonitorCheckConf | undefined,
+    check: CheckSchema
+  ) => void;
 }
 
 export function GraphicsSection({
@@ -31,9 +47,16 @@ export function GraphicsSection({
   onOpenMonitorDrawer,
   onDeleteMonitor,
   isLoading,
+  onPointClick,
   ...props
 }: GraphicsSectionProps) {
-  const { alert_rules, frequency } = monitor;
+  const { alert_rules, frequency, check, additional_kwargs } = monitor;
+
+  const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(check.id, {
+    query: {
+      enabled: false
+    }
+  });
 
   const [hover, setHover] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
@@ -54,7 +77,7 @@ export function GraphicsSection({
     setAnchorElRootMenu(null);
   };
 
-  const handleOpenMonitor = (drawerName: DrawerNames) => {
+  const handleOpenMonitor = (drawerName: DialogNames) => {
     onOpenMonitorDrawer(drawerName, monitor);
     setAnchorElRootMenu(null);
   };
@@ -64,13 +87,17 @@ export function GraphicsSection({
     setAnchorElRootMenu(null);
   };
 
+  const handlePointClick = (datasetName: string, versionName: string, timeLabel: number) => {
+    onPointClick(datasetName, versionName, timeLabel, additional_kwargs, checkInfo, check);
+  };
+
   return (
     <>
-      <StyledContainer onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} {...props} sx={{ background: 'white' }}>
+      <StyledContainer onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} {...props}>
         {isLoading ? (
           <Loader />
         ) : (
-          <Stack direction="column" height="100%">
+          <Stack direction="column">
             <MonitorInfoWidget
               monitor={monitor}
               hover={hover}
@@ -86,6 +113,7 @@ export function GraphicsSection({
               minTimeUnit={minTimeUnit}
               timeFreq={FrequencyMap[frequency]}
               zoomEnabled={zoomEnabled}
+              onPointCLick={handlePointClick}
             />
             {alert_rules.length > 0 ? (
               <MonitorAlertRuleWidget monitor={monitor} alertRules={alert_rules} />

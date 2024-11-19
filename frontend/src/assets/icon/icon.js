@@ -5,7 +5,6 @@ import { ReactComponent as Clear } from './clear.svg';
 import { ReactComponent as CloseIcon } from './close.svg';
 import { ReactComponent as CollapseArrowLeft } from './collapseArrowLeft.svg';
 import { ReactComponent as CollapseArrowRight } from './collapseArrowRight.svg';
-import { ReactComponent as DeleteIcon } from './delete.svg';
 import { ReactComponent as Email } from './email.svg';
 import { ReactComponent as FastForward } from './fastForward.svg';
 import { ReactComponent as FileUploadIcon } from './fileUpload.svg';
@@ -28,7 +27,6 @@ import { ReactComponent as Checks } from './checks.svg';
 import { ReactComponent as Research } from './research.svg';
 import { ReactComponent as Link } from './Link.svg';
 import { ReactComponent as MarkedMail } from './markedMail.svg';
-import { ReactComponent as ViewDetails } from './viewDetails.svg';
 import { ReactComponent as Check } from './check.svg';
 import { ReactComponent as Download } from './download.svg';
 import { ReactComponent as GraphReport } from './graphReport.svg';
@@ -61,7 +59,6 @@ export {
   SearchIcon,
   Slack,
   Sort,
-  DeleteIcon,
   WarningIcon,
   RedWarningIcon,
   TableChart,
@@ -72,7 +69,6 @@ export {
   Research,
   Link,
   MarkedMail,
-  ViewDetails,
   Check,
   Download,
   GraphReport,

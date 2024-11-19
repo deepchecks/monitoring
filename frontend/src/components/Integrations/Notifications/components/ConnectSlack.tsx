@@ -10,7 +10,7 @@ import {
 import { Box, Stack } from '@mui/material';
 
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
-import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../../lib';
+import { StyledButton, StyledImage, StyledText } from '../../../lib';
 
 import slack from '../../../../assets/integrations/slack.svg';
 
@@ -24,8 +24,11 @@ interface App {
 
 const ConnectSlack = ({ isSlackConnected, disabled }: { isSlackConnected: boolean | undefined; disabled: boolean }) => {
   const { data: apps, isLoading: isAppsLoading } = useRetrieveInstalationsApiV1SlackAppsGet<App[]>();
-  const { data: slackConnect, isLoading: isSlackConnectLoading } =
-    useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>();
+  const {
+    data: slackConnect,
+    isLoading: isSlackConnectLoading,
+    refetch
+  } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>();
   const { mutate: updateNotifications, isLoading: isUpdateNotificationsLoading } =
     useUpdateOrganizationApiV1OrganizationPut();
   const { mutate: removeInstallation, isLoading: isRemoveInstallationLoading } =
@@ -33,6 +36,7 @@ const ConnectSlack = ({ isSlackConnected, disabled }: { isSlackConnected: boolea
       mutation: {
         onSuccess: () => {
           updateNotifications({ data: { ...slackConnect, [NotificationDictionary.slack]: [] } });
+          refetch();
         }
       }
     });
@@ -40,29 +44,21 @@ const ConnectSlack = ({ isSlackConnected, disabled }: { isSlackConnected: boolea
   const isLoading =
     isSlackConnectLoading || isRemoveInstallationLoading || isAppsLoading || isUpdateNotificationsLoading;
 
-  const handleSlack = () => {
-    isSlackConnected &&
-      apps &&
+  const handleSlack = async () => {
+    if (isSlackConnected && apps) {
       apps?.forEach(({ id }) => {
         removeInstallation({
           appId: id
         });
       });
-
-    window.open(
-      `${process.env.REACT_APP_BASE_API}/api/v1/slack.authorize`,
-      '_blank',
-      'width=600, height=650,scrollbars=1,top=150,left=' + (window.screen.width / 2 - 250)
-    );
+    } else {
+      window.open(
+        `${process.env.REACT_APP_BASE_API}/api/v1/slack.authorize`,
+        '_blank',
+        'width=600, height=650,scrollbars=1,top=150,left=' + (window.screen.width / 2 - 250)
+      );
+    }
   };
-
-  if (isLoading) {
-    return (
-      <Box sx={{ width: '100%' }}>
-        <StyledLoader />
-      </Box>
-    );
-  }
 
   return (
     <Box
@@ -82,7 +78,12 @@ const ConnectSlack = ({ isSlackConnected, disabled }: { isSlackConnected: boolea
           <StyledText text={constants.connect.slack.title} type="h1" color="white" />
           <StyledText text={constants.connect.slack.description} type="h3" color="white" />
         </Stack>
-        <StyledButton onClick={handleSlack} label={constants.connect.slack.buttonLabel(isSlackConnected)} />
+        <StyledButton
+          onClick={handleSlack}
+          label={constants.connect.slack.buttonLabel(isSlackConnected)}
+          loading={isLoading}
+          width="130px"
+        />
       </Box>
       <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="auto" />
     </Box>

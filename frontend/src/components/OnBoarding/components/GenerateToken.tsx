@@ -6,25 +6,32 @@ import { StyledButton, StyledContainer, StyledText } from 'components/lib';
 
 const constants = {
   title: 'Generate API Token',
-  description: 'Our tokens are valid until you are generating a new one. \nClick here to get new token.',
+  description: 'Your token is valid until you generate a new one. \nClick here to get new token.',
   buttonLabel: 'Generate and copy',
   buttonCopiedLabel: 'Copied!'
 };
 
 interface GenerateTokenProps {
   regenerateApiToken: () => void;
+  isLocal: boolean;
+  apiToken: string;
 }
 
-const GenerateToken = ({ regenerateApiToken }: GenerateTokenProps) => {
+const GenerateToken = ({ regenerateApiToken, isLocal, apiToken }: GenerateTokenProps) => {
   const theme = useTheme();
   const [copiedApiToken, setCopiedApiToken] = useState(false);
 
   const buttonLabel = copiedApiToken ? constants.buttonCopiedLabel : constants.buttonLabel;
+  const hideTokenGeneration = apiToken !== 'API_TOKEN' && isLocal;
 
   const handleButtonClick = () => {
     regenerateApiToken();
     setCopiedApiToken(true);
   };
+
+  if (hideTokenGeneration) {
+    return <div />;
+  }
 
   return (
     <StyledContainer
