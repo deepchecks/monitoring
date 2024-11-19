@@ -136,7 +136,7 @@ class TasksQueuer:
         return 0
 
 
-class BaseWorkerSettings(DatabaseSettings, RedisSettings):
+class WorkerSettings(DatabaseSettings, RedisSettings):
     """Worker settings."""
 
     logfile: t.Optional[str] = None
@@ -150,16 +150,6 @@ class BaseWorkerSettings(DatabaseSettings, RedisSettings):
 
         env_file = '.env'
         env_file_encoding = 'utf-8'
-
-
-if with_ee:
-    class WorkerSettings(BaseWorkerSettings, ee.config.TelemetrySettings):
-        """Set of worker settings."""
-        pass
-else:
-    class WorkerSettings(BaseWorkerSettings):
-        """Set of worker settings."""
-        pass
 
 
 async def init_async_redis(redis_uri):
@@ -189,16 +179,6 @@ def execute_worker():
         # When running main it creates TaskQueuer under __main__ module, which fails
         # the telemetry collection. Adding here this import to fix this
         from deepchecks_monitoring.bgtasks import tasks_queuer  # pylint: disable=import-outside-toplevel
-
-        if with_ee:
-            if settings.sentry_dsn:
-                import sentry_sdk  # pylint: disable=import-outside-toplevel
-                sentry_sdk.init(
-                    dsn=settings.sentry_dsn,
-                    traces_sample_rate=0.1,
-                    environment=settings.sentry_env,
-                )
-                ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
         workers = [
             # ModelVersionTopicDeletionWorker,

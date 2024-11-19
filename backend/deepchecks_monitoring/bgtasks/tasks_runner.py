@@ -29,7 +29,6 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE, TASK_RUNNER_LOCK
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
-from deepchecks_monitoring.utils.other import ExtendedAIOKafkaAdminClient
 
 try:
     from deepchecks_monitoring import ee
@@ -189,18 +188,6 @@ def execute_worker():
         # the telemetry collection. Adding here this import to fix this
         from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
 
-        if with_ee and settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
-
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=0.1,
-                environment=settings.sentry_env
-            )
-            ee.utils.telemetry.collect_telemetry(tasks_runner.TaskRunner)
-            # Ignoring this logger since it can spam sentry with errors
-            sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
-
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
 
@@ -211,16 +198,6 @@ def execute_worker():
                 AlertsTask(),
                 MixpanelSystemStateEvent()
             ]
-
-            # Adding kafka related workers
-            if settings.kafka_host is not None:
-                # AIOKafka is spamming our logs, disable it for errors and warnings
-                logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)
-                kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
-                await kafka_admin.start()
-
-                # flake8: noqa: SC100
-                # workers.append(ModelVersionTopicDeletionWorker(kafka_admin))
 
             # Adding ee workers
             if with_ee:

@@ -312,7 +312,6 @@ def run_deepchecks(
         pass
     # For rest of the errors logs them
     except Exception as e:  # pylint: disable=broad-except
-        # TODO: send error to sentry, needs to be done in the ee sub-package
         error_message = (
             str(e)
             if not (msg := getattr(e, 'message', None))

@@ -18,20 +18,11 @@ from deepchecks_monitoring.config import Settings as OpenSourceSettings
 
 __all__ = [
     'Settings',
-    'TelemetrySettings',
     'SlackSettings'
 ]
 
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
-
-
-class TelemetrySettings(BaseDeepchecksSettings):
-    """Telemetry settings."""
-
-    instrument_telemetry: bool = False
-    sentry_dsn: t.Optional[str] = None
-    sentry_env: str = 'dev'
 
 
 class SlackSettings(BaseDeepchecksSettings):
@@ -52,8 +43,7 @@ class SlackSettings(BaseDeepchecksSettings):
 
 class Settings(
     OpenSourceSettings,
-    SlackSettings,
-    TelemetrySettings,
+    SlackSettings
 ):
     """Settings for the deepchecks_monitoring package."""
 
