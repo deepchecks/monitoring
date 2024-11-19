@@ -200,7 +200,7 @@ class AlertsScheduler:
                         except (SerializationError, DBAPIError) as error:
                             await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                                self.logger.is_serialization_error('Monitor(id=%s) tasks enqueue failed', monitor.id)
+                                self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise
 
     async def run_organization_data_ingestion_alert(self, organization):
@@ -271,7 +271,7 @@ class AlertsScheduler:
                 except (SerializationError, DBAPIError) as error:
                     await session.rollback()
                     if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                        self.logger.is_serialization_error('Model(id=%s) s3 task enqueue failed', model.id)
+                        self.logger.exception('Model(id=%s) s3 task enqueue failed', model.id)
                         raise
 
 
