@@ -189,18 +189,6 @@ def execute_worker():
         # the telemetry collection. Adding here this import to fix this
         from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
 
-        if with_ee and settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
-
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=0.1,
-                environment=settings.sentry_env
-            )
-            ee.utils.telemetry.collect_telemetry(tasks_runner.TaskRunner)
-            # Ignoring this logger since it can spam sentry with errors
-            sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
-
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
 

@@ -383,7 +383,7 @@ def is_serialization_error(error: DBAPIError):
     )
 
 
-class BaseSchedulerSettings(config.DatabaseSettings):
+class SchedulerSettings(config.DatabaseSettings):
     """Scheduler settings."""
 
     scheduler_sleep_seconds: int = 30
@@ -393,38 +393,12 @@ class BaseSchedulerSettings(config.DatabaseSettings):
     scheduler_logfile_backup_count: int = 3
 
 
-try:
-    from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel
-
-    with_ee = True
-
-    class SchedulerSettings(BaseSchedulerSettings, ee.config.TelemetrySettings):
-        """Set of worker settings."""
-        pass
-except ImportError:
-    with_ee = False
-
-    class SchedulerSettings(BaseSchedulerSettings):
-        """Set of worker settings."""
-        pass
-
-
 def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
     """Execute alrets scheduler."""
 
     async def main():
         settings = SchedulerSettings()  # type: ignore
         service_name = 'alerts-scheduler'
-
-        if with_ee:
-            if settings.sentry_dsn:
-                import sentry_sdk  # pylint: disable=import-outside-toplevel
-                sentry_sdk.init(
-                    dsn=settings.sentry_dsn,
-                    traces_sample_rate=0.6,
-                    environment=settings.sentry_env
-                )
-                ee.utils.telemetry.collect_telemetry(scheduler_implementation)
 
         logger = configure_logger(
             name=service_name,

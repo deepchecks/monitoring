@@ -18,7 +18,7 @@ from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
 
 from deepchecks_monitoring.ee import utils
-from deepchecks_monitoring.ee.config import Settings, SlackSettings, TelemetrySettings
+from deepchecks_monitoring.ee.config import Settings, SlackSettings
 from deepchecks_monitoring.ee.features_control_cloud import CloudFeaturesControl
 from deepchecks_monitoring.ee.features_control_on_prem import OnPremFeaturesControl
 from deepchecks_monitoring.ee.notifications import AlertNotificator as EEAlertNotificator
@@ -42,18 +42,6 @@ class ResourcesProvider(OpenSourceResourcesProvider):
     def __init__(self, settings: Settings):
         super().__init__(settings)
         self._lauchdarkly_client = None
-        self._is_telemetry_initialized = False
-
-    @property
-    def telemetry_settings(self) -> TelemetrySettings:
-        """Get the telemetry settings."""
-        if not isinstance(self._settings, TelemetrySettings):
-            raise AssertionError(
-                "Provided settings instance type is not a subclass of "
-                "the 'TelemetrySettings', you need to provide instance "
-                "of 'TelemetrySettings' to the 'ResourcesProvider' constructor"
-            )
-        return self._settings
 
     @property
     def slack_settings(self) -> SlackSettings:
@@ -110,35 +98,10 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         if parallel_check_executor_flag:
             return super().parallel_check_executors_pool
 
-    def initialize_telemetry_collectors(
-        self,
-        *targets,
-        traces_sample_rate: float = 0.6,
-    ):
-        """Initialize telemetry."""
-        settings = self.telemetry_settings
-
-        if settings.sentry_dsn and not self._is_telemetry_initialized:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
-
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=traces_sample_rate,
-                environment=settings.sentry_env,
-                before_send_transaction=utils.sentry.sentry_send_hook
-            )
-
-            self._is_telemetry_initialized = True
-
-        if self._is_telemetry_initialized:
-            for it in targets:
-                utils.telemetry.collect_telemetry(it)
-
     def get_client_configuration(self) -> dict:
         if self.settings.is_cloud:
             settings = cast(Settings, self.settings)
             return {
-                "sentryDsn": settings.sentry_dsn,
                 "lauchdarklySdkKey": settings.lauchdarkly_sdk_key,
                 "environment": settings.enviroment,
                 "mixpanel_id": settings.mixpanel_id,
