@@ -50,7 +50,7 @@ class Organization(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(100), unique=False, nullable=False)
     schema_name = sa.Column(sa.String(100), unique=True, nullable=False)
-    tier = sa.Column(sa.Enum(OrgTier), nullable=False, default=OrgTier.FREE)
+    tier = sa.Column(sa.Enum(OrgTier), nullable=False, default=OrgTier.FREE)  # TODO: remove tier
 
     slack_notification_levels = sa.Column(
         sa.ARRAY(sa.Enum(AlertSeverity)),
