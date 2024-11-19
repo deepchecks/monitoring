@@ -12,6 +12,7 @@
 import asyncio
 import copy
 import json
+import logging
 import typing as t
 
 import asyncpg.exceptions
@@ -346,6 +347,8 @@ class DataIngestionBackend(object):
         self.resources_provider: ResourcesProvider = resources_provider
         self.logger = logger or configure_logger(name="data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
+        if self.use_kafka:
+            logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)
 
     async def _send_with_retry(
             self,
