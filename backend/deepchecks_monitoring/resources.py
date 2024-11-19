@@ -475,10 +475,6 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return features control."""
         return FeaturesControl(self.settings)
 
-    def initialize_telemetry_collectors(self, *targets):
-        """Initialize telemetry."""
-        pass
-
     def get_client_configuration(self) -> "dict[str, t.Any]":
         """Return configuration to be used in client side."""
         return {
