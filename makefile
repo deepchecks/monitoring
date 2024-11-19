@@ -318,7 +318,7 @@ external-services-setup:
 	@sleep 2
 
 env-setup: external-services-setup
-	@docker run -d --env-file $(E2E)/.development.env -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
+	@docker run -d --env-file $(E2E)/.development.env -e IS_ON_PREM -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
 	@sleep 15
 	@docker run -d --env-file $(E2E)/.development.env --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
 	@docker run -d --env-file $(E2E)/.development.env --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
