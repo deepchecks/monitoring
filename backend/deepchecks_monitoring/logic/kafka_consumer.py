@@ -27,9 +27,9 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logg
                 enable_auto_commit=False,  # Will disable autocommit
                 auto_offset_reset="earliest",  # If committed offset not found, start from beginning,
                 max_poll_records=500,
-                session_timeout_ms=60 * 1000,
-                heartbeat_interval_ms=5 * 1000,
-                consumer_timeout_ms=5 * 1000,
+                session_timeout_ms=300 * 1000,
+                heartbeat_interval_ms=60 * 1000,
+                consumer_timeout_ms=60 * 1000,
             )
             await consumer.start()
             consumer.subscribe(pattern=pattern)
