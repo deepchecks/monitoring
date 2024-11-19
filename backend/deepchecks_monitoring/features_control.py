@@ -33,7 +33,7 @@ class FeaturesControl:
     def __init__(self, settings):
         self.settings = settings
 
-    async def get_allowed_models(self, session) -> int:  # pylint: disable=unused-argument
+    async def get_allowed_models(self, session) -> int | None:  # pylint: disable=unused-argument
         """For the cloud, number of models which are allowed by subscription."""
         return 1
 

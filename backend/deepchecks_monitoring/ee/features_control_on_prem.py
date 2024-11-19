@@ -9,15 +9,8 @@ class OnPremFeaturesControl(FeaturesControl):
     TODO: implement license check :(
     """
 
-    async def get_allowed_models(self, session) -> int:
-        if self._allowed_models is None:
-            self._allowed_models = await session.scalar(
-                select(Billing.bought_models).where(Billing.organization_id == self.user.organization_id)
-            )
-        if self._allowed_models is None:
-            return 1
-
-        return self._allowed_models + 1
+    async def get_allowed_models(self, session) -> None:
+        return None
 
     @property
     def update_roles(self) -> bool:
