@@ -56,7 +56,7 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         if self.settings.is_cloud:
             return CloudFeaturesControl(user, self.settings)
         # TODO add license check -
-        elif self.settings.is_on_prem:
+        if self.settings.is_on_prem:
             return OnPremFeaturesControl(self.settings)
         return FeaturesControl(self.settings)
 
