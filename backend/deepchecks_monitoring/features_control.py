@@ -18,7 +18,6 @@ class FeaturesSchema(BaseModel):
 
     slack_enabled: bool
     rows_per_minute: int
-    sso_enabled: bool
     onboarding_enabled: bool
     update_roles: bool
     model_assignment: bool

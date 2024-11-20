@@ -12,7 +12,6 @@ export const featuresList = {
   signup_enabled: 'signup_enabled',
   slack_enabled: 'slack_enabled',
   rows_per_minute: 'rows_per_minute',
-  sso_enabled: 'sso_enabled',
   onboarding_enabled: 'onboarding_enabled',
   email_enabled: 'email_enabled'
 };

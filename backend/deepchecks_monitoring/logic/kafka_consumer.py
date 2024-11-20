@@ -41,7 +41,10 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logg
                         to_commit = await handle_func(consumer, tp, messages)
                         if to_commit:
                             offset = messages[-1].offset
-                            await consumer.commit({tp: offset + 1})
+                            if tp in consumer.assignment():
+                                await consumer.commit({tp: offset + 1})
+                            else:
+                                logger.warning(f"Partition {tp} not assigned to consumer anymore. Cannot commit offsets.")
         except KafkaError as e:  # pylint: disable=broad-except
             logger.exception(e)
         finally:

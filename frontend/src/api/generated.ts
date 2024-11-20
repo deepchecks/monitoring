@@ -846,7 +846,6 @@ export interface FeaturesSchema {
   signup_enabled: boolean;
   slack_enabled: boolean;
   rows_per_minute: number;
-  sso_enabled: boolean;
   onboarding_enabled: boolean;
   update_roles: boolean;
   model_assignment: boolean;

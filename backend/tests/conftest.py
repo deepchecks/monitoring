@@ -188,8 +188,16 @@ def _mock_mixpanel_client():
 
 @pytest.fixture(scope="function")
 def features_control_mock(settings):
+    class TestsFeaturesControl(CloudFeaturesControl):
+        """Mocked features control class for tests, replacing launchdarkly usage."""
+
+        @property
+        def rows_per_minute(self) -> int:
+            """Maximum number of rows per minute allowed for organization."""
+            return ROWS_PER_MINUTE_LIMIT
+
     def mock_get_features_control(self, user):  # pylint: disable=unused-argument
-        return CloudFeaturesControl(user, settings)
+        return TestsFeaturesControl(user, settings)
 
     return mock_get_features_control
 
