@@ -191,21 +191,13 @@ def features_control_mock(settings):
     class TestsFeaturesControl(CloudFeaturesControl):
         """Mocked features control class for tests, replacing launchdarkly usage."""
 
-        def _load_tier(self):
-            self._custom_checks_enabled = False
-            self._data_retention_months = 12
-            self._max_models = 8
-            self._monthly_predictions_limit = 10_000_000
-            self._sso_enabled = False
-            self._signup_enabled = None
-            self._rows_per_minute = ROWS_PER_MINUTE_LIMIT
-            self._signup_enabled = True
-            self._onboarding_enabled = True
-            self._update_roles = True
-            self._model_assignment = True
+        @property
+        def rows_per_minute(self) -> int:
+            """Maximum number of rows per minute allowed for organization."""
+            return ROWS_PER_MINUTE_LIMIT
 
     def mock_get_features_control(self, user):  # pylint: disable=unused-argument
-        return TestsFeaturesControl(user, None, settings)
+        return TestsFeaturesControl(user, settings)
 
     return mock_get_features_control
 

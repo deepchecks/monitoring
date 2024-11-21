@@ -29,7 +29,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import insert_model_version_cache_invalidation_task
-from deepchecks_monitoring.bgtasks.model_version_topic_delete import insert_model_version_topic_delete_task
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import DATA_TOPIC_PREFIXES, data_topic_name_to_ids, get_data_topic_name
 from deepchecks_monitoring.monitoring_utils import configure_logger
@@ -418,7 +417,7 @@ class DataIngestionBackend(object):
             if not topic_existed:
                 model_version.ingestion_offset = -1
                 model_version.topic_end_offset = -1
-                await insert_model_version_topic_delete_task(organization_id, model_version.id, entity, session)
+                # await insert_model_version_topic_delete_task(organization_id, model_version.id, entity, session)
 
             async with self.resources_provider.get_kafka_producer() as producer:
                 messages = [
@@ -451,7 +450,7 @@ class DataIngestionBackend(object):
             if not topic_existed:
                 model.ingestion_offset = -1
                 model.topic_end_offset = -1
-                await insert_model_version_topic_delete_task(organization_id, model.id, entity, session)
+                # await insert_model_version_topic_delete_task(organization_id, model.id, entity, session)
 
             async with self.resources_provider.get_kafka_producer() as producer:
                 messages = [

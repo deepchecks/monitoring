@@ -12,11 +12,6 @@
 import logging
 from typing import TYPE_CHECKING, cast
 
-import ldclient
-from ldclient import Context
-from ldclient.client import LDClient
-from ldclient.config import Config as LDConfig
-
 from deepchecks_monitoring.ee.config import Settings, SlackSettings
 from deepchecks_monitoring.ee.features_control_cloud import CloudFeaturesControl
 from deepchecks_monitoring.ee.features_control_on_prem import OnPremFeaturesControl
@@ -38,10 +33,6 @@ class ResourcesProvider(OpenSourceResourcesProvider):
 
     ALERT_NOTIFICATOR_TYPE = EEAlertNotificator
 
-    def __init__(self, settings: Settings):
-        super().__init__(settings)
-        self._lauchdarkly_client = None
-
     @property
     def slack_settings(self) -> SlackSettings:
         """Get the telemetry settings."""
@@ -60,36 +51,18 @@ class ResourcesProvider(OpenSourceResourcesProvider):
             self._email_sender = EmailSender(self.email_settings)
         return self._email_sender
 
-    @property
-    def lauchdarkly_client(self) -> LDClient:
-        """Launchdarkly client."""
-        if self.settings.is_cloud is False:
-            raise Exception("Launchdarkly client is only available in cloud mode")
-        if self._lauchdarkly_client:
-            return self._lauchdarkly_client
-        ldclient.set_config(LDConfig(self.settings.lauchdarkly_sdk_key))
-        self._lauchdarkly_client = ldclient.get()
-        return self._lauchdarkly_client
-
     def get_features_control(self, user: User) -> FeaturesControl:
         """Return features control."""
-        if self.settings.is_cloud:
-            return CloudFeaturesControl(user, self.lauchdarkly_client, self.settings)
         # TODO add license check -
-        elif self.settings.is_on_prem:
+        if self.settings.is_on_prem:
             return OnPremFeaturesControl(self.settings)
+        if self.settings.is_cloud:
+            return CloudFeaturesControl(user, self.settings)
         return FeaturesControl(self.settings)
 
     @property
     def parallel_check_executors_pool(self) -> "ActorPool | None":
-        if self.settings.is_cloud is False:
-            parallel_check_executor_flag = True
-        else:
-            parallel_check_executor_flag = self.lauchdarkly_client.variation(
-                "parallelCheckExecutorEnabled",
-                context=Context.builder("parallelCheckExecutorEnabled").build(),
-                default=True
-            )
+        parallel_check_executor_flag = self.settings.parallel_check_executor_flag
 
         logging.getLogger("server").info({
             "mesage": f"'parallelCheckExecutorEnabled' is set to {parallel_check_executor_flag}"
@@ -101,7 +74,6 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         if self.settings.is_cloud:
             settings = cast(Settings, self.settings)
             return {
-                "lauchdarklySdkKey": settings.lauchdarkly_sdk_key,
                 "environment": settings.enviroment,
                 "mixpanel_id": settings.mixpanel_id,
                 "is_cloud": True,

@@ -96,6 +96,9 @@ async def update_complete_details(
         resources_provider=ResourcesProviderDep
 ):
     """Complete user details for final login."""
+
+    resources_provider: "ResourcesProvider"
+
     if body.new_organization_name is not None and body.accept_invite is True:
         raise BadRequest("Can't accept invitation and create new organization")
 

@@ -186,7 +186,6 @@ jobs:
           docker image ls -a
       # - name: Run e2e tests // TODO: Uncomment when we fix e2e tests
       #   env:
-      #     LAUCHDARKLY_SDK_KEY: ${{ secrets.LAUCHDARKLY_SDK_KEY }}
       #     OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
       #     OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
       #   run: make cypress
@@ -242,9 +241,9 @@ jobs:
           DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
           DEEPCHECKS_API_TOKEN: ${{ env.DEEPCHECKS_API_TOKEN }}
           DEEPCHECKS_API_HOST: ${{ env.DEEPCHECKS_API_HOST }}
-          LAUCHDARKLY_SDK_KEY: ${{ secrets.LAUCHDARKLY_SDK_KEY }}
           OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
           OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          IS_ON_PREM: 'True'
         run: |
           make env-setup
           make docs

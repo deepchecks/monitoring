@@ -9,14 +9,9 @@ interface Dict {
 }
 
 export const featuresList = {
-  max_models: 'max_models',
   signup_enabled: 'signup_enabled',
   slack_enabled: 'slack_enabled',
   rows_per_minute: 'rows_per_minute',
-  custom_checks_enabled: 'custom_checks_enabled',
-  data_retention_months: 'data_retention_months',
-  monthly_predictions_limit: 'monthly_predictions_limit',
-  sso_enabled: 'sso_enabled',
   onboarding_enabled: 'onboarding_enabled',
   email_enabled: 'email_enabled'
 };

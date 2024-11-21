@@ -21,7 +21,6 @@ nbformat>=5.4.0,<6
 deepchecks@git+https://github.com/deepchecks/deepchecks.git@main
 redis[hiredis]~=4.6.0
 pandas~=2.1.0
-launchdarkly-server-sdk~=9.1.0
 pyjwt[crypto]==2.4.0
 Authlib~=1.0.1
 httpx~=0.24.1
