@@ -1,0 +1,33 @@
+apiVersion: v1
+data:
+  ACCESS_TOKEN_EXPIRE_MINUTES: "10"
+  ASSETS_FOLDER: /code/frontend/dist
+  ASYNC_DATABASE_URI: postgresql+asyncpg://user:password@db:5432/deepchecks
+  AUTH_JWT_SECRET: 5qM4Te0knu65k1gG9UGOoba6KVag4HRD
+  DATABASE_URI: postgresql://user:password@db:5432/deepchecks
+  DEBUG_MODE: "False"
+  DEPLOYMENT_URL: https://
+  INIT_LOCAL_RAY_INSTANCE: "True"
+  IS_ON_PREM: "True"
+  TOTAL_NUMBER_OF_CHECK_EXECUTOR_ACTORS: "4"
+  email_smtp_host: ""
+  email_smtp_password: ""
+  email_smtp_port: "25"
+  email_smtp_username: ""
+  kafka_host: kafka:9092
+  kafka_max_metadata_age: "1000"
+  kafka_password: ""
+  kafka_replication_factor: "1"
+  kafka_sasl_mechanism: PLAIN
+  kafka_security_protocol: PLAINTEXT
+  kafka_username: ""
+  oauth_client_id: ba6ce982162fb0d58e0e
+  oauth_client_secret: 7ff1f39cca2ff23fe8105ad02bd1d090793d9421
+  oauth_url: https://:8443
+  parallel_enabled: "False"
+  redis_uri: redis://redis/0
+kind: ConfigMap
+metadata:
+  labels:
+    io.kompose.service: alert-scheduler-oss-conf-env
+  name: oss-conf-env
