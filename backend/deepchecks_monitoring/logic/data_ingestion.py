@@ -418,7 +418,7 @@ class DataIngestionBackend(object):
             if not topic_existed:
                 model_version.ingestion_offset = -1
                 model_version.topic_end_offset = -1
-                await insert_model_version_topic_delete_task(organization_id, model_version.id, entity, session)
+                # await insert_model_version_topic_delete_task(organization_id, model_version.id, entity, session)
 
             async with self.resources_provider.get_kafka_producer() as producer:
                 messages = [
@@ -451,7 +451,7 @@ class DataIngestionBackend(object):
             if not topic_existed:
                 model.ingestion_offset = -1
                 model.topic_end_offset = -1
-                await insert_model_version_topic_delete_task(organization_id, model.id, entity, session)
+                # await insert_model_version_topic_delete_task(organization_id, model.id, entity, session)
 
             async with self.resources_provider.get_kafka_producer() as producer:
                 messages = [

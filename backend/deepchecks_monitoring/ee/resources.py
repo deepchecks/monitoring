@@ -53,11 +53,11 @@ class ResourcesProvider(OpenSourceResourcesProvider):
 
     def get_features_control(self, user: User) -> FeaturesControl:
         """Return features control."""
-        if self.settings.is_cloud:
-            return CloudFeaturesControl(user, self.settings)
         # TODO add license check -
         if self.settings.is_on_prem:
             return OnPremFeaturesControl(self.settings)
+        if self.settings.is_cloud:
+            return CloudFeaturesControl(user, self.settings)
         return FeaturesControl(self.settings)
 
     @property
