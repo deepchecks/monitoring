@@ -29,7 +29,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import insert_model_version_cache_invalidation_task
-from deepchecks_monitoring.bgtasks.model_version_topic_delete import insert_model_version_topic_delete_task
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import DATA_TOPIC_PREFIXES, data_topic_name_to_ids, get_data_topic_name
 from deepchecks_monitoring.monitoring_utils import configure_logger
