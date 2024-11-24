@@ -24,10 +24,6 @@ import httpx
 import numpy as np
 import pandas as pd
 import pendulum as pdl
-from deepchecks.tabular import Dataset
-from deepchecks.tabular.checks import (FeatureDrift, LabelDrift, MixedNulls, NewCategoryTrainTest, NewLabelTrainTest,
-                                       PercentOfNulls, PredictionDrift, SingleDatasetPerformance, StringMismatch)
-from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
@@ -48,8 +44,14 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     """
 
     def _dataframe_to_dataset_and_pred(self, df:  pd.DataFrame) \
-            -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
+            -> t.Tuple['Dataset', t.Optional[np.ndarray], t.Optional[np.ndarray]]:
         """Convert a dataframe to deepcheck dataset and predictions array."""
+
+        try:
+            from deepchecks.tabular import Dataset
+        except ImportError:
+            raise Exception('Must have deepchecks installed to use this function.')
+
         if df is None or len(df) == 0:
             return None, None, None
 
@@ -99,7 +101,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         rows_count: int = 10_000,
         filters: t.List[DataFilter] = None,
         deepchecks_format: bool = False,
-    ) -> t.Union[pd.DataFrame, t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]]:
+    ) -> t.Union[pd.DataFrame, t.Tuple['Dataset', t.Optional[np.ndarray], t.Optional[np.ndarray]]]:
         """Get DataFrame or Deepchecks dataset and predictions for a model version reference data.
 
         Parameters
@@ -134,7 +136,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         rows_count: int = 10_000,
         filters: t.List[DataFilter] = None,
         deepchecks_format: bool = False,
-    ) -> t.Union[pd.DataFrame, t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]]:
+    ) -> t.Union[pd.DataFrame, t.Tuple['Dataset', t.Optional[np.ndarray], t.Optional[np.ndarray]]]:
         """Get DataFrame or Deepchecks dataset and predictions for a model version production data on a specific window.
 
         Parameters
@@ -336,7 +338,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
     def upload_reference(
             self,
-            dataset: Dataset,
+            dataset: 'Dataset',
             predictions: t.Union[pd.Series, np.ndarray, t.List],
             prediction_probas: t.Optional[np.ndarray] = None,
             samples_per_request: int = 5000
@@ -354,6 +356,14 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         samples_per_request : int
             The samples per batch request.
         """
+
+        try:
+            from deepchecks.tabular import Dataset
+        except ImportError:
+            raise Exception('Must have deepchecks installed to use this function.')
+        if not isinstance(dataset, Dataset):
+            raise TypeError('dataset must be a deepchecks Dataset.')
+
         existing_reference_data = self.get_reference_data(rows_count=1)
         if existing_reference_data is not None and len(existing_reference_data.index > 0):
             raise ValueError('it is not possible to replace reference data for existing model version you can'
@@ -566,6 +576,16 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
     def _add_defaults(self, monitoring_frequency: str):
         """Add default checks, monitors and alerts to a tabular model."""
+
+        try:
+            from deepchecks.tabular.checks import (FeatureDrift, LabelDrift, MixedNulls, NewCategoryTrainTest,
+                                                   NewLabelTrainTest, PercentOfNulls, PredictionDrift,
+                                                   SingleDatasetPerformance, StringMismatch)
+        except ImportError:
+            raise Exception(
+                'Must have deepchecks installed to use this function. Set create_model_defaults to false to skip.'
+            )
+
         task_type = TaskType(self.model['task_type'])
         frequency = validate_frequency(monitoring_frequency)
 
@@ -791,7 +811,7 @@ def _prediction_proba_formatter(prediction_probas, model_classes):
         raise ValueError('Number of classes in prediction_probas does not match number of classes in '
                          'model classes.')
     # TODO: add validation probas sum to one for each row?
-    return un_numpy(prediction_probas)
+    return _un_numpy(prediction_probas)
 
 
 def _classification_prediction_formatter(prediction, model_classes):
@@ -842,3 +862,32 @@ def _feature_importance_validate(feature_importance: dict, features: dict):
         raise ValueError('feature_importance must contain only non-negative values')
     if set(feature_importance.keys()) != set(features):
         raise ValueError('feature_importance must contain all features')
+
+
+def _un_numpy(val):
+    """Convert numpy value to native value.
+
+    Parameters
+    ----------
+    val :
+        The value to convert.
+
+    Returns
+    -------
+        returns the numpy value in a native type.
+    """
+    if isinstance(val, np.str_):
+        # NOTE:
+        # 'np.str_' is instance of the 'np.generic' but
+        # 'np.isnan(np.str_())' raises an error with a next message:
+        # >> TypeError: ufunc 'isnan' not supported for the input types...)
+        #
+        # therefore this 'if' statement is needed
+        return val.item()
+    if isinstance(val, np.generic):
+        if np.isnan(val):
+            return None
+        return val.item()
+    if isinstance(val, np.ndarray):
+        return val.tolist()
+    return val

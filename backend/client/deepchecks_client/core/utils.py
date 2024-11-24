@@ -23,10 +23,8 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 import rfc3339_validator
-from deepchecks.tabular import Dataset
-from deepchecks.utils.type_inference import is_categorical
-from pandas.core.dtypes.common import (is_bool_dtype, is_categorical_dtype, is_datetime64_dtype, is_integer_dtype,
-                                       is_numeric_dtype, is_period_dtype)
+from pandas.core.dtypes.common import (is_bool_dtype, is_datetime64_dtype, is_integer_dtype,
+                                       is_numeric_dtype, is_datetime64_any_dtype, is_float_dtype, is_numeric_dtype)
 from pendulum.datetime import DateTime as PendulumDateTime
 from termcolor import cprint
 from typing_extensions import TypeAlias, TypedDict
@@ -294,21 +292,21 @@ def _get_series_column_type(series: pd.Series):
     if is_bool_dtype(series):
         return ColumnType.BOOLEAN.value
     if is_integer_dtype(series):
-        if is_categorical(series):
+        if _is_categorical(series):
             return ColumnType.CATEGORICAL.value
         if series.abs().ge(2 ** 32).to_numpy().any():
             return ColumnType.BIGINT.value
         return ColumnType.INTEGER.value
     if is_numeric_dtype(series):
         return ColumnType.NUMERIC.value
-    if is_categorical_dtype(series):
+    if isinstance(series.dtype, pd.CategoricalDtype):
         return ColumnType.CATEGORICAL.value
     series_types = series.apply(type)
     if series_types.eq(str).all():
-        if is_categorical(series):
+        if _is_categorical(series):
             return ColumnType.CATEGORICAL.value
         return ColumnType.TEXT.value
-    if series_types.eq(datetime).all() or is_datetime64_dtype(series) or is_period_dtype(series):
+    if series_types.eq(datetime).all() or is_datetime64_dtype(series) or isinstance(series.dtype, pd.Period):
         return ColumnType.DATETIME.value
     warnings.warn(f'Column {series.name} is of unsupported dtype - {series.dtype}.')
     return None
@@ -321,8 +319,16 @@ class DataSchema(TypedDict):
     additional_data: t.Dict[str, ColumnTypeName]
 
 
-def describe_dataset(dataset: Dataset) -> DataSchema:
+def describe_dataset(dataset: 'Dataset') -> DataSchema:
     """Create a schema for a dataset"""
+
+    try:
+        from deepchecks.tabular import Dataset
+    except ImportError:
+        raise Exception('Must have deepchecks installed to use this function.')
+    if not isinstance(dataset, Dataset):
+        raise TypeError('dataset must be a deepchecks Dataset.')
+
     additional_data = {}
     features = {}
     for column in dataset.data.columns:
@@ -387,3 +393,72 @@ def validate_frequency(value) -> str:
         return value.upper()
 
     raise ValueError(f'Unexpecte value - {value}')
+
+
+def _is_categorical(
+        column: pd.Series,
+        max_categorical_ratio: float = 0.01,
+        max_categories_type_string: int = 150,
+        max_categories_type_int: int = 30,
+        max_categories_type_float_or_datetime: int = 5
+) -> bool:
+    """Check if uniques are few enough to count as categorical.
+
+    Parameters
+    ----------
+    column : pd.Series
+        A dataframe column
+    max_categorical_ratio : float , default: 0.01
+    max_categories_type_string : int , default: 150
+    max_categories_type_int : int , default: 30
+    max_categories_type_float_or_datetime : int , default: 5
+
+    Returns
+    -------
+    bool
+        True if is categorical according to input numbers
+    """
+    n_samples = len(column.dropna())
+    if n_samples == 0:
+        warnings.warn('Column %s only contains NaN values.', column.name)
+        return False
+
+    n_samples = np.max([n_samples, 1000])
+    n_unique = column.nunique(dropna=True)
+    col_type = _get_column_type(column)
+    if col_type == 'string':
+        max_categories = max_categories_type_string
+    elif col_type == 'float':
+        # If all values are natural numbers, treat as int
+        all_numbers_natural = np.max(pd.to_numeric(column).dropna() % 1) == 0
+        max_categories = max_categories_type_int if all_numbers_natural else max_categories_type_float_or_datetime
+    elif col_type == 'time':
+        max_categories = max_categories_type_float_or_datetime
+    elif col_type == 'int':
+        max_categories = max_categories_type_int
+    else:
+        return False
+
+    return (n_unique / n_samples) < max_categorical_ratio and n_unique <= max_categories
+
+
+def _get_column_type(column: pd.Series) -> t.Literal['float', 'int', 'string', 'time', 'other']:
+    """Get the type of column."""
+    if is_float_dtype(column):
+        return 'float'
+    elif is_numeric_dtype(column):
+        return 'int'
+    elif is_datetime64_any_dtype(column):
+        return 'time'
+
+    try:
+        column: pd.Series = pd.to_numeric(column)
+        if is_float_dtype(column):
+            return 'float'
+        else:
+            return 'int'
+    except ValueError:
+        return 'string'
+    # Non-string objects like pd.Timestamp results in TypeError
+    except TypeError:
+        return 'other'

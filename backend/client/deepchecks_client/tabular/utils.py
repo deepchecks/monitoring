@@ -17,14 +17,13 @@ import warnings
 import numpy as np
 import pandas as pd
 import yaml
-from deepchecks.tabular import Dataset
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import ColumnType, DataSchema, describe_dataset, pretty_print
 
 __all__ = ['create_schema', 'read_schema', 'standardize_input']
 
 
-def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
+def create_schema(dataset: 'Dataset', schema_output_file='schema.yaml'):
     """Automatically infer schema and saves it to yaml.
 
     Parameters
@@ -34,6 +33,14 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
     schema_output_file : str, default: 'schema.yaml'
         file like object or path in which the generated schema will be saved into
     """
+
+    try:
+        from deepchecks.tabular import Dataset
+    except ImportError:
+        raise Exception('Must have deepchecks installed to use this function.')
+    if not isinstance(dataset, Dataset):
+        raise TypeError('dataset must be a deepchecks Dataset.')
+
     schema = describe_dataset(dataset)
     yaml_schema = io.StringIO()
     yaml.dump(schema, yaml_schema)

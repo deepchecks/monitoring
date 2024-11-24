@@ -17,8 +17,6 @@ from datetime import datetime
 import fastjsonschema
 import pandas as pd
 import pendulum as pdl
-from deepchecks.core.checks import BaseCheck
-from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
                                           classification_label_formatter, parse_timestamp, pretty_print,
@@ -364,7 +362,7 @@ class DeepchecksModelClient:
         """Add default checks, monitors and alerts to the model based on its task type."""
         raise NotImplementedError
 
-    def add_checks(self, checks: t.Dict[str, BaseCheck], force_replace: bool = False):
+    def add_checks(self, checks: t.Dict[str, 'BaseCheck'], force_replace: bool = False):
         """Add new checks for the model and returns their checks' id.
 
         Parameters
@@ -379,10 +377,18 @@ class DeepchecksModelClient:
         dict
             The checks' ids.
         """
+        try:
+            from deepchecks.core.checks import BaseCheck
+            from deepchecks.core.reduce_classes import ReduceMixin
+        except ImportError:
+            raise Exception('Must have deepchecks installed to use this function.')
+
         serialized_checks = []
         checks_in_model = self.get_checks()
 
         for name, check in checks.items():
+            if not isinstance(check, BaseCheck):
+                raise TypeError('Checks must be deepchecks checks.')
             if not isinstance(check, ReduceMixin):
                 raise TypeError('Checks that do not implement "ReduceMixin" are not supported')
             elif name in checks_in_model and not force_replace:
