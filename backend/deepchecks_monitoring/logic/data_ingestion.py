@@ -347,7 +347,7 @@ class DataIngestionBackend(object):
         self.logger = logger or configure_logger(name="data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
         if self.use_kafka:
-            logging.getLogger("aiokafka.cluster").setLevel(logging.CRITICAL)
+            logging.getLogger("aiokafka.cluster").setLevel(logging.DEBUG)
 
     async def _send_with_retry(
             self,

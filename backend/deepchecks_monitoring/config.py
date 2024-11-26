@@ -66,7 +66,7 @@ class KafkaSettings(BaseDeepchecksSettings):
     kafka_username: t.Optional[str] = None
     kafka_password: t.Optional[str] = None
     kafka_replication_factor: int = 1
-    kafka_max_metadata_age: int = 60 * 1000
+    kafka_max_metadata_age: int = 300000
 
     @property
     def kafka_params(self):
