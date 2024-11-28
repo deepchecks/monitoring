@@ -33,7 +33,7 @@ class CloudFeaturesControl(FeaturesControl):
 
     @property
     def signup_enabled(self) -> bool:
-        return RoleEnum.OWNER in self.user.roles
+        return False
 
     @property
     def onboarding_enabled(self) -> bool:
