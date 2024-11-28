@@ -1,8 +1,8 @@
-from deepchecks_monitoring.public_models.role import RoleEnum
 from sqlalchemy import select
 
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.public_models import Billing, User
+from deepchecks_monitoring.public_models.role import RoleEnum
 
 
 class CloudFeaturesControl(FeaturesControl):
