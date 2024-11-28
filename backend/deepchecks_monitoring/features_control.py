@@ -16,6 +16,7 @@ __all__ = ["FeaturesControl", "FeaturesSchema"]
 class FeaturesSchema(BaseModel):
     """Schema to be returned to the client for the features control."""
 
+    signup_enabled: bool
     slack_enabled: bool
     rows_per_minute: int
     onboarding_enabled: bool
