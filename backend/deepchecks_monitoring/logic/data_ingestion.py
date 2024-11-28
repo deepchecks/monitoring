@@ -12,7 +12,6 @@
 import asyncio
 import copy
 import json
-import logging
 import typing as t
 
 import asyncpg.exceptions
