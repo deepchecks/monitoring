@@ -1,3 +1,4 @@
+from deepchecks_monitoring.public_models.role import RoleEnum
 from sqlalchemy import select
 
 from deepchecks_monitoring.features_control import FeaturesControl
@@ -32,7 +33,7 @@ class CloudFeaturesControl(FeaturesControl):
 
     @property
     def signup_enabled(self) -> bool:
-        return True
+        return RoleEnum.OWNER in self.user.roles
 
     @property
     def onboarding_enabled(self) -> bool:
