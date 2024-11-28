@@ -192,6 +192,10 @@ def features_control_mock(settings):
         """Mocked features control class for tests, replacing launchdarkly usage."""
 
         @property
+        def signup_enabled(self) -> bool:
+            return True
+
+        @property
         def rows_per_minute(self) -> int:
             """Maximum number of rows per minute allowed for organization."""
             return ROWS_PER_MINUTE_LIMIT

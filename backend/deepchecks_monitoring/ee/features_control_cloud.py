@@ -32,7 +32,7 @@ class CloudFeaturesControl(FeaturesControl):
 
     @property
     def signup_enabled(self) -> bool:
-        return True
+        return False
 
     @property
     def onboarding_enabled(self) -> bool:
