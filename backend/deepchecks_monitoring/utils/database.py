@@ -18,8 +18,6 @@ __all__ = ["SchemaBuilder", "attach_schema_switcher_listener", "attach_schema_sw
            "sqlalchemy_exception_to_asyncpg_exception"]
 
 
-
-
 class SessionParameter(DDLElement):
     """Represents postgres session runtime parameter (SET <parameter> TO <value>).
 
