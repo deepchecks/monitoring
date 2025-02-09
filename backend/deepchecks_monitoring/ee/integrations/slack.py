@@ -12,8 +12,9 @@ from slack_sdk.webhook import WebhookResponse
 
 from deepchecks_monitoring.config import Settings as OpenSourceSettings
 from deepchecks_monitoring.ee.config import SlackSettings
-from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as CheckParameterKind, configure_logger
+from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as CheckParameterKind
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema as MonitorConfig
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor
 from deepchecks_monitoring.utils.alerts import prepare_alert_link
 from deepchecks_monitoring.utils.text import format_float

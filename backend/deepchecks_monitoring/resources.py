@@ -32,7 +32,7 @@ from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, json_dumps, configure_logger
+from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, configure_logger, json_dumps
 from deepchecks_monitoring.notifications import AlertNotificator
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.user import User
