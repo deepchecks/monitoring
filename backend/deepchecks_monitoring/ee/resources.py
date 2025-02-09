@@ -18,6 +18,7 @@ from deepchecks_monitoring.ee.features_control_on_prem import OnPremFeaturesCont
 from deepchecks_monitoring.ee.notifications import AlertNotificator as EEAlertNotificator
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.integrations.email import EmailSender
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider as OpenSourceResourcesProvider
 
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 
 __all__ = ["ResourcesProvider"]
 
+logger: logging.Logger = configure_logger("server")
 
 class ResourcesProvider(OpenSourceResourcesProvider):
     """Provider of resources."""
@@ -64,7 +66,7 @@ class ResourcesProvider(OpenSourceResourcesProvider):
     def parallel_check_executors_pool(self) -> "ActorPool | None":
         parallel_check_executor_flag = self.settings.parallel_check_executor_flag
 
-        logging.getLogger("server").info({
+        logger.info({
             "mesage": f"'parallelCheckExecutorEnabled' is set to {parallel_check_executor_flag}"
         })
         if parallel_check_executor_flag:

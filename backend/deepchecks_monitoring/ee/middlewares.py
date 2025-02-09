@@ -19,6 +19,7 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from deepchecks_monitoring.exceptions import LicenseError
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.utils.auth import CurrentUser
 
@@ -82,7 +83,7 @@ class SecurityAuditMiddleware:
             log_stream_name=log_stream_name,
         )
         h.setLevel(logging.INFO)
-        self.logger = logging.getLogger("access-audit")
+        self.logger = configure_logger("access-audit")
         self.logger.addHandler(h)
         self.app = app
 

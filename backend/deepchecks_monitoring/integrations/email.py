@@ -21,12 +21,13 @@ from pydantic import BaseModel, EmailStr
 from typing_extensions import Self
 
 from deepchecks_monitoring.config import EmailSettings
+from deepchecks_monitoring.monitoring_utils import configure_logger
 
 # TODO: change this
 TEMPLATES_DIR = pathlib.Path(__file__).absolute().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
-logger: logging.Logger = logging.getLogger(__name__)
+logger: logging.Logger = configure_logger(__name__)
 
 
 class Recepient(BaseModel):

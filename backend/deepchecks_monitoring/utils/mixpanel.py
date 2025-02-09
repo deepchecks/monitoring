@@ -13,7 +13,7 @@ from sqlalchemy.orm import joinedload
 
 import deepchecks_monitoring
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.monitoring_utils import OperatorsEnum
+from deepchecks_monitoring.monitoring_utils import OperatorsEnum, configure_logger
 from deepchecks_monitoring.public_models.organization import OrgTier
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Model, ModelVersion, Monitor
@@ -655,7 +655,7 @@ class MixpanelEventReporter:
     ):
         self.mixpanel = mixpanel
         self.supress_errors = supress_errors
-        self.logger = logger or logging.getLogger(type(self).__name__)
+        self.logger = logger or configure_logger(type(self).__name__)
 
     def report(
         self,

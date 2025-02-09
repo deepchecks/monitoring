@@ -12,7 +12,7 @@ from slack_sdk.webhook import WebhookResponse
 
 from deepchecks_monitoring.config import Settings as OpenSourceSettings
 from deepchecks_monitoring.ee.config import SlackSettings
-from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as CheckParameterKind
+from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as CheckParameterKind, configure_logger
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema as MonitorConfig
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor
 from deepchecks_monitoring.utils.alerts import prepare_alert_link
@@ -84,7 +84,7 @@ class SlackInstallationUtils:
     ):
         self.settings = settings
         self.client = SlackClient()
-        self.logger = logger or logging.getLogger("slack.installation")
+        self.logger = logger or configure_logger("slack.installation")
         self.state_utils = OAuthStateUtils()
 
     def generate_authorization_url(self, state, redirect_path) -> str:

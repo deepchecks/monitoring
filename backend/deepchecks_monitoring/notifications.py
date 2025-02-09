@@ -19,6 +19,7 @@ from sqlalchemy.orm import joinedload
 from typing_extensions import Self
 
 from deepchecks_monitoring import __version__
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.schema_models import Check, Model
 from deepchecks_monitoring.schema_models.alert import Alert
@@ -85,7 +86,7 @@ class AlertNotificator:
         self.alert_rule = alert_rule
         self.session = session
         self.resources_provider = resources_provider
-        self.logger = logger or logging.getLogger("alert-notificator")
+        self.logger = logger or configure_logger("alert-notificator")
 
     async def send_emails(self) -> bool:
         """Send notification emails."""
