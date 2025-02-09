@@ -44,6 +44,7 @@ __all__ = ["ResourcesProvider"]
 
 logger: logging.Logger = configure_logger("server")
 
+
 class BaseResourcesProvider:
     """Base class for all resources provides."""
 

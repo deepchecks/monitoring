@@ -36,6 +36,7 @@ DEFAULT_N_SAMPLES = 5000
 
 logger: logging.Logger = configure_logger('monitor_run_logger')
 
+
 async def get_model_versions_for_time_range(session: AsyncSession,
                                             model_id: int,
                                             start_time: pdl.DateTime,

@@ -30,6 +30,7 @@ __all__ = ["ResourcesProvider"]
 
 logger: logging.Logger = configure_logger("server")
 
+
 class ResourcesProvider(OpenSourceResourcesProvider):
     """Provider of resources."""
 
