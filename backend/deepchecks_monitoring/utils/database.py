@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema, DDLElement
+
 from deepchecks_monitoring.monitoring_utils import configure_logger
 
 __all__ = ["SchemaBuilder", "attach_schema_switcher_listener", "attach_schema_switcher",
