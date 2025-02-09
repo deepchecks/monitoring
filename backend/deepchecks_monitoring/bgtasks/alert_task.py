@@ -112,7 +112,7 @@ async def execute_monitor(
         logger: t.Optional[logging.Logger] = None,
 ) -> t.List[Alert]:
     """Execute monitor alert rules."""
-    logger = logger or logging.getLogger('monitor-executor')
+    logger = logger or configure_logger('monitor-executor')
     logger.info('Execution of Monitor(id:%s) for timestamp %s', monitor_id, timestamp)
 
     monitor = t.cast(Monitor, await session.scalar(

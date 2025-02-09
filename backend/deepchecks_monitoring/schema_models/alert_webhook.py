@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from pydantic import AnyUrl, BaseModel, validator
 from sqlalchemy.dialects.postgresql import JSONB
 
-from deepchecks_monitoring.monitoring_utils import MetadataMixin
+from deepchecks_monitoring.monitoring_utils import MetadataMixin, configure_logger
 from deepchecks_monitoring.schema_models import Base
 from deepchecks_monitoring.utils.alerts import AlertSeverity
 
@@ -157,7 +157,7 @@ class AlertWebhook(Base, MetadataMixin):
             True - if webhook executes succesfully
             False - if webhook execution fails or request returns not successful response status
         """
-        logger = logger or logging.getLogger(f"webhook-{self.name}")
+        logger = logger or configure_logger(f"webhook-{self.name}")
 
         if alert.alert_rule.alert_severity not in self.notification_levels:
             logger.info(

@@ -22,7 +22,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
+from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, MonitorCheckConfSchema, configure_logger,
+                                                    fetch_or_404)
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL,
                                                              SAMPLE_TS_COL, ColumnType)
@@ -32,6 +33,8 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.model import TaskType
 
 DEFAULT_N_SAMPLES = 5000
+
+logger: logging.Logger = configure_logger('monitor_run_logger')
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
@@ -317,7 +320,7 @@ def run_deepchecks(
             if not (msg := getattr(e, 'message', None))
             else msg
         )
-        logging.getLogger('monitor_run_logger').exception(
+        logger.exception(
             'For model(id=%s) version(id=%s) check(%s) '
             'got exception: %s',
             model.id,
@@ -372,7 +375,7 @@ async def get_results_for_model_versions_for_reference(
         except errors.DeepchecksBaseError as e:
             message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
                 f'got exception: {e.message}'
-            logging.getLogger('monitor_run_logger').error(message)
+            logger.error(message)
             curr_result = None
 
         reduced_outs.append({'result': curr_result})

@@ -18,7 +18,7 @@ confluent-kafka==2.3.0
 kafka-python==2.0.2
 uvloop==0.17.0
 nbformat>=5.4.0,<6
-deepchecks@git+https://github.com/deepchecks/deepchecks.git@main
+deepchecks@git+https://github.com/deepchecks/deepchecks.git@8c15865aaebc7f73faeb0939d07fa982d646b2c4
 redis[hiredis]~=4.6.0
 pandas~=2.1.0
 pyjwt[crypto]==2.4.0
@@ -39,3 +39,4 @@ mixpanel==4.10.0
 typing_extensions~=4.12.0
 tenacity~=8.5.0
 pyarrow==14.0.2
+plotly>=5.13.1,<6

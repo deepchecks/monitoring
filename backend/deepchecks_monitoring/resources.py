@@ -32,7 +32,7 @@ from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, json_dumps
+from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, configure_logger, json_dumps
 from deepchecks_monitoring.notifications import AlertNotificator
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.user import User
@@ -41,6 +41,8 @@ from deepchecks_monitoring.utils.mixpanel import BaseEvent as BaseMixpanelEvent
 from deepchecks_monitoring.utils.mixpanel import MixpanelEventReporter
 
 __all__ = ["ResourcesProvider"]
+
+logger: logging.Logger = configure_logger("server")
 
 
 class BaseResourcesProvider:
@@ -348,11 +350,11 @@ class ResourcesProvider(BaseResourcesProvider):
             import ray  # noqa
             from ray.util.actor_pool import ActorPool  # noqa
         except ImportError:
-            logging.getLogger("server").info({"message": "Ray is not installed"})
+            logger.info({"message": "Ray is not installed"})
             return
 
         if not ray.is_initialized():
-            logging.getLogger("server").info({
+            logger.info({
                 "message": "Ray is not initialized"
             })
             return
@@ -389,7 +391,7 @@ class ResourcesProvider(BaseResourcesProvider):
         wait=tenacity.wait_fixed(1),
         retry=tenacity.retry_if_exception_type(KafkaError),
         reraise=True,
-        before_sleep=tenacity.before_sleep_log(logging.getLogger("server"), logging.WARNING),
+        before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
     )
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.
@@ -462,14 +464,14 @@ class ResourcesProvider(BaseResourcesProvider):
         if mixpanel is not None:
             return mixpanel
         if self.settings.enable_analytics is False:
-            logging.getLogger("server").warning({"message": "Analytics gathering is disabled"})
+            logger.warning({"message": "Analytics gathering is disabled"})
             return
         if token := self.settings.mixpanel_id:
             mixpanel = MixpanelEventReporter.from_token(token)
             self._mixpanel_event_reporter = mixpanel
             return mixpanel
 
-        logging.getLogger("server").warning({"message": "Mixpanel token is not provided"})
+        logger.warning({"message": "Mixpanel token is not provided"})
 
     def get_features_control(self, user: User) -> FeaturesControl:  # pylint: disable=unused-argument
         """Return features control."""

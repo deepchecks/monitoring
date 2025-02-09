@@ -13,6 +13,8 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema, DDLElement
 
+from deepchecks_monitoring.monitoring_utils import configure_logger
+
 __all__ = ["SchemaBuilder", "attach_schema_switcher_listener", "attach_schema_switcher",
            "sqlalchemy_exception_to_asyncpg_exception"]
 
@@ -139,7 +141,7 @@ class SchemaBuilder:
         self.name = name
         self.metadata = metadata
         self.migrations_location = migrations_location
-        self.logger = logger or logging.getLogger("schema-builder")
+        self.logger = logger or configure_logger("schema-builder")
 
     async def create(self, engine: AsyncEngine):
         """Create schema."""

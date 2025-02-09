@@ -67,7 +67,7 @@ class AlertsScheduler:
         self.engine = engine
         self.async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
         self.sleep_seconds = sleep_seconds
-        self.logger = logger or logging.getLogger('alerts-scheduler')
+        self.logger = logger or configure_logger('alerts-scheduler')
 
     async def run(self):
         """Start alert scheduler."""
