@@ -4,13 +4,12 @@ import { useCreateInviteApiV1OrganizationInvitePut } from 'api/generated';
 
 import { Snackbar } from '@mui/material';
 
-import { StyledContainer, StyledDialog, StyledText } from 'components/lib';
+import { StyledDialog, StyledText } from 'components/lib';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { BaseInput } from 'components/base/InputDropdown/InputDropdown';
 
 import { validateEmail } from 'helpers/utils/validateEmail';
 import { resError } from 'helpers/types/resError';
-import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
 
 import { MembersActionDialog } from '../Members.type';
 import { constants } from '../members.constants';
@@ -31,10 +30,9 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const [buttonEnabled, setButtonEnabled] = useState(false);
 
   const { mutateAsync: inviteUser } = useCreateInviteApiV1OrganizationInvitePut();
-  const isEmailEnabled = usePermissionControl({ feature: featuresList.email_enabled });
 
   const resErrMessage = err !== 'none' && err;
-  const submitBtnLabel = isEmailEnabled ? constants.inviteMember.submit : constants.inviteMember.copy;
+  const submitBtnLabel = constants.inviteMember.submit
 
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -51,13 +49,8 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   };
 
   const handleInviteMember = async () => {
-    if (isEmailEnabled) {
-      const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
-      setErr((res as resError)?.error_message ?? 'none');
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      handleCloseDialog();
-    }
+    const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
+    setErr((res as resError)?.error_message ?? 'none');
   };
 
   useEffect(() => {
@@ -76,34 +69,16 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
         title={constants.inviteMember.submit}
         closeDialog={handleCloseDialog}
         submitButtonLabel={submitBtnLabel}
-        submitButtonDisabled={!buttonEnabled && isEmailEnabled}
+        submitButtonDisabled={!buttonEnabled}
         submitButtonAction={handleInviteMember}
       >
         <MembersActionDialogContentLayout>
-          {isEmailEnabled ? (
-            <BaseInput
-              placeholder={constants.inviteMember.placeholder}
-              label={constants.inviteMember.inputLabel}
-              value={email}
-              onChange={handleEmailChange}
-            />
-          ) : (
-            <>
-              <StyledContainer flexDirection="row" padding="0">
-                <StyledText text={constants.inviteMember.mailConfigErr.first} type="h3" />
-                <a
-                  href={constants.inviteMember.mailConfigErr.docLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ fontSize: '16px' }}
-                >
-                  {constants.inviteMember.mailConfigErr.second}
-                </a>
-              </StyledContainer>
-
-              <StyledText text={constants.inviteMember.mailConfigErr.third} type="h3" />
-            </>
-          )}
+          <BaseInput
+            placeholder={constants.inviteMember.placeholder}
+            label={constants.inviteMember.inputLabel}
+            value={email}
+            onChange={handleEmailChange}
+          />
           <StyledText text={resErrMessage} color={theme.palette.error.main} marginBottom="8px" />
         </MembersActionDialogContentLayout>
       </StyledDialog>

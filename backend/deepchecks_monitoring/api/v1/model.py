@@ -368,10 +368,13 @@ async def _retrieve_models_data_ingestion(
 
     union_q = sa.union_all(*model_queries)
 
+    if not model_queries:
+        return {}
+
     rows = (await session.execute(
         sa.select(union_q.c.model_id, union_q.c.timestamp, union_q.c.count, union_q.c.label_count)
     )).fetchall()
-
+    
     result = defaultdict(list)
 
     for row in rows:
