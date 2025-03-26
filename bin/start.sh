@@ -12,4 +12,4 @@ if [[ -v DD_ENV ]]; then
   STARTAPP="ddtrace-run ${STARTAPP}"
 fi
 
-exec "${STARTAPP}"
+exec ${STARTAPP}
