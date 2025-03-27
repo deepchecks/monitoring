@@ -9,7 +9,9 @@ fi
 STARTAPP="uvicorn --factory deepchecks_monitoring.app:create_application --host 0.0.0.0 --workers 4 --log-level debug --proxy-headers --forwarded-allow-ips '*'"
 
 if [[ -v DD_ENV ]]; then
-  STARTAPP="ddtrace-run ${STARTAPP}"
+  # Run ddtrace with uvicorn as a pid 1 in the container (pass pid 1 in the container from bash to ddtrace)
+  exec ddtrace-run ${STARTAPP}
 fi
 
+# Run Uvicorn as a pid 1 in the container (pass pid 1 in the container from bash to Unicorn)
 exec ${STARTAPP}
