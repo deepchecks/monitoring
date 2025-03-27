@@ -152,6 +152,7 @@ class WorkerSettings(DatabaseSettings, RedisSettings):
         env_file = '.env'
         env_file_encoding = 'utf-8'
 
+
 def execute_worker():
     """Execute worker."""
 
