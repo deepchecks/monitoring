@@ -47,9 +47,9 @@ class RedisProxy:
         """Wrapp the Redis client with retry mechanism."""
         attr = getattr(self.client, name)
         decorator = retry(stop=stop_after_attempt(self.settings.stop_after_retries),
-                           wait=wait_fixed(self.settings.wait_between_retries),
-                           retry=retry_if_exception_type(redis_exceptions_tuple),
-                           reraise=True)
+                          wait=wait_fixed(self.settings.wait_between_retries),
+                          retry=retry_if_exception_type(redis_exceptions_tuple),
+                          reraise=True)
         if callable(attr):
             if asyncio.iscoroutinefunction(attr):
                 @decorator
