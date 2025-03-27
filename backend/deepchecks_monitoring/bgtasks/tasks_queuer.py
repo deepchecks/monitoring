@@ -33,6 +33,7 @@ from deepchecks_monitoring.config import DatabaseSettings, RedisSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
+from deepchecks_monitoring.utils.redis_proxy import RedisProxy
 
 try:
     from deepchecks_monitoring import ee
@@ -50,7 +51,7 @@ class TasksQueuer:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
-            redis_client: RedisCluster | Redis,
+            redis_client: RedisCluster | Redis | RedisProxy,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
             run_interval: int,
@@ -151,17 +152,6 @@ class WorkerSettings(DatabaseSettings, RedisSettings):
         env_file = '.env'
         env_file_encoding = 'utf-8'
 
-
-async def init_async_redis(redis_uri):
-    """Initialize redis connection."""
-    try:
-        redis = RedisCluster.from_url(redis_uri)
-        await redis.ping()
-        return redis
-    except redis_exceptions.RedisClusterException:
-        return Redis.from_url(redis_uri)
-
-
 def execute_worker():
     """Execute worker."""
 
@@ -195,7 +185,7 @@ def execute_worker():
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+                async_redis = RedisProxy(rp.redis_settings)
                 worker = tasks_queuer.TasksQueuer(rp, async_redis, workers, logger, settings.queuer_run_interval)
                 g.start_soon(worker.run)
 

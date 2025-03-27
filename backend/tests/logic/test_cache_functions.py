@@ -17,23 +17,23 @@ async def test_clear_monitor_cache(resources_provider):
     for _ in range(0, 10_000, 100):
         end_time = start_time.add(seconds=100)
         # Should be deleted later
-        cache_funcs.set_monitor_cache(organization_id=1, model_version_id=1, monitor_id=1,
+        await cache_funcs.set_monitor_cache(organization_id=1, model_version_id=1, monitor_id=1,
                                       start_time=start_time, end_time=end_time, value='some value')
         # Should be deleted later
-        cache_funcs.set_monitor_cache(organization_id=1, model_version_id=2, monitor_id=1,
+        await cache_funcs.set_monitor_cache(organization_id=1, model_version_id=2, monitor_id=1,
                                       start_time=start_time, end_time=end_time, value='some value')
         # Should NOT be deleted later
-        cache_funcs.set_monitor_cache(organization_id=1, model_version_id=1, monitor_id=7,
+        await cache_funcs.set_monitor_cache(organization_id=1, model_version_id=1, monitor_id=7,
                                       start_time=start_time, end_time=end_time, value='some value')
         # Should NOT be deleted later
-        cache_funcs.set_monitor_cache(organization_id=9, model_version_id=1, monitor_id=1,
+        await cache_funcs.set_monitor_cache(organization_id=9, model_version_id=1, monitor_id=1,
                                       start_time=start_time, end_time=end_time, value='some value')
         start_time = end_time
 
     # Act
     cache_funcs.clear_monitor_cache(organization_id=1, monitor_id=1)
     # Assert
-    assert len(cache_funcs.redis.keys()) == 200
+    assert len(await cache_funcs.redis.keys()) == 200
 
 
 @pytest.mark.asyncio
@@ -45,13 +45,13 @@ async def test_delete_monitor_cache_by_timestamp(resources_provider, async_sessi
     start_time = now
     for _ in range(0, 10_000, 100):
         end_time = start_time.add(seconds=100)
-        cache_funcs.set_monitor_cache(organization_id=1, model_version_id=1, monitor_id=1,
+        await cache_funcs.set_monitor_cache(organization_id=1, model_version_id=1, monitor_id=1,
                                       start_time=start_time, end_time=end_time, value='some value')
-        cache_funcs.set_monitor_cache(organization_id=1, model_version_id=2, monitor_id=1,
+        await cache_funcs.set_monitor_cache(organization_id=1, model_version_id=2, monitor_id=1,
                                       start_time=start_time, end_time=end_time, value='some value')
-        cache_funcs.set_monitor_cache(organization_id=1, model_version_id=1, monitor_id=7,
+        await cache_funcs.set_monitor_cache(organization_id=1, model_version_id=1, monitor_id=7,
                                       start_time=start_time, end_time=end_time, value='some value')
-        cache_funcs.set_monitor_cache(organization_id=9, model_version_id=1, monitor_id=1,
+        await cache_funcs.set_monitor_cache(organization_id=9, model_version_id=1, monitor_id=1,
                                       start_time=start_time, end_time=end_time, value='some value')
         start_time = end_time
 

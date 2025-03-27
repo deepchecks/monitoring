@@ -372,7 +372,7 @@ async def run_check_per_window_in_range(
                     result_value = reduce_check_result(result_value, monitor_options.additional_kwargs)
                 # If cache available and there is monitor id, save result to cache
                 if cache_funcs and monitor_id:
-                    cache_funcs.set_monitor_cache(organization_id, model_version.id, monitor_id, result_dict["start"],
+                    await cache_funcs.set_monitor_cache(organization_id, model_version.id, monitor_id, result_dict["start"],
                                                   result_dict["end"], result_value)
             reduce_results[model_version.name].append(result_value)
 

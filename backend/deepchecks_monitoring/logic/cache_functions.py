@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import pendulum as pdl
 import redis.exceptions
-from redis.client import Redis
+from redis.asyncio.client import Redis
 
 from deepchecks_monitoring.logic.keys import build_monitor_cache_key, get_invalidation_set_key
 
@@ -36,10 +36,10 @@ class CacheFunctions:
 
     def __init__(self, redis_client=None):
         self.use_cache = redis_client is not None
-        self.redis: Redis = redis_client
+        self.redis: Redis  = redis_client
         self.logger = logging.Logger("cache-functions")
 
-    def get_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time):
+    async def get_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time):
         """Get result from cache if exists. We can cache values which are "None" therefore to distinguish between the \
         situations we return CacheResult with 'found' property."""
         if self.use_cache:
@@ -48,7 +48,7 @@ class CacheFunctions:
                 p = self.redis.pipeline()
                 p.get(key)
                 p.expire(key, MONITOR_CACHE_EXPIRY_TIME)
-                cache_value = p.execute()[0]
+                cache_value = (await p.execute())[0]
                 # If cache value is none it means the key was not found
                 if cache_value is not None:
                     return CacheResult(found=True, value=json.loads(cache_value))
@@ -58,7 +58,7 @@ class CacheFunctions:
         # Return no cache result
         return CacheResult(found=False, value=None)
 
-    def set_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time, value):
+    async def set_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time, value):
         """Set cache value for the properties given."""
         if not self.use_cache:
             return
@@ -68,7 +68,7 @@ class CacheFunctions:
             p = self.redis.pipeline()
             p.set(key, cache_val)
             p.expire(key, MONITOR_CACHE_EXPIRY_TIME)
-            p.execute()
+            await p.execute()
         except redis.exceptions.RedisError as e:
             self.logger.exception(e)
 
@@ -97,7 +97,7 @@ class CacheFunctions:
         """Remove a given key from the cache."""
         self.redis.delete(key)
 
-    def get_and_incr_user_rate_count(self, user, time, count_added, is_label=True):
+    async def get_and_incr_user_rate_count(self, user, time, count_added, is_label=True):
         """Get the user's organization samples count for the given minute, and increase by the given amount."""
         key = f"rate-limit:{user.organization.id}:{time.minute}"
         if is_label:
@@ -105,7 +105,7 @@ class CacheFunctions:
         p = self.redis.pipeline()
         p.incr(key, count_added)
         p.expire(key, 60)
-        count_after_increase = p.execute()[0]
+        count_after_increase = (await p.execute())[0]
         # Return the count before incrementing
         return count_after_increase - count_added
 

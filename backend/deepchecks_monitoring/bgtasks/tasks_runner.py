@@ -29,6 +29,7 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE, TASK_RUNNER_LOCK
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
+from deepchecks_monitoring.utils.redis_proxy import RedisProxy
 
 try:
     from deepchecks_monitoring import ee
@@ -159,17 +160,6 @@ else:
         """Set of worker settings."""
         pass
 
-
-async def init_async_redis(redis_uri):
-    """Initialize redis connection."""
-    try:
-        redis = RedisCluster.from_url(redis_uri)
-        await redis.ping()
-        return redis
-    except RedisClusterException:
-        return Redis.from_url(redis_uri)
-
-
 def execute_worker():
     """Execute worker."""
 
@@ -189,7 +179,7 @@ def execute_worker():
         from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
 
         async with ResourcesProvider(settings) as rp:
-            async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+            async_redis = RedisProxy(rp.redis_settings)
 
             workers = [
                 ModelVersionCacheInvalidation(),
