@@ -182,7 +182,7 @@ async def execute_monitor(
         result_per_version = reduce_check_window(result_per_version, options)
         # Save to cache
         for version, result in result_per_version.items():
-            resources_provider.cache_functions.set_monitor_cache(
+            await resources_provider.cache_functions.set_monitor_cache(
                 organization_id, version.id, monitor_id, start_time, end_time, result)
 
         logger.debug('Check execution result: %s', result_per_version)

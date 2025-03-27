@@ -137,6 +137,8 @@ class RedisSettings(BaseDeepchecksSettings):
     """Redis settings."""
 
     redis_uri: t.Optional[RedisDsn] = None
+    stop_after_retries: int = 3  # Number of retries before giving up
+    wait_between_retries: int = 3  # Time to wait between retries
 
 
 class Settings(

@@ -220,7 +220,7 @@ async def execute_check_per_window(
 
         # TODO: consider caching results not only when a 'monitor_id' is provided
         if cache_funcs and monitor_id:
-            cache_funcs.set_monitor_cache(
+            await cache_funcs.set_monitor_cache(
                 organization_id,
                 result['model_version_id'],
                 monitor_id,

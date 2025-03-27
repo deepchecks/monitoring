@@ -340,7 +340,7 @@ async def test_monitor_executor_is_using_cache(
     window_start = window_end - (monitor_frequency.to_pendulum_duration() * monitor["aggregation_window"])
     cache_value = {"my special key": 1}
 
-    resources_provider.cache_functions.set_monitor_cache(
+    await resources_provider.cache_functions.set_monitor_cache(
         organization_id,
         model_version["id"],
         monitor["id"],

@@ -20,20 +20,12 @@ from deepchecks_monitoring.ee.bgtasks import ObjectStorageIngestor
 from deepchecks_monitoring.ee.resources import ResourcesProvider
 from deepchecks_monitoring.logic.keys import TASK_RUNNER_LOCK
 from deepchecks_monitoring.public_models import Task
+from deepchecks_monitoring.utils.redis_proxy import RedisProxy
 
 # Task class you want to run
 TASK_CLASS = ObjectStorageIngestor
 # The task name you want to run (need to be exists in DB, we take the last one ordered by id desc)
 BG_WORKER_TASK = 'object_storage_ingestion'
-
-async def init_async_redis(redis_uri):
-    """Initialize redis connection."""
-    try:
-        redis = RedisCluster.from_url(redis_uri)
-        await redis.ping()
-        return redis
-    except RedisClusterException:
-        return Redis.from_url(redis_uri)
 
 async def run_it():
     if path := dotenv.find_dotenv(usecwd=True):
@@ -49,7 +41,7 @@ async def run_it():
         async with rp.create_async_database_session() as session:
 
             try:
-                async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+                async_redis = RedisProxy(rp.redis_settings)
 
                 lock_name = TASK_RUNNER_LOCK.format(1)
                 # By default, allow task 5 minutes before removes lock to allow another run. Inside the task itself we can

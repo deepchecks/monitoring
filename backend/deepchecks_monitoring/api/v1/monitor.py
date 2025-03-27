@@ -220,7 +220,7 @@ async def update_monitor(
         )
 
         # Delete cache
-        cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
+        await cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     update_dict["updated_by"] = user.id
     await Monitor.update(session, monitor_id, update_dict)
     return Response(status_code=status.HTTP_200_OK)
@@ -236,7 +236,7 @@ async def delete_monitor(
 ):
     """Delete monitor by id."""
     await session.delete(monitor)
-    cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
+    await cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
