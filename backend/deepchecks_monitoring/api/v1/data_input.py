@@ -140,7 +140,9 @@ async def log_labels(
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
 
     # Atomically getting the count and increasing in order to avoid race conditions
-    curr_count = await resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data), is_label=True)
+    curr_count = await resources_provider.cache_functions.get_and_incr_user_rate_count(
+        user, time, len(data), is_label=True
+    )
     remains = minute_rate - curr_count
 
     # Remains can be negative because we don't check the limit before incrementing

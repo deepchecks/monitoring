@@ -28,6 +28,7 @@ redis_exceptions_tuple = tuple(  # Get all exception classes from redis.exceptio
 
 class RedisProxy:
     def __init__(self, settings: RedisSettings):
+        "A proxy for Redis client that handles connection errors."
         self.settings = settings
         self.client = self._connect(settings)
 
@@ -44,13 +45,13 @@ class RedisProxy:
     def __getattr__(self, name):
         """Wrapp the Redis client with retry mechanism."""
         attr = getattr(self.client, name)
-        _decorator = retry(stop=stop_after_attempt(self.settings.stop_after_retries),
+        decorator = retry(stop=stop_after_attempt(self.settings.stop_after_retries),
                            wait=wait_fixed(self.settings.wait_between_retries),
                            retry=retry_if_exception_type(redis_exceptions_tuple),
                            reraise=True)
         if callable(attr):
             if asyncio.iscoroutinefunction(attr):
-                @_decorator
+                @decorator
                 async def wrapped(*args, **kwargs):
                     try:
                         return await attr(*args, **kwargs)
@@ -58,7 +59,7 @@ class RedisProxy:
                         self.client = self._connect(self.settings)
                         raise
             else:
-                @_decorator
+                @decorator
                 def wrapped(*args, **kwargs):
                     try:
                         return attr(*args, **kwargs)
