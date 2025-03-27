@@ -27,8 +27,9 @@ redis_exceptions_tuple = tuple(  # Get all exception classes from redis.exceptio
 
 
 class RedisProxy:
+    "A proxy for Redis client that handles connection errors."
+
     def __init__(self, settings: RedisSettings):
-        "A proxy for Redis client that handles connection errors."
         self.settings = settings
         self.client = self._connect(settings)
 
