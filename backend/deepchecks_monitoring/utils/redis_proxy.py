@@ -41,7 +41,6 @@ class RedisProxy:
             client.ping()
         except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
             client = Redis.from_url(settings.redis_uri)
-            client.execute_command
         return client
 
     def __getattr__(self, name):
