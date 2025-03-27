@@ -36,7 +36,7 @@ class CacheFunctions:
 
     def __init__(self, redis_client=None):
         self.use_cache = redis_client is not None
-        self.redis: Redis  = redis_client
+        self.redis: Redis = redis_client
         self.logger = logging.Logger("cache-functions")
 
     async def get_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time):

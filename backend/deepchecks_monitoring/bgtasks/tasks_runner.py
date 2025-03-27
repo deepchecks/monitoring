@@ -160,6 +160,7 @@ else:
         """Set of worker settings."""
         pass
 
+
 def execute_worker():
     """Execute worker."""
 
