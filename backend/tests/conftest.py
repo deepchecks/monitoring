@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, patch
 import dotenv
 import faker
 import fakeredis
+import fakeredis.aioredis
 import pytest
 import pytest_asyncio
 import testing.postgresql
@@ -145,7 +146,7 @@ def smtp_server():
 
 @pytest.fixture(scope="function")
 def redis():
-    yield fakeredis.FakeStrictRedis()
+    yield fakeredis.aioredis.FakeRedis()
 
 
 @pytest.fixture(scope="function")

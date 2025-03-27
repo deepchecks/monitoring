@@ -31,7 +31,7 @@ async def test_clear_monitor_cache(resources_provider):
         start_time = end_time
 
     # Act
-    cache_funcs.clear_monitor_cache(organization_id=1, monitor_id=1)
+    await cache_funcs.clear_monitor_cache(organization_id=1, monitor_id=1)
     # Assert
     assert len(await cache_funcs.redis.keys()) == 200
 
@@ -57,7 +57,7 @@ async def test_delete_monitor_cache_by_timestamp(resources_provider, async_sessi
 
     timestamps_to_invalidate = {now.add(seconds=140).int_timestamp, now.add(seconds=520).int_timestamp,
                                 now.add(seconds=1000).int_timestamp}
-    cache_funcs.add_invalidation_timestamps(1, 1, timestamps_to_invalidate)
+    await cache_funcs.add_invalidation_timestamps(1, 1, timestamps_to_invalidate)
 
     # Act - run task
     async with async_session as session:
@@ -66,4 +66,4 @@ async def test_delete_monitor_cache_by_timestamp(resources_provider, async_sessi
         await ModelVersionCacheInvalidation().run(task, session, resources_provider, lock=None)
 
     # Assert - 2 monitors and 3 timestamps
-    assert len(cache_funcs.redis.keys()) == 400 - 2 * 3
+    assert len(await cache_funcs.redis.keys()) == 400 - 2 * 3

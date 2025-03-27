@@ -38,7 +38,6 @@ class RedisProxy:
         """Connect to Redis."""
         try:
             client = RedisCluster.from_url(settings.redis_uri)
-            client.ping()
         except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
             client = Redis.from_url(settings.redis_uri)
         return client
