@@ -59,6 +59,7 @@ def get_data_ingestion_backend(request: fastapi.Request):
     state = request.app.state
     return state.data_ingestion_backend
 
+
 def get_host(request: fastapi.Request) -> str:
     settings = request.app.state.settings
     return settings.host
