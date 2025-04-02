@@ -82,7 +82,6 @@ class ResourcesProvider(BaseResourcesProvider):
         self._settings = settings
         self._database_engine: t.Optional[Engine] = None
         self._async_database_engine: t.Optional[AsyncEngine] = None
-        self._kafka_admin: t.Optional[KafkaAdminClient] = None
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
         self._parallel_check_executors = None
