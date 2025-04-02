@@ -20,4 +20,4 @@ tox==3.25.1
 faker
 pyOpenSSL
 aiosmtpd
-fakeredis[lua]==2.9.2
+fakeredis[lua]==2.28.0
