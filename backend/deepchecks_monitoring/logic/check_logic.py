@@ -323,7 +323,7 @@ async def run_check_per_window_in_range(
             curr_test_info = {"start": window_start, "end": window_end}
             test_info.append(curr_test_info)
             if monitor_id and cache_funcs:
-                cache_result = cache_funcs.get_monitor_cache(
+                cache_result = await cache_funcs.get_monitor_cache(
                     organization_id, model_version.id, monitor_id, window_start, window_end)
                 # If found the result in cache, skip querying
                 if cache_result.found:

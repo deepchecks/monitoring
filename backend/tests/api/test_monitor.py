@@ -11,7 +11,7 @@ import typing as t
 
 import pendulum as pdl
 import pytest
-from fakeredis import FakeRedis
+from fakeredis.aioredis import FakeRedis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.keys import build_monitor_cache_key
@@ -407,13 +407,13 @@ async def test_update_monitor_freq(
     expected = round_up_datetime(daterange[0], frequency, "utc") - frequency.to_pendulum_duration()
     assert latest_schedule == expected
 
-
-def test_monitor_execution(
+@pytest.mark.asyncio
+async def test_monitor_execution(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
     classification_model: Payload,
-    redis: FakeRedis,
+    async_redis: FakeRedis,
     user
 ):
     # Arrange
@@ -434,12 +434,24 @@ def test_monitor_execution(
             }]}
         }
     ))
+
     upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
         model_id=classification_model["id"],
         daterange=daterange
     )
+    # assert cache empty before running monitor
+    count_cache = 0
+    monitor_key = build_monitor_cache_key(user.organization_id, classification_model_version["id"], monitor["id"],
+                                          None, None)
+    connection_pool = async_redis.connection_pool
+    connection_pool.reset()  # we need to reset due to fake redis being async
+    async for _ in async_redis.scan_iter(monitor_key):
+        count_cache += 1
+
+    assert count_cache == 0
+    connection_pool.reset()
     # Act
     result_without_cache = test_api.execute_monitor(
         monitor_id=monitor["id"],
@@ -449,14 +461,13 @@ def test_monitor_execution(
     result_without_cache = t.cast(Payload, result_without_cache)
 
     # Assert cache is populated
+    connection_pool.reset()
     count_cache = 0
-    monitor_key = build_monitor_cache_key(user.organization_id, classification_model_version["id"], monitor["id"],
-                                          None, None)
-    for _ in redis.scan_iter(monitor_key):
+    async for _ in async_redis.scan_iter(monitor_key):
         count_cache += 1
 
     assert count_cache == 8
-
+    connection_pool.reset()
     # Assert result is same with cache
     result_with_cache = test_api.execute_monitor(
         monitor_id=monitor["id"],

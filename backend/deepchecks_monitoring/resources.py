@@ -83,8 +83,6 @@ class ResourcesProvider(BaseResourcesProvider):
         self._database_engine: t.Optional[Engine] = None
         self._async_database_engine: t.Optional[AsyncEngine] = None
         self._kafka_admin: t.Optional[KafkaAdminClient] = None
-        self._redis_client: t.Optional[Redis] = None
-        self._cache_funcs: t.Optional[CacheFunctions] = None
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
         self._parallel_check_executors = None
@@ -290,16 +288,12 @@ class ResourcesProvider(BaseResourcesProvider):
     @property
     def redis_client(self) -> t.Optional[Redis]:
         """Return redis client if redis defined, else None."""
-        if self._redis_client is None and self.redis_settings.redis_uri:
-            self._redis_client = RedisProxy(self.redis_settings)
-        return self._redis_client
+        return RedisProxy(self.redis_settings)
 
     @property
     def cache_functions(self) -> t.Optional[CacheFunctions]:
         """Return cache functions."""
-        if self._cache_funcs is None:
-            self._cache_funcs = CacheFunctions(self.redis_client)
-        return self._cache_funcs
+        return CacheFunctions(self.redis_client)
 
     @property
     def oauth_client(self):
