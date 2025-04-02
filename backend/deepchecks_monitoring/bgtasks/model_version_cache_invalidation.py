@@ -48,38 +48,38 @@ class ModelVersionCacheInvalidation(BackgroundWorker):
         self.logger.info({'message': 'starting job', 'worker name': str(type(self)),
                           'task': task.id, 'model version': model_version_id, 'org_id': org_id})
 
-        redis = resources_provider.redis_client
-        invalidation_set_key = get_invalidation_set_key(org_id, model_version_id)
+        async with resources_provider.get_redis_client() as redis:
+            invalidation_set_key = get_invalidation_set_key(org_id, model_version_id)
 
-        # Query all timestamps
-        entries = await redis.zrange(invalidation_set_key, start=0, end=-1, withscores=True)
-        if entries:
-            # Sort timestamps for faster search
-            invalidation_ts = sorted([int(x[0]) for x in entries])
-            max_score = max((x[1] for x in entries))
+            # Query all timestamps
+            entries = await redis.zrange(invalidation_set_key, start=0, end=-1, withscores=True)
+            if entries:
+                # Sort timestamps for faster search
+                invalidation_ts = sorted([int(x[0]) for x in entries])
+                max_score = max((x[1] for x in entries))
 
-            # Iterate all monitors cache keys and check timestamps overlap
-            monitor_pattern = build_monitor_cache_key(org_id, model_version_id, None, None, None)
-            keys_to_delete = []
-            async for monitor_cache_key in redis.scan_iter(match=monitor_pattern):
-                splitted = monitor_cache_key.split(b':')
-                start_ts, end_ts = int(splitted[4]), int(splitted[5])
-                # Get first timestamp equal or larger than start_ts
-                index = bisect.bisect_left(invalidation_ts, start_ts)
-                # If index is equal to list length, then all timestamps are smaller than start_ts
-                if index == len(invalidation_ts):
-                    continue
-                if start_ts <= invalidation_ts[index] < end_ts:
-                    keys_to_delete.append(monitor_cache_key)
+                # Iterate all monitors cache keys and check timestamps overlap
+                monitor_pattern = build_monitor_cache_key(org_id, model_version_id, None, None, None)
+                keys_to_delete = []
+                async for monitor_cache_key in redis.scan_iter(match=monitor_pattern):
+                    splitted = monitor_cache_key.split(b':')
+                    start_ts, end_ts = int(splitted[4]), int(splitted[5])
+                    # Get first timestamp equal or larger than start_ts
+                    index = bisect.bisect_left(invalidation_ts, start_ts)
+                    # If index is equal to list length, then all timestamps are smaller than start_ts
+                    if index == len(invalidation_ts):
+                        continue
+                    if start_ts <= invalidation_ts[index] < end_ts:
+                        keys_to_delete.append(monitor_cache_key)
 
-            pipe = redis.pipeline()
-            for key in keys_to_delete:
-                # Delete all cache keys - must do in separate deletes since RedisCluster does not support multi-delete
-                await pipe.delete(key)
-            # Delete all invalidation timestamps by range. if timestamps were updated while running,
-            # then their score should be larger than max_score, and they won't be deleted
-            await pipe.zremrangebyscore(invalidation_set_key, min=0, max=max_score)
-            await pipe.execute()
+                pipe = redis.pipeline()
+                for key in keys_to_delete:
+                    # Delete all cache keys - must do in separate deletes since RedisCluster does not support multi-delete
+                    await pipe.delete(key)
+                # Delete all invalidation timestamps by range. if timestamps were updated while running,
+                # then their score should be larger than max_score, and they won't be deleted
+                await pipe.zremrangebyscore(invalidation_set_key, min=0, max=max_score)
+                await pipe.execute()
         self.logger.info({'message': 'finished job', 'worker name': str(type(self)),
                           'task': task.id, 'model version': model_version_id, 'org_id': org_id})
 

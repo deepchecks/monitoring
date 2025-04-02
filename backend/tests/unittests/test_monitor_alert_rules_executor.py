@@ -118,13 +118,14 @@ async def test_monitor_executor(
     window_end = now
     window_start = window_end - Frequency.DAY.to_pendulum_duration()
 
-    cache_value = resources_provider.cache_functions.get_monitor_cache(
-        user.organization.id,
-        versions[0]["id"],
-        monitor["id"],
-        window_start,
-        window_end
-    )
+    async with resources_provider.cache_functions() as cache_functions:
+        cache_value = cache_functions.get_monitor_cache(
+            user.organization.id,
+            versions[0]["id"],
+            monitor["id"],
+            window_start,
+            window_end
+        )
 
     assert cache_value.found is True
     assert cache_value.value == {"accuracy": 0.2}
@@ -340,14 +341,15 @@ async def test_monitor_executor_is_using_cache(
     window_start = window_end - (monitor_frequency.to_pendulum_duration() * monitor["aggregation_window"])
     cache_value = {"my special key": 1}
 
-    await resources_provider.cache_functions.set_monitor_cache(
-        organization_id,
-        model_version["id"],
-        monitor["id"],
-        window_start,
-        window_end,
-        cache_value
-    )
+    async with resources_provider.cache_functions() as cache_functions:
+        await cache_functions.set_monitor_cache(
+            organization_id,
+            model_version["id"],
+            monitor["id"],
+            window_start,
+            window_end,
+            cache_value
+        )
 
     result: t.List[Alert] = await execute_monitor(
         monitor_id=monitor["id"],

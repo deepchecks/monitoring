@@ -21,7 +21,7 @@ from sqlalchemy.orm import joinedload
 from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
 from deepchecks_monitoring.config import Settings, Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, ResourcesProviderDep, SettingsDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyncSession, IdResponse,
@@ -155,7 +155,6 @@ async def update_monitor(
         monitor_id: int,
         body: MonitorUpdateSchema,
         session: AsyncSession = AsyncSessionDep,
-        cache_funcs: CacheFunctions = CacheFunctionsDep,
         user: User = Depends(CurrentActiveUser()),
         resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
@@ -220,7 +219,8 @@ async def update_monitor(
         )
 
         # Delete cache
-        await cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
+        async with resources_provider.cache_functions() as cache_funcs:
+            await cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     update_dict["updated_by"] = user.id
     await Monitor.update(session, monitor_id, update_dict)
     return Response(status_code=status.HTTP_200_OK)
@@ -231,12 +231,13 @@ async def delete_monitor(
         monitor_id: int,
         monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
-        cache_funcs: CacheFunctions = CacheFunctionsDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
         user: User = Depends(CurrentActiveUser())
 ):
     """Delete monitor by id."""
     await session.delete(monitor)
-    await cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
+    async with resources_provider.cache_functions() as cache_funcs:
+        await cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
@@ -280,7 +281,6 @@ async def run_monitor_lookback(
         body: MonitorRunSchema,
         monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
-        cache_funcs: CacheFunctions = CacheFunctionsDep,
         user: User = Depends(CurrentActiveUser()),
         resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
@@ -326,11 +326,12 @@ async def run_monitor_lookback(
             organization_id=t.cast(int, user.organization_id)
         )
 
-    return await run_check_per_window_in_range(
-        monitor.check_id,
-        session,
-        options,
-        monitor_id=monitor_id,
-        cache_funcs=cache_funcs,
-        organization_id=user.organization_id,
-    )
+    async with resources_provider.cache_functions() as cache_funcs:
+        return await run_check_per_window_in_range(
+            monitor.check_id,
+            session,
+            options,
+            monitor_id=monitor_id,
+            cache_funcs=cache_funcs,
+            organization_id=user.organization_id,
+        )

@@ -154,13 +154,14 @@ async def execute_monitor(
     # First looking for results in cache if already calculated
     cache_results = {}
     model_versions_without_cache = []
-    for model_version in model_versions:
-        cache_result = resources_provider.cache_functions.get_monitor_cache(
-            organization_id, model_version.id, monitor_id, start_time, end_time)
-        if cache_result.found:
-            cache_results[model_version] = cache_result.value
-        else:
-            model_versions_without_cache.append(model_version)
+    async with resources_provider.cache_functions() as cache_functions:
+        for model_version in model_versions:
+            cache_result = cache_functions.get_monitor_cache(
+                organization_id, model_version.id, monitor_id, start_time, end_time)
+            if cache_result.found:
+                cache_results[model_version] = cache_result.value
+            else:
+                model_versions_without_cache.append(model_version)
         logger.debug('Cache result: %s', cache_results)
 
     # For model versions without result in cache running calculation
@@ -181,9 +182,10 @@ async def execute_monitor(
 
         result_per_version = reduce_check_window(result_per_version, options)
         # Save to cache
-        for version, result in result_per_version.items():
-            await resources_provider.cache_functions.set_monitor_cache(
-                organization_id, version.id, monitor_id, start_time, end_time, result)
+        async with resources_provider.cache_functions() as cache_functions:
+            for version, result in result_per_version.items():
+                await cache_functions.set_monitor_cache(
+                    organization_id, version.id, monitor_id, start_time, end_time, result)
 
         logger.debug('Check execution result: %s', result_per_version)
     else:

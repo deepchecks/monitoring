@@ -16,6 +16,7 @@ import string
 import typing as t
 from unittest.mock import MagicMock, patch
 
+from deepchecks_monitoring.utils.redis_proxy import RedisProxy
 import dotenv
 import faker
 import fakeredis
@@ -213,7 +214,7 @@ def features_control_mock(settings):
 @pytest_asyncio.fixture(scope="function")
 async def resources_provider(settings, features_control_mock, async_redis):
     patch.object(ResourcesProvider, "get_features_control", features_control_mock).start()
-    patch.object(ResourcesProvider, "redis_client",async_redis).start()
+    patch.object(RedisProxy, "_connect",lambda *_: async_redis).start()
     yield ResourcesProvider(settings)
 
 

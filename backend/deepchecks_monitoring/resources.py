@@ -20,7 +20,9 @@ from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from kafka.errors import KafkaError, TopicAlreadyExistsError
-from redis.client import Redis
+from redis.asyncio.client import Redis
+from deepchecks_monitoring.utils.redis_proxy import RedisProxy
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
@@ -40,7 +42,6 @@ from deepchecks_monitoring.utils.mixpanel import MixpanelEventReporter
 
 __all__ = ["ResourcesProvider"]
 
-from deepchecks_monitoring.utils.redis_proxy import RedisProxy
 
 logger: logging.Logger = configure_logger("server")
 
@@ -284,15 +285,24 @@ class ResourcesProvider(BaseResourcesProvider):
         finally:
             kafka_admin.close()
 
-    @property
-    def redis_client(self) -> t.Optional[Redis]:
+    @asynccontextmanager
+    async def get_redis_client(self) -> t.AsyncGenerator[t.Optional[RedisProxy], None]:
         """Return redis client if redis defined, else None."""
-        return RedisProxy(self.redis_settings)
-
-    @property
-    def cache_functions(self) -> t.Optional[CacheFunctions]:
+        if self.redis_settings.redis_uri:
+            redis_proxy = RedisProxy(self.redis_settings)
+            try:
+                yield redis_proxy
+            finally:
+                await redis_proxy.aclose()
+        else:
+            yield None
+        
+        
+    @asynccontextmanager
+    async def cache_functions(self) ->  t.AsyncGenerator[t.Optional[CacheFunctions], None]:
         """Return cache functions."""
-        return CacheFunctions(self.redis_client)
+        async with self.get_redis_client() as redis_client:
+            yield CacheFunctions(redis_client)
 
     @property
     def oauth_client(self):

@@ -73,7 +73,8 @@ async def log_data_batch(
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
 
     # Atomically getting the count and increasing in order to avoid race conditions
-    curr_count = await resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
+    async with resources_provider.cache_functions() as cache_functions:
+        curr_count = await cache_functions.get_and_incr_user_rate_count(user, time, len(data))
     remains = minute_rate - curr_count
 
     # Remains can be negative because we don't check the limit before incrementing
@@ -140,9 +141,10 @@ async def log_labels(
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
 
     # Atomically getting the count and increasing in order to avoid race conditions
-    curr_count = await resources_provider.cache_functions.get_and_incr_user_rate_count(
-        user, time, len(data), is_label=True
-    )
+    async with resources_provider.cache_functions() as cache_functions:
+        curr_count = await cache_functions.get_and_incr_user_rate_count(
+            user, time, len(data), is_label=True
+        )
     remains = minute_rate - curr_count
 
     # Remains can be negative because we don't check the limit before incrementing

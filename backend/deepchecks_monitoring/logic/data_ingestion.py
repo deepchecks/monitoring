@@ -425,8 +425,8 @@ class DataIngestionBackend(object):
 
                 await self._send_with_retry(producer, topic_name, messages, len(messages))
         else:
-            await log_data(model_version, data, session, [log_time] * len(data), self.logger,
-                           organization_id, self.resources_provider.cache_functions)
+            async with self.resources_provider.cache_functions() as cache_functions:
+                await log_data(model_version, data, session, [log_time] * len(data), self.logger, organization_id, cache_functions)
 
     async def log_labels(
         self,
@@ -458,8 +458,8 @@ class DataIngestionBackend(object):
 
                 await self._send_with_retry(producer, topic_name, messages, len(messages))
         else:
-            await log_labels(model, data, session, organization_id,
-                             self.resources_provider.cache_functions, self.logger)
+            async with self.resources_provider.cache_functions() as cache_functions:
+                await log_labels(model, data, session, organization_id, cache_functions, self.logger)
 
     async def run_data_consumer(self):
         """Create an endless-loop of consuming messages from kafka."""
@@ -494,8 +494,9 @@ class DataIngestionBackend(object):
                     messages_data = [json.loads(m.value) for m in messages if m.offset > model_version.ingestion_offset]
                     samples = [m["data"] for m in messages_data]
                     log_times = [pdl.parse(m["log_time"]) for m in messages_data]
-                    await log_data(model_version, samples, session, log_times, self.logger, organization_id,
-                                   self.resources_provider.cache_functions)
+                    async with self.resources_provider.cache_functions() as cache_functions:
+                        await log_data(model_version, samples, session, log_times, self.logger, organization_id,
+                                       cache_functions)
                     model_version.ingestion_offset = messages[-1].offset
                 if entity == "model":
                     model: Model = (await session.execute(select(Model).where(Model.id == entity_id))).scalar()
@@ -507,8 +508,8 @@ class DataIngestionBackend(object):
                     # already ingested messages
                     messages_data = [json.loads(m.value) for m in messages if m.offset > model.ingestion_offset]
                     samples = [m["data"] for m in messages_data]
-                    await log_labels(model, samples, session, organization_id,
-                                     self.resources_provider.cache_functions, self.logger)
+                    async with self.resources_provider.cache_functions() as cache_functions:
+                        await log_labels(model, samples, session, organization_id, cache_functions, self.logger)
                     model.ingestion_offset = messages[-1].offset
 
             return True

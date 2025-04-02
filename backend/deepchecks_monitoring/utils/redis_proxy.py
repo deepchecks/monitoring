@@ -34,7 +34,7 @@ class RedisProxy:
         self.client = self._connect(settings)
 
     @classmethod
-    def _connect(cls, settings):
+    def _connect(cls, settings: RedisSettings):
         """Connect to Redis."""
         try:
             client = RedisCluster.from_url(settings.redis_uri)

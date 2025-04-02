@@ -28,7 +28,6 @@ __all__ = [
     "limit_request_size",
     "SettingsDep",
     "DataIngestionDep",
-    "CacheFunctionsDep",
     "ResourcesProviderDep"
 ]
 
@@ -60,12 +59,6 @@ def get_data_ingestion_backend(request: fastapi.Request):
     state = request.app.state
     return state.data_ingestion_backend
 
-
-def get_cache_functions(request: fastapi.Request):
-    state = request.app.state
-    return state.resources_provider.cache_functions
-
-
 def get_host(request: fastapi.Request) -> str:
     settings = request.app.state.settings
     return settings.host
@@ -78,7 +71,6 @@ def get_resources_provider(request: fastapi.Request) -> "ResourcesProvider":
 AsyncSessionDep = fastapi.Depends(get_async_session)
 SettingsDep = fastapi.Depends(get_settings)
 DataIngestionDep = fastapi.Depends(get_data_ingestion_backend)
-CacheFunctionsDep = fastapi.Depends(get_cache_functions)
 ResourcesProviderDep = fastapi.Depends(get_resources_provider)
 
 
