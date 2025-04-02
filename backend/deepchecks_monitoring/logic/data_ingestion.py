@@ -426,7 +426,8 @@ class DataIngestionBackend(object):
                 await self._send_with_retry(producer, topic_name, messages, len(messages))
         else:
             async with self.resources_provider.cache_functions() as cache_functions:
-                await log_data(model_version, data, session, [log_time] * len(data), self.logger, organization_id, cache_functions)
+                await log_data(model_version, data, session,
+                               [log_time] * len(data), self.logger, organization_id, cache_functions)
 
     async def log_labels(
         self,

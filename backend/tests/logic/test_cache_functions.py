@@ -4,7 +4,6 @@ from sqlalchemy import select
 
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import (
     ModelVersionCacheInvalidation, insert_model_version_cache_invalidation_task)
-from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.public_models import Task
 
 

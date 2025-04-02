@@ -20,8 +20,6 @@ from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from kafka.errors import KafkaError, TopicAlreadyExistsError
-from redis.asyncio.client import Redis
-from deepchecks_monitoring.utils.redis_proxy import RedisProxy
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
@@ -39,6 +37,7 @@ from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.utils import database
 from deepchecks_monitoring.utils.mixpanel import BaseEvent as BaseMixpanelEvent
 from deepchecks_monitoring.utils.mixpanel import MixpanelEventReporter
+from deepchecks_monitoring.utils.redis_proxy import RedisProxy
 
 __all__ = ["ResourcesProvider"]
 
@@ -296,10 +295,9 @@ class ResourcesProvider(BaseResourcesProvider):
                 await redis_proxy.aclose()
         else:
             yield None
-        
-        
+
     @asynccontextmanager
-    async def cache_functions(self) ->  t.AsyncGenerator[t.Optional[CacheFunctions], None]:
+    async def cache_functions(self) -> t.AsyncGenerator[t.Optional[CacheFunctions], None]:
         """Return cache functions."""
         async with self.get_redis_client() as redis_client:
             yield CacheFunctions(redis_client)

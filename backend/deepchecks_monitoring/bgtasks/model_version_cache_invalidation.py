@@ -73,8 +73,8 @@ class ModelVersionCacheInvalidation(BackgroundWorker):
                         keys_to_delete.append(monitor_cache_key)
 
                 pipe = redis.pipeline()
+                # Delete all cache keys - must do in separate deletes since RedisCluster does not support multi-delete
                 for key in keys_to_delete:
-                    # Delete all cache keys - must do in separate deletes since RedisCluster does not support multi-delete
                     await pipe.delete(key)
                 # Delete all invalidation timestamps by range. if timestamps were updated while running,
                 # then their score should be larger than max_score, and they won't be deleted
