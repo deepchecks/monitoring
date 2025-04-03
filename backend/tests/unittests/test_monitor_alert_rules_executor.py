@@ -119,7 +119,7 @@ async def test_monitor_executor(
     window_start = window_end - Frequency.DAY.to_pendulum_duration()
 
     async with resources_provider.cache_functions() as cache_functions:
-        cache_value = cache_functions.get_monitor_cache(
+        cache_value = await cache_functions.get_monitor_cache(
             user.organization.id,
             versions[0]["id"],
             monitor["id"],
