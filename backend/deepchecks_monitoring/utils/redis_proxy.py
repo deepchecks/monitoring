@@ -35,49 +35,16 @@ class RedisProxy:
 
     async def init_conn_async(self):
         """Connect to Redis."""
-        try:
-            self.client = RedisCluster.from_url(self.settings.redis_uri)
-            await self.client.ping()
-        except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
-            self.client = Redis.from_url(self.settings.redis_uri)
-
-    def init_conn_sync(self):
-        """Connect to Redis."""
-        try:
-            self.client = RedisCluster.from_url(self.settings.redis_uri)
-            self.client.ping()
-        except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
-            self.client = Redis.from_url(self.settings.redis_uri)
-
-    def __getattr__(self, name):
-        """Wrapp the Redis client with retry mechanism."""
-        attr = getattr(self.client, name)
-        decorator = retry(stop=stop_after_attempt(self.settings.stop_after_retries),
-                          wait=wait_fixed(self.settings.wait_between_retries),
-                          retry=retry_if_exception_type(redis_exceptions_tuple),
-                          reraise=True)
-        if callable(attr):
-            if asyncio.iscoroutinefunction(attr):
-                @decorator
-                async def wrapped(*args, **kwargs):
-                    try:
-                        if self.client is None:
-                            await self.init_conn_async()
-                        return await attr(*args, **kwargs)
-                    except (RedisClusterException, RedisConnectionError):
-                        await self.init_conn_async()
-                        raise
-            else:
-                @decorator
-                def wrapped(*args, **kwargs):
-                    try:
-                        if self.client is None:
-                            self.init_conn_sync()
-                        return attr(*args, **kwargs)
-                    except (RedisClusterException, RedisConnectionError):
-                        self.init_conn_sync()
-                        raise
-
-            return wrapped
-        else:
-            return attr
+        @retry(
+            stop=stop_after_attempt(self.settings.stop_after_retries),
+            wait=wait_fixed(self.settings.wait_between_retries),
+            retry=retry_if_exception_type(redis_exceptions_tuple),
+            reraise=True
+        )
+        async def connect_to_redis():
+            try:
+                self.client = RedisCluster.from_url(self.settings.redis_uri)
+                await self.client.ping()
+            except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
+                self.client = Redis.from_url(self.settings.redis_uri)
+        await connect_to_redis()

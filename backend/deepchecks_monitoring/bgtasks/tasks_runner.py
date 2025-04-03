@@ -181,6 +181,7 @@ def execute_worker():
 
         async with ResourcesProvider(settings) as rp:
             async_redis = RedisProxy(rp.redis_settings)
+            await async_redis.init_conn_async()
 
             workers = [
                 ModelVersionCacheInvalidation(),

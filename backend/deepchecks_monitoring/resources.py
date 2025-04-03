@@ -288,6 +288,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return redis client if redis defined, else None."""
         if self.redis_settings.redis_uri:
             redis_proxy = RedisProxy(self.redis_settings)
+            await redis_proxy.init_conn_async()
             try:
                 yield redis_proxy
             finally:

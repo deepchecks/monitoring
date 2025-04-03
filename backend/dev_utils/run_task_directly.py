@@ -42,6 +42,7 @@ async def run_it():
 
             try:
                 async_redis = RedisProxy(rp.redis_settings)
+                await async_redis.init_conn_async()
 
                 lock_name = TASK_RUNNER_LOCK.format(1)
                 # By default, allow task 5 minutes before removes lock to allow another run. Inside the task itself we can
