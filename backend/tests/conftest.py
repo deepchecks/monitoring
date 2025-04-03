@@ -151,7 +151,11 @@ def redis():
 
 @pytest_asyncio.fixture(scope="function")
 async def async_redis():
-    return fakeredis.aioredis.FakeRedis()
+    try:
+        redis = fakeredis.aioredis.FakeRedis()
+        yield redis
+    finally:
+        await redis.aclose()
 
 @pytest.fixture(scope="function")
 def settings(async_engine, smtp_server):
@@ -214,7 +218,7 @@ def features_control_mock(settings):
 @pytest_asyncio.fixture(scope="function")
 async def resources_provider(settings, features_control_mock, async_redis):
     patch.object(ResourcesProvider, "get_features_control", features_control_mock).start()
-    patch.object(RedisProxy, "_connect",lambda *_: async_redis).start()
+    patch.object(RedisProxy, "_connect",lambda *_: (async_redis.connection_pool.reset() or async_redis)).start()
     yield ResourcesProvider(settings)
 
 

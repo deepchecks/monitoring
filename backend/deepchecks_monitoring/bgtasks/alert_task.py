@@ -156,7 +156,7 @@ async def execute_monitor(
     model_versions_without_cache = []
     async with resources_provider.cache_functions() as cache_functions:
         for model_version in model_versions:
-            cache_result = cache_functions.get_monitor_cache(
+            cache_result = await cache_functions.get_monitor_cache(
                 organization_id, model_version.id, monitor_id, start_time, end_time)
             if cache_result.found:
                 cache_results[model_version] = cache_result.value
