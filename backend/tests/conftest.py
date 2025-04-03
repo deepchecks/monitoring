@@ -16,7 +16,6 @@ import string
 import typing as t
 from unittest.mock import MagicMock, patch
 
-from deepchecks_monitoring.config import RedisSettings
 import dotenv
 import faker
 import fakeredis
@@ -40,7 +39,9 @@ from deepchecks_monitoring.ee.resources import ResourcesProvider
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
 from deepchecks_monitoring.public_models.base import Base as PublicModelsBase
 from deepchecks_monitoring.schema_models import TaskType
+from deepchecks_monitoring.config import RedisSettings
 from deepchecks_monitoring.utils.redis_proxy import RedisProxy
+
 from tests.common import Payload, TestAPI, generate_user
 from tests.utils import TestDatabaseGenerator, create_dummy_smtp_server
 
