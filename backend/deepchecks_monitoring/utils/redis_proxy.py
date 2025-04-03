@@ -48,3 +48,24 @@ class RedisProxy:
             except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
                 self.client = Redis.from_url(self.settings.redis_uri)
         await connect_to_redis()
+
+    def __getattr__(self, name):
+        """Wrapp the Redis client with retry mechanism."""
+        attr = getattr(self.client, name)
+        decorator = retry(stop=stop_after_attempt(self.settings.stop_after_retries),
+                          wait=wait_fixed(self.settings.wait_between_retries),
+                          retry=retry_if_exception_type(redis_exceptions_tuple),
+                          reraise=True)
+        if callable(attr):
+            if asyncio.iscoroutinefunction(attr):
+                @decorator
+                async def wrapped(*args, **kwargs):
+                    return await attr(*args, **kwargs)
+            else:
+                @decorator
+                def wrapped(*args, **kwargs):
+                    return attr(*args, **kwargs)
+
+            return wrapped
+        else:
+            return attr
