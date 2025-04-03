@@ -301,7 +301,7 @@ async def test_monitor_update_with_data(
     monitor = await async_session.get(Monitor, monitor["id"])
 
     expected_schedule = round_up_datetime(daterange[0], monitor_frequency, "utc") - \
-                        monitor_frequency.to_pendulum_duration()
+        monitor_frequency.to_pendulum_duration()
     assert pdl.instance(monitor.latest_schedule) == expected_schedule
 
     # Act - Update only monitor name, and rest of the fields should be the same
@@ -407,6 +407,7 @@ async def test_update_monitor_freq(
     expected = round_up_datetime(daterange[0], frequency, "utc") - frequency.to_pendulum_duration()
     assert latest_schedule == expected
 
+
 @pytest.mark.asyncio
 async def test_monitor_execution(
     test_api: TestAPI,
@@ -449,7 +450,7 @@ async def test_monitor_execution(
     async for _ in async_redis.scan_iter(monitor_key):
         count_cache += 1
 
-    assert count_cache == 0  
+    assert count_cache == 0
 
     # Act
     result_without_cache = test_api.execute_monitor(
