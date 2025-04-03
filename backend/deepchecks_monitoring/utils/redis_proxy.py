@@ -40,6 +40,7 @@ class RedisProxy:
             await client.ping()
         except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
             client = Redis.from_url(settings.redis_uri)
+        return client
 
     async def init_conn_async(self):
         """Connect to Redis."""
