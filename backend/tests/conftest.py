@@ -176,7 +176,7 @@ def settings(async_engine, smtp_server):
         is_cloud=True,
         mixpanel_id="xxxxxx",
         enable_analytics=True,
-        redis_uri='redis://localhost/0',
+        redis_uri="redis://localhost/0",
     )
 
 
