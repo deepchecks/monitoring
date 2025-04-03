@@ -39,7 +39,6 @@ from deepchecks_monitoring.ee.resources import ResourcesProvider
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
 from deepchecks_monitoring.public_models.base import Base as PublicModelsBase
 from deepchecks_monitoring.schema_models import TaskType
-from deepchecks_monitoring.config import RedisSettings
 from deepchecks_monitoring.utils.redis_proxy import RedisProxy
 
 from tests.common import Payload, TestAPI, generate_user
@@ -176,7 +175,8 @@ def settings(async_engine, smtp_server):
         kafka_host=None,
         is_cloud=True,
         mixpanel_id="xxxxxx",
-        enable_analytics=True
+        enable_analytics=True,
+        redis_uri='redis://localhost/0',
     )
 
 
@@ -218,7 +218,6 @@ def features_control_mock(settings):
 @pytest_asyncio.fixture(scope="function")
 async def resources_provider(settings, features_control_mock, async_redis):
     patch.object(ResourcesProvider, "get_features_control", features_control_mock).start()
-    patch.object(ResourcesProvider, "redis_settings", RedisSettings(redis_uri='redis://localhost/0')).start()
     patch.object(RedisProxy, "_connect", lambda *_: (async_redis.connection_pool.reset() or async_redis)).start()
     yield ResourcesProvider(settings)
 
