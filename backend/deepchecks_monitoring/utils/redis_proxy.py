@@ -33,6 +33,14 @@ class RedisProxy:
         self.settings = settings
         self.client = None
 
+    @classmethod
+    async def _get_redis_client(cls, settings: RedisSettings):
+        try:
+            client = RedisCluster.from_url(settings.redis_uri)
+            await client.ping()
+        except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
+            client = Redis.from_url(settings.redis_uri)
+
     async def init_conn_async(self):
         """Connect to Redis."""
         @retry(
@@ -42,11 +50,7 @@ class RedisProxy:
             reraise=True
         )
         async def connect_to_redis():
-            try:
-                self.client = RedisCluster.from_url(self.settings.redis_uri)
-                await self.client.ping()
-            except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
-                self.client = Redis.from_url(self.settings.redis_uri)
+            self.client = await self._get_redis_client(self.settings)
         await connect_to_redis()
 
     def __getattr__(self, name):

@@ -217,21 +217,24 @@ def features_control_mock(settings):
 
 @pytest_asyncio.fixture(scope="function")
 async def resources_provider(settings, features_control_mock, async_redis):
+    async def _get_redis_client(*_):
+        async_redis.connection_pool.reset()
+        return async_redis
     patch.object(ResourcesProvider, "get_features_control", features_control_mock).start()
-    patch.object(RedisProxy, "_connect", lambda *_: (async_redis.connection_pool.reset() or async_redis)).start()
+    patch.object(RedisProxy, "_get_redis_client", _get_redis_client).start()
     yield ResourcesProvider(settings)
 
 
-@pytest_asyncio.fixture(scope="function")
+@ pytest_asyncio.fixture(scope="function")
 async def application(
     resources_provider: ResourcesProvider,
     settings: Settings
 ) -> FastAPI:
     """Create application instance."""
     return create_application(
-        resources_provider=resources_provider,
-        settings=settings,
-        log_level="ERROR"
+        resources_provider = resources_provider,
+        settings = settings,
+        log_level = "ERROR"
     )
 
 
