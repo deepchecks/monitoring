@@ -31,16 +31,23 @@ class RedisProxy:
 
     def __init__(self, settings: RedisSettings):
         self.settings = settings
-        self.client = self._connect(settings)
+        self.client = None
 
-    @classmethod
-    def _connect(cls, settings: RedisSettings):
+    async def init_conn_async(self):
         """Connect to Redis."""
         try:
-            client = RedisCluster.from_url(settings.redis_uri)
+            self.client = RedisCluster.from_url(self.settings.redis_uri)
+            await self.client.ping()
         except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
-            client = Redis.from_url(settings.redis_uri)
-        return client
+            self.client = Redis.from_url(self.settings.redis_uri)
+
+    def init_conn_sync(self):
+        """Connect to Redis."""
+        try:
+            self.client = RedisCluster.from_url(self.settings.redis_uri)
+            self.client.ping()
+        except redis_exceptions_tuple:  # pylint: disable=catching-non-exception
+            self.client = Redis.from_url(self.settings.redis_uri)
 
     def __getattr__(self, name):
         """Wrapp the Redis client with retry mechanism."""
@@ -54,17 +61,21 @@ class RedisProxy:
                 @decorator
                 async def wrapped(*args, **kwargs):
                     try:
+                        if self.client is None:
+                            await self.init_conn_async()
                         return await attr(*args, **kwargs)
                     except (RedisClusterException, RedisConnectionError):
-                        self.client = self._connect(self.settings)
+                        await self.init_conn_async()
                         raise
             else:
                 @decorator
                 def wrapped(*args, **kwargs):
                     try:
+                        if self.client is None:
+                            self.init_conn_sync()
                         return attr(*args, **kwargs)
                     except (RedisClusterException, RedisConnectionError):
-                        self.client = self._connect(self.settings)
+                        self.init_conn_sync()
                         raise
 
             return wrapped
