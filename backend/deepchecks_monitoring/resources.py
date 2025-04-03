@@ -296,7 +296,7 @@ class ResourcesProvider(BaseResourcesProvider):
             yield None
 
     @asynccontextmanager
-    async def cache_functions(self) -> t.AsyncGenerator[t.Optional[CacheFunctions], None]:
+    async def cache_functions(self) -> t.AsyncGenerator[CacheFunctions, None]:
         """Return cache functions."""
         async with self.get_redis_client() as redis_client:
             yield CacheFunctions(redis_client)

@@ -16,6 +16,7 @@ import string
 import typing as t
 from unittest.mock import MagicMock, patch
 
+from deepchecks_monitoring.config import RedisSettings
 import dotenv
 import faker
 import fakeredis
@@ -145,10 +146,6 @@ def smtp_server():
         yield server
 
 
-@pytest.fixture(scope="function")
-def redis():
-    yield fakeredis.FakeStrictRedis()
-
 @pytest_asyncio.fixture(scope="function")
 async def async_redis():
     try:
@@ -156,6 +153,7 @@ async def async_redis():
         yield redis
     finally:
         await redis.aclose()
+
 
 @pytest.fixture(scope="function")
 def settings(async_engine, smtp_server):
@@ -186,6 +184,7 @@ def _mock_mixpanel_client():
     mixpanel_mock = MagicMock()
     with patch("deepchecks_monitoring.utils.mixpanel.Mixpanel", new=mixpanel_mock) as MockClass:
         instance = MockClass.return_value
+
         def track(distinct_id, event_name, properties=None, meta=None):
             nonlocal instance, mixpanel_mock
             if properties:
@@ -218,7 +217,8 @@ def features_control_mock(settings):
 @pytest_asyncio.fixture(scope="function")
 async def resources_provider(settings, features_control_mock, async_redis):
     patch.object(ResourcesProvider, "get_features_control", features_control_mock).start()
-    patch.object(RedisProxy, "_connect",lambda *_: (async_redis.connection_pool.reset() or async_redis)).start()
+    patch.object(ResourcesProvider, "redis_settings", RedisSettings(redis_uri='redis://localhost/0')).start()
+    patch.object(RedisProxy, "_connect", lambda *_: (async_redis.connection_pool.reset() or async_redis)).start()
     yield ResourcesProvider(settings)
 
 
@@ -380,6 +380,7 @@ async def classification_model_version(
         }
     )
     return t.cast(t.Dict[str, t.Any], result)
+
 
 @pytest_asyncio.fixture()
 async def classification_model_version_with_bool(
