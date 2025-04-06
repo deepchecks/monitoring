@@ -145,6 +145,7 @@ class RedisSettings(BaseDeepchecksSettings):
     retry_on_timeout: bool = True
     socket_keepalive: bool = True
 
+
 class Settings(
     DatabaseSettings,
     EmailSettings,
