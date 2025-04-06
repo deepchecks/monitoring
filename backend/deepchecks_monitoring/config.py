@@ -138,12 +138,11 @@ class RedisSettings(BaseDeepchecksSettings):
 
     redis_uri: t.Optional[RedisDsn] = None
     decode_responses: bool = True
-    retry_attempts: int = 6
-    cluster_error_retry_attempts: int = 2
     socket_connect_timeout: int = 5
     socket_timeout: int = 5
     socket_keepalive: bool = True
-
+    retry_attempts: int = 6
+    cluster_error_retry_attempts: int = 2
 
 class Settings(
     DatabaseSettings,
