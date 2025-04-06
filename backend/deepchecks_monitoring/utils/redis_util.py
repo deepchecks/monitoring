@@ -1,16 +1,10 @@
-import redis.exceptions as redis_exceptions
 from redis.asyncio import Redis as AsyncRedis
 from redis.asyncio import RedisCluster as AsyncRedisCluster
 from redis.backoff import ExponentialBackoff
+from redis.exceptions import RedisClusterException
 from redis.retry import Retry
 
 from deepchecks_monitoring.config import RedisSettings
-
-
-redis_exceptions_tuple = tuple(  # Get all exception classes from redis.exceptions
-    cls for _, cls in vars(redis_exceptions).items()
-    if isinstance(cls, type) and issubclass(cls, Exception)
-)
 
 
 def create_settings_dict(redis_settings: RedisSettings):
@@ -22,7 +16,6 @@ def create_settings_dict(redis_settings: RedisSettings):
         url=uri,
         **settings,
         retry=Retry(ExponentialBackoff(), 6),
-        retry_on_error=redis_exceptions_tuple
     )
 
 
@@ -33,5 +26,5 @@ async def init_async_redis(redis_settings: RedisSettings):
         redis = AsyncRedisCluster.from_url(cluster_error_retry_attempts=2, **settings)
         await redis.ping()
         return redis
-    except redis_exceptions.RedisClusterException:
+    except RedisClusterException:
         return AsyncRedis.from_url(**settings)
