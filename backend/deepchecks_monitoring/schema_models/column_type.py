@@ -63,7 +63,7 @@ class ColumnType(str, enum.Enum):
         return types_map[self]
 
     def is_indexed(self):
-        return self in {ColumnType.NUMERIC, ColumnType.INTEGE, ColumnType.BIGINT}
+        return self in {ColumnType.NUMERIC, ColumnType.INTEGER, ColumnType.BIGINT}
 
     def to_json_schema_type(self, nullable=False, min_items: int = None, max_items: int = None):
         """Return the json type of the column type."""
