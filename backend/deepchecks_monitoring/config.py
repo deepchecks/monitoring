@@ -140,7 +140,7 @@ class RedisSettings(BaseDeepchecksSettings):
     decode_responses: bool = True
     stop_after_retries: int = 4
     wait_between_retries: int = 5
-    socket_connect_timeou: int = 5
+    socket_connect_timeout: int = 5
     socket_timeout: int = 5
     retry_on_timeout: bool = True
     socket_keepalive: bool = True
