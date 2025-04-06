@@ -9,13 +9,14 @@ from deepchecks_monitoring.config import RedisSettings
 
 def create_settings_dict(redis_settings: RedisSettings):
     """Create redis settings param dict"""
-    settings = redis_settings.dict()
-    uri = settings.pop("redis_uri")
 
     return dict(
-        url=uri,
-        **settings,
-        retry=Retry(ExponentialBackoff(), 6),
+        url=redis_settings.redis_uri,
+        decode_responses=redis_settings.decode_responses,
+        socket_connect_timeout=redis_settings.socket_connect_timeout,
+        socket_timeout=redis_settings.socket_timeout,
+        socket_keepalive=redis_settings.socket_keepalive,
+        retry=Retry(ExponentialBackoff(), redis_settings.retry_attempts),
     )
 
 
@@ -23,7 +24,10 @@ async def init_async_redis(redis_settings: RedisSettings):
     """Initialize redis connection."""
     settings = create_settings_dict(redis_settings)
     try:
-        redis = AsyncRedisCluster.from_url(cluster_error_retry_attempts=2, **settings)
+        redis = AsyncRedisCluster.from_url(
+            cluster_error_retry_attempts=redis_settings.cluster_error_retry_attempts,
+            **settings
+        )
         await redis.ping()
         return redis
     except RedisClusterException:

@@ -133,16 +133,7 @@ class ResourcesProvider(BaseResourcesProvider):
                 "you need to provide instance of 'RedisSettings' "
                 "to the 'ResourcesProvider' constructor"
             )
-        return config.RedisSettings(
-            redis_uri=self._settings.redis_uri,
-            decode_responses=self._settings.decode_responses,
-            stop_after_retries=self._settings.stop_after_retries,
-            wait_between_retries=self._settings.wait_between_retries,
-            socket_connect_timeout=self._settings.socket_connect_timeout,
-            socket_timeout=self._settings.socket_timeout,
-            retry_on_timeout=self._settings.retry_on_timeout,
-            socket_keepalive=self._settings.socket_keepalive,
-        )
+        return self._settings
 
     @property
     def settings(self) -> config.Settings:
