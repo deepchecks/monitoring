@@ -39,11 +39,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min,ignore-error=true
           tags: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
@@ -85,11 +85,11 @@ jobs:
       # Sadly, buildx does not support loading images from file to reuse the image from the previous step
       # https://github.com/docker/buildx/issues/847
       - name: Build and push - private
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min,ignore-error=true
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: |
@@ -99,11 +99,11 @@ jobs:
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
             MIXPANEL_ID=${{ secrets.MIXPANEL_ID }}
       - name: Build and push - public
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min,ignore-error=true
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: |
