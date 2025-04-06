@@ -294,7 +294,10 @@ class ResourcesProvider(BaseResourcesProvider):
         if self._redis_client is None and self.redis_settings.redis_uri:
             settings = create_settings_dict(self.redis_settings)
             try:
-                self._redis_client = RedisCluster.from_url(cluster_error_retry_attempts=2, **settings)
+                self._redis_client = RedisCluster.from_url(
+                    cluster_error_retry_attempts=self.redis_settings.cluster_error_retry_attempts,
+                    **settings
+                )
             except redis_exceptions.RedisClusterException:
                 self._redis_client = Redis.from_url(**settings)
 
