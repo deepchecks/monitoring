@@ -11,7 +11,7 @@
 """Contains alert scheduling logic."""
 import asyncio
 import datetime
-import logging.handlers
+import logging
 import typing as t
 from time import perf_counter
 
@@ -28,11 +28,11 @@ from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
 from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
-# from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
-from deepchecks_monitoring.config import DatabaseSettings, RedisSettings
+from deepchecks_monitoring.config import DatabaseSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
+from deepchecks_monitoring.utils.redis_util import init_async_redis
 
 try:
     from deepchecks_monitoring import ee
@@ -136,7 +136,7 @@ class TasksQueuer:
         return 0
 
 
-class WorkerSettings(DatabaseSettings, RedisSettings):
+class WorkerSettings(DatabaseSettings):
     """Worker settings."""
 
     logfile: t.Optional[str] = None
@@ -150,16 +150,6 @@ class WorkerSettings(DatabaseSettings, RedisSettings):
 
         env_file = '.env'
         env_file_encoding = 'utf-8'
-
-
-async def init_async_redis(redis_uri):
-    """Initialize redis connection."""
-    try:
-        redis = RedisCluster.from_url(redis_uri)
-        await redis.ping()
-        return redis
-    except redis_exceptions.RedisClusterException:
-        return Redis.from_url(redis_uri)
 
 
 def execute_worker():
@@ -195,7 +185,7 @@ def execute_worker():
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+                async_redis = await init_async_redis(rp.redis_settings)
                 worker = tasks_queuer.TasksQueuer(rp, async_redis, workers, logger, settings.queuer_run_interval)
                 g.start_soon(worker.run)
 
