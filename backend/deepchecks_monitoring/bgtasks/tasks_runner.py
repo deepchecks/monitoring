@@ -9,14 +9,13 @@
 # ----------------------------------------------------------------------------
 #
 """Contains alert scheduling logic."""
-import logging.handlers
 import typing as t
 
 import anyio
 import pendulum as pdl
 import uvloop
 from redis.asyncio import Redis, RedisCluster
-from redis.exceptions import LockNotOwnedError, RedisClusterException
+from redis.exceptions import LockNotOwnedError
 from sqlalchemy import select
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
@@ -24,11 +23,11 @@ from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
 from deepchecks_monitoring.bgtasks.mixpanel_system_state_event import MixpanelSystemStateEvent
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
-# from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE, TASK_RUNNER_LOCK
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
+from deepchecks_monitoring.utils.redis_util import init_async_redis
 
 try:
     from deepchecks_monitoring import ee
@@ -160,16 +159,6 @@ else:
         pass
 
 
-async def init_async_redis(redis_uri):
-    """Initialize redis connection."""
-    try:
-        redis = RedisCluster.from_url(redis_uri)
-        await redis.ping()
-        return redis
-    except RedisClusterException:
-        return Redis.from_url(redis_uri)
-
-
 def execute_worker():
     """Execute worker."""
 
@@ -189,7 +178,7 @@ def execute_worker():
         from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
 
         async with ResourcesProvider(settings) as rp:
-            async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+            async_redis = await init_async_redis(rp.redis_settings)
 
             workers = [
                 ModelVersionCacheInvalidation(),
