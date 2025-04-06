@@ -14,6 +14,7 @@ import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
+import redis.exceptions as redis_exceptions
 import tenacity
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
@@ -22,7 +23,6 @@ from kafka.admin import NewTopic
 from kafka.errors import KafkaError, TopicAlreadyExistsError
 from redis.client import Redis
 from redis.cluster import RedisCluster
-from redis.exceptions import RedisClusterException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
@@ -39,6 +39,7 @@ from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.utils import database
 from deepchecks_monitoring.utils.mixpanel import BaseEvent as BaseMixpanelEvent
 from deepchecks_monitoring.utils.mixpanel import MixpanelEventReporter
+from deepchecks_monitoring.utils.redis_util import create_settings_dict
 
 __all__ = ["ResourcesProvider"]
 
@@ -300,12 +301,14 @@ class ResourcesProvider(BaseResourcesProvider):
     def redis_client(self) -> t.Optional[Redis]:
         """Return redis client if redis defined, else None."""
         if self._redis_client is None and self.redis_settings.redis_uri:
-            settings = self.redis_settings.dict()
-            uri = settings.pop("redis_uri")
+            settings = create_settings_dict(self.redis_settings)
+
+            logger.info(f"Connecting to Redis at {settings.host}:{settings.port}")
             try:
-                self._redis_client = RedisCluster.from_url(uri, **settings)
-            except RedisClusterException:
-                self._redis_client = Redis.from_url(uri, **settings)
+                self._redis_client = RedisCluster.from_url(cluster_error_retry_attempts=2, **settings)
+            except redis_exceptions.RedisClusterException:
+                self._redis_client = Redis.from_url(**settings)
+
         return self._redis_client
 
     @property
