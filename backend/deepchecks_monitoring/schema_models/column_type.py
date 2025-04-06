@@ -62,6 +62,9 @@ class ColumnType(str, enum.Enum):
         }
         return types_map[self]
 
+    def is_indexed(self):
+        return self in {ColumnType.NUMERIC, ColumnType.INTEGE, ColumnType.BIGINT}
+
     def to_json_schema_type(self, nullable=False, min_items: int = None, max_items: int = None):
         """Return the json type of the column type."""
         types_map = {
@@ -170,7 +173,7 @@ def column_types_to_table_columns(column_types: t.Dict[str, ColumnType], primary
         sa.Column(
             name,
             data_type.to_sqlalchemy_type(),
-            index=True,
+            index=data_type.is_indexed(),
             primary_key=(name == primary_key)
         )
         for name, data_type in column_types.items()
