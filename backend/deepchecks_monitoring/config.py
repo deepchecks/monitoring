@@ -144,6 +144,7 @@ class RedisSettings(BaseDeepchecksSettings):
     retry_attempts: int = 6
     cluster_error_retry_attempts: int = 2
 
+
 class Settings(
     DatabaseSettings,
     EmailSettings,
