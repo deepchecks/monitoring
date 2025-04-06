@@ -302,8 +302,6 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return redis client if redis defined, else None."""
         if self._redis_client is None and self.redis_settings.redis_uri:
             settings = create_settings_dict(self.redis_settings)
-
-            logger.info(f"Connecting to Redis at {settings.host}:{settings.port}")
             try:
                 self._redis_client = RedisCluster.from_url(cluster_error_retry_attempts=2, **settings)
             except redis_exceptions.RedisClusterException:
