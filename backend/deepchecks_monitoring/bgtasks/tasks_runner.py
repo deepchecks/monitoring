@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 """Contains alert scheduling logic."""
+import logging
 import typing as t
 
 import anyio

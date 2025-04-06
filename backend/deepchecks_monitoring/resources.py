@@ -292,7 +292,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return redis client if redis defined, else None."""
         if self._redis_client is None and self.redis_settings.redis_uri:
             settings = self.redis_settings.dict()
-            uri = settings.pop('redis_uri')
+            uri = settings.pop("redis_uri")
             try:
                 self._redis_client = RedisCluster.from_url(uri, **settings)
             except RedisClusterException:

@@ -11,6 +11,7 @@
 """Contains alert scheduling logic."""
 import asyncio
 import datetime
+import logging
 import typing as t
 from time import perf_counter
 
