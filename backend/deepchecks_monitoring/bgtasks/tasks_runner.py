@@ -15,8 +15,8 @@ import typing as t
 import anyio
 import pendulum as pdl
 import uvloop
+import redis.exceptions as redis_exceptions
 from redis.asyncio import Redis, RedisCluster
-from redis.exceptions import LockNotOwnedError, TimeoutError
 from sqlalchemy import select
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
@@ -79,7 +79,7 @@ class TaskRunner:
     async def wait_for_task(self, timeout=120):
         try:
             task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
-        except TimeoutError:
+        except redis_exceptions.TimeoutError:
             self.logger.info('Got from redis queue task_id none')
             return
         else:
@@ -110,7 +110,7 @@ class TaskRunner:
 
         try:
             await lock.release()
-        except LockNotOwnedError:
+        except redis_exceptions.LockNotOwnedError:
             self.logger.error(f'Failed to release lock for task id: {task_id}. probably task run for longer than '
                               f'maximum time for the lock')
 
