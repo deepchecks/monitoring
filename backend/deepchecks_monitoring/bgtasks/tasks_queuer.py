@@ -185,7 +185,7 @@ def execute_worker():
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                async_redis = await init_async_redis(rp.redis_settings)
+                async_redis = await init_async_redis()
                 worker = tasks_queuer.TasksQueuer(rp, async_redis, workers, logger, settings.queuer_run_interval)
                 g.start_soon(worker.run)
 

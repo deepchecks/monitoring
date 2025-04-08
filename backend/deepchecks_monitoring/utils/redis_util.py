@@ -20,8 +20,9 @@ def create_settings_dict(redis_settings: RedisSettings):
     )
 
 
-async def init_async_redis(redis_settings: RedisSettings):
+async def init_async_redis(redis_settings: RedisSettings | None = None):
     """Initialize redis connection."""
+    redis_settings = redis_settings or RedisSettings()
     settings = create_settings_dict(redis_settings)
     try:
         redis = AsyncRedisCluster.from_url(
