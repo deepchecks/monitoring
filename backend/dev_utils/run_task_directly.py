@@ -40,7 +40,7 @@ async def run_it():
         async with rp.create_async_database_session() as session:
 
             try:
-                async_redis = await init_async_redis(rp.redis_settings)
+                async_redis = await init_async_redis()
 
                 lock_name = TASK_RUNNER_LOCK.format(1)
                 # By default, allow task 5 minutes before removes lock to allow another run. Inside the task itself we can

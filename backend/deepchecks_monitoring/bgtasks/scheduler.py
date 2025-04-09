@@ -12,7 +12,6 @@
 """Contains alert scheduling logic."""
 import asyncio
 import logging
-import logging.handlers
 import typing as t
 from collections import defaultdict
 from contextlib import asynccontextmanager
