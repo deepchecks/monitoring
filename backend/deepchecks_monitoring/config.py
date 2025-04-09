@@ -137,7 +137,6 @@ class RedisSettings(BaseDeepchecksSettings):
     """Redis settings."""
 
     redis_uri: t.Optional[RedisDsn] = None
-    decode_responses: bool = True
     socket_connect_timeout: int = 5
     socket_timeout: int = 5
     socket_keepalive: bool = True

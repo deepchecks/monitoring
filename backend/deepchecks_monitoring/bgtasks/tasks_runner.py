@@ -15,8 +15,8 @@ import typing as t
 import anyio
 import pendulum as pdl
 import uvloop
-import redis.exceptions as redis_exceptions
 from redis.asyncio import Redis, RedisCluster
+from redis.exceptions import LockNotOwnedError
 from sqlalchemy import select
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
@@ -77,14 +77,15 @@ class TaskRunner:
             raise
 
     async def wait_for_task(self, timeout=120):
-        try:
-            task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
-        except redis_exceptions.TimeoutError:
+        task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
+
+        # If timeout is not 0 we might get return value of None
+        if task_entry is None:
             self.logger.info('Got from redis queue task_id none')
             return
         else:
             # Return value from redis is (redis key, value, score)
-            task_id = int(task_entry[1])
+            task_id = int(task_entry[1].decode())
             queued_timestamp: int = task_entry[2]
             return task_id, queued_timestamp
 
@@ -110,7 +111,7 @@ class TaskRunner:
 
         try:
             await lock.release()
-        except redis_exceptions.LockNotOwnedError:
+        except LockNotOwnedError:
             self.logger.error(f'Failed to release lock for task id: {task_id}. probably task run for longer than '
                               f'maximum time for the lock')
 
@@ -178,7 +179,7 @@ def execute_worker():
         from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
 
         async with ResourcesProvider(settings) as rp:
-            async_redis = await init_async_redis()
+            async_redis = await init_async_redis(rp.redis_settings)
 
             workers = [
                 ModelVersionCacheInvalidation(),
