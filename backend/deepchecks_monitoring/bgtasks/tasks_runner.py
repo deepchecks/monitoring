@@ -84,7 +84,7 @@ class TaskRunner:
             return
         else:
             # Return value from redis is (redis key, value, score)
-            task_id = int(task_entry[1])
+            task_id = int(task_entry[1].decode())
             queued_timestamp: int = task_entry[2]
             return task_id, queued_timestamp
 
