@@ -14,7 +14,7 @@ import typing as t
 
 import anyio
 import pendulum as pdl
-import redis.exceptions as redis_exceptions 
+import redis.exceptions as redis_exceptions
 import uvloop
 from redis.asyncio import Redis, RedisCluster
 from sqlalchemy import select
@@ -82,11 +82,11 @@ class TaskRunner:
         except redis_exceptions.TimeoutError:
             self.logger.info('Got timeout from redis queue polling task_id ')
             return
-        else: 
+        else:
             if task_entry is None:
                 self.logger.info('Got from redis queue task_id none')
                 return
-            else:       
+            else:
                 # Return value from redis is (redis key, value, score)
                 task_id = int(task_entry[1].decode())
                 queued_timestamp: int = task_entry[2]
