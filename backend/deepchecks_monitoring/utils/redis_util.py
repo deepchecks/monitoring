@@ -12,8 +12,6 @@ def create_settings_dict(redis_settings: RedisSettings):
 
     return dict(
         url=redis_settings.redis_uri,
-        socket_connect_timeout=redis_settings.socket_connect_timeout,
-        socket_timeout=redis_settings.socket_timeout,
         socket_keepalive=redis_settings.socket_keepalive,
         retry=Retry(ExponentialBackoff(), redis_settings.retry_attempts),
     )
