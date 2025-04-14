@@ -77,20 +77,14 @@ class TaskRunner:
             raise
 
     async def wait_for_task(self, timeout=120):
-        try:
-            task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
-        except redis_exceptions.TimeoutError:
-            self.logger.info('Got timeout from redis queue polling task_id ')
+        task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
+        if task_entry is None:
+            self.logger.info('Got from redis queue task_id none')
             return
-        else:
-            if task_entry is None:
-                self.logger.info('Got from redis queue task_id none')
-                return
-            else:
-                # Return value from redis is (redis key, value, score)
-                task_id = int(task_entry[1].decode())
-                queued_timestamp: int = task_entry[2]
-                return task_id, queued_timestamp
+        # Return value from redis is (redis key, value, score)
+        task_id = int(task_entry[1].decode())
+        queued_timestamp: int = task_entry[2]
+        return task_id, queued_timestamp
 
     async def run_single_task(self, task_id, session, queued_timestamp):
         """Run single task."""
