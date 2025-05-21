@@ -31,9 +31,7 @@ ENV TZ=Asia/Jerusalem
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN echo "Updated on 2 Apr 2024" # Change to force apt to update the cache
-RUN apt-get -y update &&  apt-get -y upgrade
-
-RUN apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa &&  \
+RUN set -x && apt-get -qqy update && apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa &&  \
     apt install -y git python3.11 python3.11-dev python3.11-distutils curl g++ libpq-dev &&  \
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
 
