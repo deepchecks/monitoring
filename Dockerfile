@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 
-FROM --platform=$BUILDPLATFORM node:16.15-alpine3.14 AS frontend
+FROM --platform=$BUILDPLATFORM node:20.10-alpine3.19 AS frontend
 
 WORKDIR /code
 
