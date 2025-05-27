@@ -40,7 +40,7 @@ jobs:
           python-version: 3.11
       - name: Get explicit and transitive dependencies
         run: |
-          pip install -U pip setuptools
+          pip install -U pip==25.1.1 setuptools==80.9.0
           pip install -q -r backend/requirements.txt
       - name: Set up liccheck
         run: pip install liccheck
