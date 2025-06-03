@@ -23,7 +23,7 @@ redis[hiredis]~=4.6.0
 pandas~=2.1.0
 pyjwt[crypto]==2.4.0
 Authlib~=1.0.1
-httpx~=0.24.1
+httpx==0.28.1
 itsdangerous~=2.1.2
 randomname~=0.1.5
 furl==2.1.3
