@@ -166,8 +166,7 @@ services:
       - '443:443'
       - '8443:8443'
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./monitoring/deploy/local_certs/certs:/certs
+      - ./monitoring/deploy/.caddyfile:/etc/caddy/Caddyfile
     depends_on:
       - app
     networks:
