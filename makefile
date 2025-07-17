@@ -130,7 +130,7 @@ $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
 	@$(PIP) install -e backend/
-	@$(PIP) install -U pip setuptools ray==2.9.0
+	@$(PIP) install -U pip setuptools wheel ray==2.9.0
 
 
 requirements: $(ENV)
