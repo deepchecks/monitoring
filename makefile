@@ -315,7 +315,7 @@ docker:
 
 external-services-setup:
 	@docker-compose -f $(E2E)/docker-compose.yml up -d
-	@sleep 20
+	@sleep 5
 
 env-setup: external-services-setup
 	@docker run -d --env-file $(E2E)/.development.env -e IS_ON_PREM -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh

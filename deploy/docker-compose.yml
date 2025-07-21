@@ -92,6 +92,7 @@ services:
       - db
       - redis
       - casdoor
+      - kafka
     extra_hosts:
       - "$DOMAIN:10.5.0.20"
     networks:
