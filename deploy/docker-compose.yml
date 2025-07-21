@@ -115,6 +115,7 @@ services:
       - db
       - redis
       - casdoor
+      - kafka
     networks:
       default:
         ipv4_address: 10.5.0.5
@@ -135,6 +136,7 @@ services:
       - db
       - redis
       - casdoor
+      - kafka
     networks:
       default:
         ipv4_address: 10.5.0.4
@@ -155,6 +157,7 @@ services:
       - db
       - redis
       - casdoor
+      - kafka
     networks:
       default:
         ipv4_address: 10.5.0.3
