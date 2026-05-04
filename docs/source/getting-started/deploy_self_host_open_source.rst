@@ -13,7 +13,7 @@ If you're using the SaaS offering, feel free to skip to the :ref:`environment_se
 :ref:`Monitoring Quickstart for SaaS <quick_tabular>`.
 
 .. Don't want to manage the deepchecks app yourself? The quickest way to get started with Deepchecks is to use
-.. the SaaS `Deepchecks Cloud <https://app.deepchecks.com>`__ offering.
+.. the SaaS Deepchecks Cloud offering.
 
 .. note::
     The open source version is built for monitoring 1 model per deployment. Its ability to handle scale

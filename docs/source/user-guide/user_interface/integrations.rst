@@ -111,7 +111,7 @@ An example of an HTTP request payload.
         "alert_name": "model: Airbnb monitor: Percent Of Nulls - Medium", 
         "alert_rule": "Medium - Percent Of Nulls > 0.0", 
         "severity": "medium",
-        "alert_link": "https://app.deepchecks.com/configuration/alert-rules?modelId=6&severity=medium"
+        "alert_link": "https://your-deepchecks-host/configuration/alert-rules?modelId=6&severity=medium"
     }
 
 

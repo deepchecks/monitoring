@@ -75,7 +75,7 @@ Step #3: Create or join an organization
 
 For SaaS usage: following an invite mail (sign up to our invite system at the `Deepchecks Website`_, or contact us at info@deepchecks.com),
 you'll be able to join a new organization.
-Then, head over to the deepchecks host URL (e.g. https://app.deepchecks.com or your unique url if received) to start exploring.
+Then, head over to the deepchecks host URL (e.g. your unique url if received) to start exploring.
 
 For open source: create a user and organization and log in to the deepchecks UI, hosted at the url you've chosen during installation
 (default is http://localhost).

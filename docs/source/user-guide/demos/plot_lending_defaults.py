@@ -48,8 +48,8 @@ from deepchecks_client import DeepchecksClient
 # recommended for security reasons) copy-paste your token string here, instead of retrieving it from the environment
 # variable.
 token = os.getenv('DEEPCHECKS_API_TOKEN')
-# Point the host to deepchecks host url (e.g. https://app.deepchecks.com. Save it to an environment variable,
-# or alternatively copy-paste it here directly)
+# Point the host to deepchecks host url. Save it to an environment variable,
+# or alternatively copy-paste it here directly.
 host = os.getenv('DEEPCHECKS_API_HOST')
 # Create a DeepchecksClient with relevant credentials
 dc_client = DeepchecksClient(host=host, token=token)
