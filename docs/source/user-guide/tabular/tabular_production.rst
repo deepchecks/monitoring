@@ -25,7 +25,7 @@ Then you should create the :class:`DeepchecksClient <deepchecks_client.Deepcheck
 
     >>> import os
     >>> from deepchecks_client import DeepchecksClient
-    >>> host = os.environ.get('DEEPCHECKS_API_HOST')  # Replace this with https://app.deepchecks.com
+    >>> host = os.environ.get('DEEPCHECKS_API_HOST')  # Replace this with your deepchecks host URL
     >>> # Make sure to put the API token in your environment variables. Or alternatively (less recommended):
     >>> # os.environ['DEEPCHECKS_API_TOKEN'] = 'uncomment-this-line-and-insert-your-api-token-here'
     >>> dc_client = DeepchecksClient(host=host, token=os.getenv('DEEPCHECKS_API_TOKEN'))
