@@ -130,7 +130,7 @@ $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
 	@$(PIP) install -e backend/
-	@$(PIP) install -U pip setuptools ray==2.9.0
+	@$(PIP) install -U pip setuptools wheel ray==2.9.0
 
 
 requirements: $(ENV)
@@ -315,7 +315,7 @@ docker:
 
 external-services-setup:
 	@docker-compose -f $(E2E)/docker-compose.yml up -d
-	@sleep 2
+	@sleep 5
 
 env-setup: external-services-setup
 	@docker run -d --env-file $(E2E)/.development.env -e IS_ON_PREM -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh

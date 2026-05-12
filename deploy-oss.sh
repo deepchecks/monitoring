@@ -117,49 +117,6 @@ then
 export TLS_BLOCK="acme_ca https://acme-staging-v02.api.letsencrypt.org/directory"
 fi
 
-# rewrite caddyfile
-rm -f Caddyfile
-if [[ $ENABLE_HTTP == 'true' ]]; then
-  export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
-  envsubst > Caddyfile <<EOF
-{
-  auto_https disable_redirects
-}
-$DOMAIN:8443 {
-    tls /certs/localhost.crt /certs/localhost.key
-
-    reverse_proxy http://casdoor:4545 {
-        header_up Host {upstream_hostport}
-        header_up X-Real-IP {remote_host}
-    }
-}
-$DOMAIN, :443 {
-    tls /certs/localhost.crt /certs/localhost.key
-
-    reverse_proxy http://app:8000
-}
-$DOMAIN:80 {
-    reverse_proxy http://app:8000
-}
-EOF
-else
-  envsubst > Caddyfile <<EOF
-{
-  $TLS_BLOCK
-}
-$DOMAIN:8443 {
-    reverse_proxy http://casdoor:4545 {
-        header_up Host {upstream_hostport}
-        header_up X-Real-IP {remote_host}
-    }
-}
-$DOMAIN, :80, :443 {
-    reverse_proxy http://app:8000
-}
-EOF
-
-fi;
-
 # Write .env file
 envsubst > .env <<EOF
 DEEPCHECKS_SECRET=$DEEPCHECKS_SECRET
